@@ -580,6 +580,50 @@ body {
   .container {
     padding-left: max(var(--space-md), env(safe-area-inset-left));
     padding-right: max(var(--space-md), env(safe-area-inset-right));
-    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
   }
+}
+
+/* Custom Tooltip */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::before {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 100%;
+  /* Position above by default */
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px) scale(0.95);
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  z-index: 100;
+  margin-bottom: 4px;
+}
+
+.tooltip:hover::before,
+.tooltip:focus-visible::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px) scale(1);
+}
+
+/* Tooltip Bottom */
+.tooltip-bottom::before {
+  top: 100%;
+  bottom: auto;
+  transform: translateX(-50%) translateY(4px) scale(0.95);
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+.tooltip-bottom:hover::before,
+.tooltip-bottom:focus-visible::before {
+  transform: translateX(-50%) translateY(4px) scale(1);
 }

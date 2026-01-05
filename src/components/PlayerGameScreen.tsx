@@ -151,28 +151,28 @@ export default function PlayerGameScreen({
                         return (
                             <div className="flex justify-center gap-2 shrink-0 py-1 border-t border-white/10 mt-1">
                                 <button
-                                    className={`btn btn-xs ${energy >= 40 ? 'btn-info' : 'opacity-50 grayscale'}`}
+                                    className={`btn btn-xs tooltip tooltip-bottom ${energy >= 40 ? 'btn-info' : 'opacity-50 grayscale'}`}
                                     onClick={() => handleUseItem('snowball')}
                                     disabled={energy < 40}
-                                    title="Freeze (40e)"
+                                    data-tip="Freeze 5s (40e)"
                                 >
                                     ❄️ 40
                                 </button>
                                 <button
-                                    className={`btn btn-xs ${energy >= 60 ? 'btn-purple hover:opacity-90' : 'opacity-50 grayscale'}`}
+                                    className={`btn btn-xs tooltip tooltip-bottom ${energy >= 60 ? 'btn-purple hover:opacity-90' : 'opacity-50 grayscale'}`}
                                     onClick={() => handleUseItem('ink_splat')}
                                     disabled={energy < 60}
-                                    title="Ink (60e)"
+                                    data-tip="Ink Squirt (60e)"
                                 >
                                     🐙 60
                                 </button>
                                 <button
-                                    className={`btn btn-xs ${energy >= 90 ? 'btn-warning' : 'opacity-50 grayscale'}`}
+                                    className={`btn btn-xs tooltip tooltip-bottom ${energy >= 90 ? 'btn-warning' : 'opacity-50 grayscale'}`}
                                     onClick={() => handleUseItem('swap_hand')}
                                     disabled={energy < 90}
-                                    title="Shuffle (90e)"
+                                    data-tip="Chaos Shuffle (90e)"
                                 >
-                                    🔀 90
+                                    🌀 90
                                 </button>
                             </div>
                         );
