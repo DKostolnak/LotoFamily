@@ -136,6 +136,16 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             setPlayerId(newSocket.id || null);
             setError(null);
             setIsLoading(false);
+
+            // Robust Reconnect: Immediately try to rejoin if we have credentials
+            const lastRoom = localStorage.getItem('loto_lastRoom');
+            const lastName = localStorage.getItem('loto_playerName');
+            const token = localStorage.getItem('loto_playerToken');
+
+            if (lastRoom && lastName && token) {
+                console.log(`[Auto-Rejoin] Re-authenticating for room ${lastRoom}`);
+                newSocket.emit('room:join', lastRoom, lastName, token);
+            }
         });
 
         newSocket.on('disconnect', () => {
