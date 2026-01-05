@@ -5,9 +5,14 @@ interface SabotageOverlayProps {
     inkSplats?: { x: number; y: number; id: string }[];
 }
 
+import { useScreenShake } from './ScreenShakeProvider';
+
 export default function SabotageOverlay({ frozenUntil, inkSplats }: SabotageOverlayProps) {
     const [now, setNow] = useState(Date.now());
     const [clearedSplats, setClearedSplats] = useState<Set<string>>(new Set());
+    const { shake } = useScreenShake();
+    const prevFrozenRef = React.useRef(false);
+    const prevSplatsLengthRef = React.useRef(0);
 
     // Timer for freeze countdown
     useEffect(() => {
@@ -18,14 +23,25 @@ export default function SabotageOverlay({ frozenUntil, inkSplats }: SabotageOver
     const isFrozen = frozenUntil && frozenUntil > now;
     const activeSplats = inkSplats?.filter(s => !clearedSplats.has(s.id)) || [];
 
+    // Trigger Shake on Freeze
+    useEffect(() => {
+        if (isFrozen && !prevFrozenRef.current) {
+            shake('heavy');
+        }
+        prevFrozenRef.current = !!isFrozen;
+    }, [isFrozen, shake]);
+
+    // Trigger Shake on new Ink Splat
+    useEffect(() => {
+        const currentLength = inkSplats?.length || 0;
+        if (currentLength > prevSplatsLengthRef.current) {
+            shake('medium');
+        }
+        prevSplatsLengthRef.current = currentLength;
+    }, [inkSplats, shake]);
+
     // Handle scrubbing ink
     const handleSplatHover = (id: string) => {
-        // Simple "hover to clean" - maybe require movement or time?
-        // For v1, let's make it 3 hovers or just rapid movement.
-        // Simplest: Click to clean, or hover 500ms? 
-        // Let's go with: Hover instantly cleans specific splat parts, or just click to remove.
-        // Plan said: "scrub". Let's simulate by requiring 3 pointer moves over it?
-        // Too complex for now. Let's do: Click to Clean.
         setClearedSplats(prev => {
             const newSet = new Set(prev);
             newSet.add(id);

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "@/styles/globals.css";
 import { GameProvider } from "@/lib/GameContext";
 import { ToastProvider } from "@/components/ToastProvider";
+import ScreenShakeProvider from "@/components/ScreenShakeProvider";
 import { GameStatusListener } from "@/components/GameStatusListener";
 
 const inter = Inter({
@@ -40,8 +41,10 @@ export default function RootLayout({
       <body className={`${inter.variable} wood-bg`} suppressHydrationWarning>
         <GameProvider>
           <ToastProvider>
-            <GameStatusListener />
-            {children}
+            <ScreenShakeProvider>
+              <GameStatusListener />
+              {children}
+            </ScreenShakeProvider>
           </ToastProvider>
         </GameProvider>
       </body>

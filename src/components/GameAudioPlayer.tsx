@@ -186,6 +186,33 @@ export function playClickSound() {
     }
 }
 
+export function playErrorSound() {
+    try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        oscillator.type = SOUNDS.error.type;
+        oscillator.frequency.setValueAtTime(SOUNDS.error.frequency, ctx.currentTime);
+
+        // Buzz sound
+        gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.15);
+
+        if ('vibrate' in navigator) navigator.vibrate(200);
+    } catch (e) {
+        // Silent
+    }
+}
+
 // Play victory fanfare manually
 export function playVictoryFanfare() {
     try {
@@ -216,6 +243,91 @@ export function playVictoryFanfare() {
         // Haptic
         if ('vibrate' in navigator) navigator.vibrate([100, 50, 100, 50, 200]);
 
+    } catch (e) {
+        // Silent
+    }
+}
+
+// Play freeze sound (shatter effect)
+export function playFreezeSound() {
+    try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+
+        // High pitch shatter
+        [2000, 2500, 3000, 4000].forEach((freq, i) => {
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.05);
+
+            gainNode.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.05 + 0.1);
+
+            oscillator.start(ctx.currentTime + i * 0.05);
+            oscillator.stop(ctx.currentTime + i * 0.05 + 0.1);
+        });
+
+        if ('vibrate' in navigator) navigator.vibrate([30, 30, 30]);
+    } catch (e) {
+        // Silent
+    }
+}
+
+// Play splat sound (low squish)
+export function playSplatSound() {
+    try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        oscillator.type = 'triangle';
+        // Pitch drop for squish effect
+        oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
+
+        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.3);
+
+        if ('vibrate' in navigator) navigator.vibrate(50);
+    } catch (e) {
+        // Silent
+    }
+}
+
+export function playBonusSound() {
+    try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        oscillator.type = 'sine';
+        // Rising pitch for bonus
+        oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.3);
+
+        gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.3);
     } catch (e) {
         // Silent
     }

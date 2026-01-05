@@ -8,8 +8,9 @@ import NumberMedallion from './NumberMedallion';
 import NumberHistory from './NumberHistory';
 import PlayerList from './PlayerList';
 import { useWakeLock } from '@/hooks/useWakeLock';
-import { playClickSound } from './GameAudioPlayer';
+import { playClickSound, playErrorSound, playFreezeSound, playSplatSound, playBonusSound } from './GameAudioPlayer';
 import SabotageOverlay from './SabotageOverlay';
+import { useScreenShake } from './ScreenShakeProvider';
 
 interface PlayerGameScreenProps {
     gameState: GameState;
@@ -41,6 +42,7 @@ export default function PlayerGameScreen({
     const calledNumberValues = gameState.calledNumbers.map(cn => cn.value);
     const isPaused = gameState.phase === 'paused';
     const t = translations[gameState.settings.language || 'en'];
+    const { shake } = useScreenShake();
 
     // State for targeting mode
     const [targetingItem, setTargetingItem] = React.useState<import('@/lib/types').SabotageType | null>(null);
@@ -260,7 +262,24 @@ export default function PlayerGameScreen({
                                         <div style={{ width: '100%' }}>
                                             <LotoCard
                                                 card={card}
-                                                onCellClick={(row, col) => onMarkCell(card.id, row, col)}
+                                                onCellClick={(row, col) => {
+                                                    // Visual feedback for marking
+                                                    const cell = card.grid[row][col];
+                                                    if (cell.value !== null && !cell.isMarked) {
+                                                        const isCorrect = gameState.currentNumber === cell.value || gameState.calledNumbers.some(cn => cn.value === cell.value);
+
+                                                        if (isCorrect) {
+                                                            playClickSound();
+                                                            shake('light');
+                                                        } else {
+                                                            // Logic for mistake handled by game engine (sabotage?), 
+                                                            // but we can give bad feedback here too.
+                                                            playErrorSound();
+                                                            shake('medium');
+                                                        }
+                                                    }
+                                                    onMarkCell(card.id, row, col);
+                                                }}
                                                 calledNumbers={calledNumberValues}
                                                 highlightedNumber={gameState.currentNumber}
                                                 highlightAllCalled={true}
