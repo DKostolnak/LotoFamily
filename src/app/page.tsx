@@ -143,21 +143,8 @@ export default function Home() {
   }
 
   // Game is playing or paused
-  if (isHost) {
-    return (
-      <>
-        {audioPlayer}
-        <HostCallerScreen
-          gameState={gameState}
-          onCallNumber={handleCallNumber}
-          onPause={handlePauseGame}
-          onResume={handleResumeGame}
-          onEndGame={handleEndGame}
-        />
-      </>
-    );
-  }
-
+  // Game is playing or paused
+  // Unified View: Host plays as a player but with extra controls
   return (
     <>
       {audioPlayer}
@@ -169,6 +156,13 @@ export default function Home() {
         onClaimWin={handleClaimWin}
         onClaimFlat={claimFlat}
         onUseSabotage={useSabotage}
+
+        // Host Props
+        isHost={isHost}
+        onCallNumber={handleCallNumber}
+        onPause={handlePauseGame}
+        onResume={handleResumeGame}
+        onEndGame={handleEndGame}
       />
     </>
   );

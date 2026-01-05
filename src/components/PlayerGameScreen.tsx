@@ -11,6 +11,7 @@ import { useWakeLock } from '@/hooks/useWakeLock';
 import { playClickSound, playErrorSound, playFreezeSound, playSplatSound, playBonusSound } from './GameAudioPlayer';
 import SabotageOverlay from './SabotageOverlay';
 import { useScreenShake } from './ScreenShakeProvider';
+import CallerBoard from './CallerBoard';
 
 interface PlayerGameScreenProps {
     gameState: GameState;
@@ -22,6 +23,13 @@ interface PlayerGameScreenProps {
 
 
     onUseSabotage: (targetId: string, type: import('@/lib/types').SabotageType) => void;
+
+    // Host Props
+    isHost?: boolean;
+    onCallNumber?: () => void;
+    onPause?: () => void;
+    onResume?: () => void;
+    onEndGame?: () => void;
 }
 
 /**
@@ -35,9 +43,13 @@ export default function PlayerGameScreen({
     onMarkCell,
     onClaimWin,
     onClaimFlat,
+    onUseSabotage,
 
-
-    onUseSabotage
+    isHost = false,
+    onCallNumber,
+    onPause,
+    onResume,
+    onEndGame
 }: PlayerGameScreenProps) {
     const calledNumberValues = gameState.calledNumbers.map(cn => cn.value);
     const isPaused = gameState.phase === 'paused';
@@ -350,6 +362,56 @@ export default function PlayerGameScreen({
                     />
                 );
             })()}
+            {/* Host Controls Fixed Bottom Bar */}
+            {isHost && (
+                <div className="fixed bottom-0 left-0 right-0 bg-black/90 p-3 pt-2 pb-safe z-50 border-t border-white/10 backdrop-blur-md">
+                    <div className="max-w-md mx-auto flex items-center justify-between gap-2">
+                        {/* Pause/Resume */}
+                        <button
+                            className="btn btn-secondary"
+                            style={{ padding: '0.8rem', fontSize: '1.2rem' }}
+                            onClick={isPaused ? onResume : onPause}
+                        >
+                            {isPaused ? '▶️' : '⏸️'}
+                        </button>
+
+                        {/* Call Next (Big Button) */}
+                        <button
+                            className="btn btn-primary"
+                            style={{ flex: 1, padding: '0.8rem', fontSize: '1.1rem', fontWeight: 800 }}
+                            onClick={onCallNumber}
+                            disabled={!gameState.remainingNumbers.length || isPaused}
+                        >
+                            🎲 {t.callNext}
+                        </button>
+
+                        {/* Show Board Button */}
+                        <button
+                            className="btn btn-secondary"
+                            style={{ padding: '0.8rem', fontSize: '1.2rem' }}
+                            onClick={() => document.getElementById('callerBoardModal')?.showModal()}
+                        >
+                            📋
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Host Caller Board Modal */}
+            <dialog id="callerBoardModal" className="modal modal-bottom sm:modal-middle bg-transparent backdrop:bg-black/80">
+                <div className="modal-box bg-[var(--color-bg-paper)] text-[var(--color-text-primary)] border-2 border-[var(--color-gold)]">
+                    <h3 className="font-bold text-lg mb-4 text-center">📋 {t.currentNumber}</h3>
+                    <CallerBoard calledNumbers={calledNumberValues} currentNumber={gameState.currentNumber} />
+                    <div className="modal-action justify-center mt-6">
+                        <form method="dialog">
+                            <button className="btn btn-primary">Close</button>
+                        </form>
+                    </div>
+                </div>
+            </dialog>
+
+            {/* Bottom Padding for Host to prevent overlap */}
+            {isHost && <div style={{ height: '80px' }} />}
         </div>
     );
 }
