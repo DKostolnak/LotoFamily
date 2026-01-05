@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "nodemon server.ts",
     "build": "next build",
-    "start": "NODE_ENV=production ts-node --esm server.ts",
+    "start": "NODE_ENV=production tsx server.ts",
     "lint": "eslint"
   },
   "dependencies": {
@@ -17,6 +17,7 @@
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   },
   "devDependencies": {
