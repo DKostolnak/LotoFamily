@@ -58,6 +58,7 @@ export default function PlayerGameScreen({
 
     // State for targeting mode
     const [targetingItem, setTargetingItem] = React.useState<import('@/lib/types').SabotageType | null>(null);
+    const [isHostControlsExpanded, setHostControlsExpanded] = React.useState(false);
 
     const handleUseItem = (type: import('@/lib/types').SabotageType) => {
         setTargetingItem(type);
@@ -363,38 +364,93 @@ export default function PlayerGameScreen({
                 );
             })()}
             {/* Host Controls Fixed Bottom Bar */}
+            {/* Host Controls Fixed Bottom Bar */}
             {isHost && (
-                <div className="fixed bottom-0 left-0 right-0 bg-black/90 p-3 pt-2 pb-safe z-50 border-t border-white/10 backdrop-blur-md">
-                    <div className="max-w-md mx-auto flex items-center justify-between gap-2">
-                        {/* Pause/Resume */}
-                        <button
-                            className="btn btn-secondary"
-                            style={{ padding: '0.8rem', fontSize: '1.2rem' }}
-                            onClick={isPaused ? onResume : onPause}
-                        >
-                            {isPaused ? '▶️' : '⏸️'}
-                        </button>
+                <>
+                    {/* Collapsed Mode: Minimal FABs */}
+                    {!isHostControlsExpanded && (
+                        <div className="fixed bottom-4 right-4 flex flex-col gap-3 z-50">
+                            {/* Call Next FAB */}
+                            <button
+                                className="btn btn-primary shadow-lg"
+                                style={{
+                                    width: 64, height: 64, borderRadius: '50%',
+                                    fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    border: '4px solid var(--color-bg-paper)'
+                                }}
+                                onClick={onCallNumber}
+                                disabled={!gameState.remainingNumbers.length || isPaused}
+                            >
+                                🎲
+                            </button>
+                            {/* Expand Menu FAB */}
+                            <button
+                                className="btn btn-secondary shadow-lg"
+                                style={{
+                                    width: 48, height: 48, borderRadius: '50%',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}
+                                onClick={() => setHostControlsExpanded(true)}
+                            >
+                                ⚙️
+                            </button>
+                        </div>
+                    )}
 
-                        {/* Call Next (Big Button) */}
-                        <button
-                            className="btn btn-primary"
-                            style={{ flex: 1, padding: '0.8rem', fontSize: '1.1rem', fontWeight: 800 }}
-                            onClick={onCallNumber}
-                            disabled={!gameState.remainingNumbers.length || isPaused}
-                        >
-                            🎲 {t.callNext}
-                        </button>
+                    {/* Expanded Mode: Full Bar */}
+                    {isHostControlsExpanded && (
+                        <div className="fixed bottom-0 left-0 right-0 bg-black/90 p-3 pt-2 pb-safe z-50 border-t border-white/10 backdrop-blur-md animate-slide-up">
+                            {/* Close Button */}
+                            <button
+                                className="absolute -top-10 right-4 bg-black/80 px-3 py-1 rounded-t-lg text-sm border-t border-x border-white/10"
+                                onClick={() => setHostControlsExpanded(false)}
+                            >
+                                🔽 Hide
+                            </button>
 
-                        {/* Show Board Button */}
-                        <button
-                            className="btn btn-secondary"
-                            style={{ padding: '0.8rem', fontSize: '1.2rem' }}
-                            onClick={() => document.getElementById('callerBoardModal')?.showModal()}
-                        >
-                            📋
-                        </button>
-                    </div>
-                </div>
+                            <div className="max-w-md mx-auto flex items-center justify-between gap-2">
+                                {/* Pause/Resume */}
+                                <button
+                                    className="btn btn-secondary"
+                                    style={{ padding: '0.8rem', fontSize: '1.2rem' }}
+                                    onClick={isPaused ? onResume : onPause}
+                                >
+                                    {isPaused ? '▶️' : '⏸️'}
+                                </button>
+
+                                {/* Call Next (Big Button) */}
+                                <button
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, padding: '0.8rem', fontSize: '1.1rem', fontWeight: 800 }}
+                                    onClick={onCallNumber}
+                                    disabled={!gameState.remainingNumbers.length || isPaused}
+                                >
+                                    🎲 {t.callNext}
+                                </button>
+
+                                {/* Show Board Button */}
+                                <button
+                                    className="btn btn-secondary"
+                                    style={{ padding: '0.8rem', fontSize: '1.2rem' }}
+                                    onClick={() => (document.getElementById('callerBoardModal') as HTMLDialogElement)?.showModal()}
+                                >
+                                    📋
+                                </button>
+
+                                {/* End Game (Mini) */}
+                                <button
+                                    className="btn btn-danger"
+                                    style={{ padding: '0.8rem', fontSize: '1.2rem' }}
+                                    onClick={() => {
+                                        if (confirm('End game?')) onEndGame?.();
+                                    }}
+                                >
+                                    🛑
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
 
             {/* Host Caller Board Modal */}
