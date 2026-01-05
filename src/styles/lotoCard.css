@@ -1,0 +1,363 @@
+/**
+ * LotoCard Component Styles
+ */
+
+.loto-card {
+    background: var(--color-card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 2px 5px rgba(0, 0, 0, 0.2);
+    padding: var(--space-sm);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.loto-card-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 2px;
+    background: var(--color-card-border);
+    border: 2px solid var(--color-card-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.loto-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(12px, 3vw, 20px);
+    /* Responsive font scaling */
+    font-weight: 600;
+    background: var(--color-cell-number);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.loto-cell:active {
+    transform: scale(0.95);
+}
+
+.loto-cell--empty {
+    background: var(--color-cell-empty);
+    cursor: default;
+}
+
+.loto-cell--empty:active {
+    transform: none;
+}
+
+.loto-cell--marked {
+    background: var(--color-cell-number);
+    color: inherit;
+}
+
+.loto-cell--marked::before,
+.loto-cell--marked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60%;
+    height: 4px;
+    background: var(--color-red);
+    border-radius: 99px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.loto-cell--marked::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.loto-cell--marked::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* Correctly marked cells (Called + Marked) - Barrel/Token Style */
+.loto-cell--correct::before,
+.loto-cell--correct::after {
+    /* Reset cross styles */
+    content: none;
+}
+
+.loto-cell--correct {
+    position: relative;
+    /* Ensure number is visible */
+    z-index: 1;
+}
+
+/* Barrel/Token overlay - Enhanced 3D Look */
+.loto-cell--correct::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    /* Larger to look like a placed token */
+    height: 90%;
+
+    /* Wooden Texture Simulation */
+    background:
+        radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 25%),
+        /* Highlight */
+        repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0, 0, 0, 0.03) 5px, rgba(0, 0, 0, 0.03) 10px),
+        /* Grain */
+        radial-gradient(circle at 50% 50%, #e6c288 0%, #c1904e 80%, #8b5e2b 100%);
+    /* Wood Base */
+
+    border-radius: 50%;
+    /* Top down view of barrel */
+
+    /* 3D Depth Shadows */
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+        /* Rim highlight */
+        inset 0 0 6px rgba(0, 0, 0, 0.3),
+        /* Inner depth */
+        0 4px 6px rgba(0, 0, 0, 0.4),
+        /* Drop shadow */
+        0 1px 2px rgba(0, 0, 0, 0.2);
+
+    z-index: -1;
+    opacity: 1;
+    border: 1px solid #754c24;
+    /* Dark wood rim */
+}
+
+/* Ensure number color contrasts with the wooden barrel */
+.loto-cell--correct .loto-cell-number {
+    color: #d93025;
+    /* Red number like traditional Loto */
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    /* Bevel effect */
+    font-weight: 800;
+    z-index: 2;
+    font-size: 1.1em;
+}
+
+/* Mistake flash - clicking uncalled number */
+.loto-cell--mistake {
+    background: #ff4444 !important;
+    animation: mistake-flash 0.5s ease-out forwards;
+}
+
+@keyframes mistake-flash {
+    0% {
+        background: #ff4444;
+        transform: scale(1.05);
+    }
+
+    100% {
+        background: var(--color-cell-number);
+        transform: scale(1);
+    }
+}
+
+/* Missed cells (Called + Not Marked) - Red Cross */
+.loto-cell--missed {
+    position: relative;
+    color: inherit;
+}
+
+.loto-cell--missed::before,
+.loto-cell--missed::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60%;
+    height: 4px;
+    background: var(--color-red);
+    border-radius: 99px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.loto-cell--missed::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.loto-cell--missed::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+
+.loto-cell--marked .loto-cell-number {
+    position: relative;
+    z-index: 1;
+}
+
+.loto-cell--highlighted {
+    animation: highlight-pulse 1s ease-in-out infinite;
+    background: var(--color-gold-light) !important;
+    z-index: 5;
+    box-shadow:
+        0 0 15px var(--color-gold),
+        0 0 30px rgba(255, 193, 7, 0.5),
+        inset 0 0 5px rgba(255, 193, 7, 0.3);
+    border: 2px solid var(--color-gold);
+    transform: scale(1.05);
+}
+
+@keyframes highlight-pulse {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 15px var(--color-gold),
+            0 0 30px rgba(255, 193, 7, 0.5);
+        transform: scale(1.05);
+    }
+
+    50% {
+        box-shadow:
+            0 0 25px var(--color-gold),
+            0 0 50px rgba(255, 193, 7, 0.7);
+        transform: scale(1.1);
+    }
+}
+
+/* Unmarked but recently called - gentle reminder pulse */
+.loto-cell--recent {
+    animation: reminder-pulse 2s ease-in-out infinite;
+    box-shadow: inset 0 0 8px rgba(255, 193, 7, 0.4);
+}
+
+@keyframes reminder-pulse {
+
+    0%,
+    100% {
+        box-shadow: inset 0 0 5px rgba(255, 193, 7, 0.3);
+    }
+
+    50% {
+        box-shadow: inset 0 0 12px rgba(255, 193, 7, 0.6);
+    }
+}
+
+/* Hinted cells (Magnifier Bonus) - High visibility glow */
+.loto-cell--hint {
+    background: rgba(255, 215, 0, 0.3) !important;
+    /* Gold background */
+    box-shadow: inset 0 0 10px var(--color-gold);
+    border: 2px solid var(--color-gold);
+    animation: pulse-soft 2s infinite ease-in-out;
+    z-index: 3;
+}
+
+.loto-cell-number {
+    position: relative;
+    z-index: 1;
+}
+
+/* Compact card for lobby preview OR main game fit-to-screen */
+.loto-card--compact {
+    width: 100%;
+    padding: 4px;
+}
+
+/* Multiple cards layout */
+.loto-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    /* Significant gap for separation */
+    width: 100%;
+    height: 100%;
+    /* Fill parent */
+    justify-content: center;
+    /* Center cards vertically */
+    padding-bottom: 4px;
+}
+
+/* Card header with player info */
+.loto-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.loto-card-player {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-weight: 600;
+}
+
+@keyframes pop {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse-soft {
+    0% {
+        box-shadow: inset 0 0 0 3px var(--color-gold);
+    }
+
+    50% {
+        box-shadow: inset 0 0 0 3px rgba(255, 193, 7, 0.5);
+    }
+
+    100% {
+        box-shadow: inset 0 0 0 3px var(--color-gold);
+    }
+}
+
+/* Mobile responsiveness - for smaller screens like iPhones */
+@media (max-width: 400px) {
+    .loto-card {
+        padding: 3px;
+        border-radius: var(--radius-md);
+    }
+
+    .loto-card-grid {
+        gap: 1px;
+        border-width: 1px;
+    }
+
+    .loto-cell {
+        font-size: clamp(10px, 2.5vw, 14px);
+    }
+
+    .loto-cell--correct .loto-cell-number {
+        font-size: 1em;
+    }
+
+    .loto-card--compact {
+        padding: 2px;
+    }
+}
+
+/* Very small screens - extreme compact mode */
+@media (max-height: 600px) {
+    .loto-cards-container {
+        gap: 1px;
+    }
+
+    .loto-card {
+        padding: 2px;
+    }
+
+    .loto-cell {
+        font-size: clamp(9px, 2vw, 12px);
+    }
+}
