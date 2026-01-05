@@ -45,32 +45,36 @@ const port = parseInt(process.env.PORT || "3000", 10);
  * Keeps marked cells in place, only shuffles positions of unmarked numbers
  */
 function shuffleCardPositions(card: LotoCard): LotoCard {
-    // Collect unmarked cell positions and their values
-    const unmarkedCells: { row: number; col: number; value: number }[] = [];
+    // Collect all movable positions (those that are NOT marked)
+    // This includes both unmarked numbers AND empty spaces (nulls)
+    const movablePositions: { row: number; col: number }[] = [];
+    const movableValues: (number | null)[] = [];
 
     for (let row = 0; row < 3; row++) {
         for (let col = 0; col < 9; col++) {
             const cell = card.grid[row][col];
-            if (cell.value !== null && !cell.isMarked) {
-                unmarkedCells.push({ row, col, value: cell.value });
+            // If it's NOT marked, it can move (including nulls)
+            if (!cell.isMarked) {
+                movablePositions.push({ row, col });
+                movableValues.push(cell.value);
             }
         }
     }
 
-    // If 0 or 1 unmarked cells, no need to shuffle
-    if (unmarkedCells.length <= 1) return card;
+    // If nothing to shuffle, return original
+    if (movablePositions.length <= 1) return card;
 
     // Shuffle the values array (Fisher-Yates)
-    const values = unmarkedCells.map(c => c.value);
-    for (let i = values.length - 1; i > 0; i--) {
+    for (let i = movableValues.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [values[i], values[j]] = [values[j], values[i]];
+        [movableValues[i], movableValues[j]] = [movableValues[j], movableValues[i]];
     }
 
-    // Reassign shuffled values to same positions
+    // Reassign shuffled values to the movable positions
     const newGrid = card.grid.map(row => row.map(cell => ({ ...cell })));
-    unmarkedCells.forEach((pos, idx) => {
-        newGrid[pos.row][pos.col].value = values[idx];
+    movablePositions.forEach((pos, idx) => {
+        // We only update the value. The isMarked is already false for these positions.
+        newGrid[pos.row][pos.col].value = movableValues[idx];
     });
 
     return { ...card, grid: newGrid };
