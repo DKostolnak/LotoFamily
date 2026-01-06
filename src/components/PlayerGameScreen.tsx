@@ -143,7 +143,7 @@ export default function PlayerGameScreen({
                 </div>
 
                 {/* Row 2: Player Status (Me & Others) */}
-                <div className="flex items-center px-3 py-2 gap-3 w-full bg-black/5">
+                <div className="flex items-center px-2 py-1 md:px-3 md:py-2 gap-2 md:gap-3 w-full bg-black/5">
 
                     {/* Me: Large Avatar */}
                     {(() => {
@@ -154,28 +154,27 @@ export default function PlayerGameScreen({
                                 <div
                                     className="avatar shadow-lg border-2 border-[#8B4513]"
                                     style={{
-                                        width: '56px', height: '56px',
                                         borderRadius: '8px', overflow: 'hidden',
                                         background: '#D2B48C'
                                     }}
                                 >
-                                    {me.avatarUrl ? (
-                                        <img src={me.avatarUrl} alt={me.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="w-full h-full flex items-center justify-center text-xl font-bold text-[#5c3a21]">{me.name.charAt(0)}</span>
-                                    )}
+                                    <div className="w-10 h-10 md:w-14 md:h-14">
+                                        {me.avatarUrl ? (
+                                            <img src={me.avatarUrl} alt={me.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="w-full h-full flex items-center justify-center text-lg md:text-xl font-bold text-[#5c3a21]">{me.name.charAt(0)}</span>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="absolute -bottom-2 bg-[#8B4513] text-[#DEB887] text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm whitespace-nowrap max-w-[70px] truncate border border-[#DEB887]">
+                                <div className="absolute -bottom-2 bg-[#8B4513] text-[#DEB887] text-[8px] md:text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm whitespace-nowrap max-w-[60px] md:max-w-[70px] truncate border border-[#DEB887]">
                                     {me.name}
                                 </div>
-
-                                {/* Energy Ring/Bar could go here too */}
                             </div>
                         );
                     })()}
 
                     {/* Separator */}
-                    <div className="w-px h-10 bg-[#8B4513] opacity-30 shrink-0 mx-1"></div>
+                    <div className="w-px h-8 md:h-10 bg-[#8B4513] opacity-30 shrink-0 mx-0.5 md:mx-1"></div>
 
                     {/* Others: Horizontal Scroll */}
                     <div className="flex-1 overflow-x-auto no-scrollbar mask-gradient-right">
