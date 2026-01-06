@@ -85,6 +85,7 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         };
 
         onCreateGame(playerName.trim(), {
+            autoCallEnabled,
             autoCallIntervalMs: intervalMap[autoCallSpeed],
             language,
             crazyMode,
