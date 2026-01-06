@@ -15,7 +15,22 @@ import CallerBoard from './CallerBoard';
 // Leaderboard import
 import Leaderboard from './Leaderboard';
 
-// ... (Interface remains same)
+interface PlayerGameScreenProps {
+    gameState: GameState;
+    playerId: string;
+    cards: LotoCardType[];
+    onMarkCell: (cardId: string, row: number, col: number) => void;
+    onClaimWin: (cardId: string) => void;
+    onClaimFlat: (flatType: number) => void;
+    onUseSabotage: (targetId: string, type: import('@/lib/types').SabotageType) => void;
+
+    // Host Props
+    isHost?: boolean;
+    onCallNumber?: () => void;
+    onPause?: () => void;
+    onResume?: () => void;
+    onEndGame?: () => void;
+}
 
 export default function PlayerGameScreen({
     // ... props
@@ -43,7 +58,22 @@ export default function PlayerGameScreen({
     const [isHostControlsExpanded, setHostControlsExpanded] = React.useState(false);
     const [showLeaderboard, setShowLeaderboard] = React.useState(false);
 
-    // ... handlers
+    const handleUseItem = (type: import('@/lib/types').SabotageType) => {
+        if (targetingItem === type) {
+            setTargetingItem(null); // Toggle off
+        } else {
+            playClickSound();
+            setTargetingItem(type);
+        }
+    };
+
+    const handleSelectTarget = (targetId: string) => {
+        if (targetingItem) {
+            playClickSound();
+            onUseSabotage(targetId, targetingItem);
+            setTargetingItem(null);
+        }
+    };
 
     // Keep screen active during gameplay
     const { requestLock, releaseLock } = useWakeLock();
