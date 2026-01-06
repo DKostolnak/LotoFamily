@@ -8,253 +8,183 @@ interface GameAudioPlayerProps {
     onCellMark?: () => void;
 }
 
-// Simple sound frequencies for different events
+// Sound configuration for different events
 const SOUNDS = {
     numberCall: { frequency: 440, duration: 200, type: 'sine' as OscillatorType },
     cellMark: { frequency: 880, duration: 100, type: 'sine' as OscillatorType },
     flatClaim: { frequency: 523, duration: 300, type: 'triangle' as OscillatorType },
     bingo: { frequencies: [523, 659, 784, 1047], duration: 150, type: 'sine' as OscillatorType },
     error: { frequency: 200, duration: 150, type: 'sawtooth' as OscillatorType },
-    click: { frequency: 1200, duration: 50, type: 'sine' as OscillatorType }, // New click sound
+    click: { frequency: 1200, duration: 50, type: 'sine' as OscillatorType },
 };
+
+// ============================================================================
+// AUDIO CONTEXT SINGLETON
+// Prevents memory leaks from creating multiple contexts (mobile Safari limit)
+// ============================================================================
+
+let sharedAudioContext: AudioContext | null = null;
+
+/**
+ * Get or create the shared AudioContext instance
+ * Uses lazy initialization to ensure it's created after user interaction
+ */
+function getSharedAudioContext(): AudioContext {
+    if (!sharedAudioContext) {
+        sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (sharedAudioContext.state === 'suspended') {
+        sharedAudioContext.resume();
+    }
+    return sharedAudioContext;
+}
+
+/**
+ * Core beep function using the shared context
+ */
+function playBeep(frequency: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.2): void {
+    try {
+        const ctx = getSharedAudioContext();
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
+
+        gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
+
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + duration / 1000);
+    } catch (e) {
+        // Silent fail - audio not critical
+    }
+}
+
+/**
+ * Haptic feedback utility
+ */
+function vibrate(pattern: number | number[]): void {
+    if ('vibrate' in navigator) {
+        navigator.vibrate(pattern);
+    }
+}
+
+/**
+ * Speak a number using speech synthesis
+ */
+function speakNumber(num: number, lang: 'en' | 'sk' | 'uk' | 'ru'): void {
+    if (!('speechSynthesis' in window)) return;
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(`${num}`);
+
+    // Map language codes to BCP 47 tags
+    const langMap: Record<string, string> = {
+        en: 'en-US',
+        sk: 'sk-SK',
+        uk: 'uk-UA',
+        ru: 'ru-RU',
+    };
+
+    utterance.lang = langMap[lang] || 'en-US';
+    utterance.rate = 1.1;
+    utterance.pitch = 1.0;
+
+    window.speechSynthesis.speak(utterance);
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 export default function GameAudioPlayer({ gameState }: GameAudioPlayerProps) {
     const lastNumberRef = useRef<number | null>(null);
     const lastPhaseRef = useRef<string | null>(null);
-    const audioContextRef = useRef<AudioContext | null>(null);
 
-    // Initialize audio context on first user interaction
-    const getAudioContext = useCallback(() => {
-        if (!audioContextRef.current) {
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        }
-        return audioContextRef.current;
-    }, []);
-
-    // Play a beep sound
-    const playBeep = useCallback((frequency: number, duration: number, type: OscillatorType = 'sine') => {
-        try {
-            const ctx = getAudioContext();
-            if (ctx.state === 'suspended') {
-                ctx.resume();
-            }
-
-            const oscillator = ctx.createOscillator();
-            const gainNode = ctx.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(ctx.destination);
-
-            oscillator.type = type;
-            oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
-
-            // Envelope for smooth sound
-            gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
-
-            oscillator.start(ctx.currentTime);
-            oscillator.stop(ctx.currentTime + duration / 1000);
-        } catch (e) {
-            // Silent fail - audio not critical
-        }
-    }, [getAudioContext]);
-
-    // Play victory sound (ascending notes)
     const playVictorySound = useCallback(() => {
         const { frequencies, duration, type } = SOUNDS.bingo;
         frequencies.forEach((freq, i) => {
-            setTimeout(() => playBeep(freq, duration, type), i * 150);
+            setTimeout(() => playBeep(freq, duration, type, 0.3), i * 150);
         });
-    }, [playBeep]);
-
-    // Haptic feedback
-    const vibrate = useCallback((pattern: number | number[]) => {
-        if ('vibrate' in navigator) {
-            navigator.vibrate(pattern);
-        }
+        vibrate([100, 50, 100, 50, 200]);
     }, []);
 
     useEffect(() => {
         if (!gameState) return;
 
-        // Number Calling Logic
+        // Number called - play sound and speak
         if (gameState.currentNumber !== lastNumberRef.current && gameState.currentNumber !== null) {
             if (gameState.phase === 'playing') {
-                // Play sound effect
-                playBeep(SOUNDS.numberCall.frequency, SOUNDS.numberCall.duration, SOUNDS.numberCall.type);
+                playBeep(SOUNDS.numberCall.frequency, SOUNDS.numberCall.duration, SOUNDS.numberCall.type, 0.3);
                 vibrate(100);
-
-                // Also speak the number
                 speakNumber(gameState.currentNumber, gameState.settings.language);
             }
             lastNumberRef.current = gameState.currentNumber;
         }
 
-        // Winner detection
+        // Winner detected - play victory
         if (gameState.phase === 'finished' && lastPhaseRef.current !== 'finished') {
             playVictorySound();
-            vibrate([100, 50, 100, 50, 200]);
         }
 
-        // Track phase changes
+        // Track phase
         lastPhaseRef.current = gameState.phase;
 
-        // Reset tracking if game ends or restarts
+        // Reset on game restart
         if (gameState.currentNumber === null) {
             lastNumberRef.current = null;
         }
 
-    }, [gameState?.currentNumber, gameState?.phase, gameState?.settings.language, playBeep, vibrate, playVictorySound]);
-
-    const speakNumber = (num: number, limitLang: 'en' | 'sk' | 'uk' | 'ru') => {
-        if (!('speechSynthesis' in window)) return;
-
-        // Cancel previous speech to avoid queue buildup
-        window.speechSynthesis.cancel();
-
-        const utterText = `${num}`;
-
-        const utterance = new SpeechSynthesisUtterance(utterText);
-
-        // Map internal language codes to BCP 47 language tags
-        let langTag = 'en-US';
-        if (limitLang === 'sk') langTag = 'sk-SK';
-        else if (limitLang === 'uk') langTag = 'uk-UA';
-        else if (limitLang === 'ru') langTag = 'ru-RU';
-
-        utterance.lang = langTag;
-        utterance.rate = 1.1; // Slightly faster
-        utterance.pitch = 1.0;
-
-        window.speechSynthesis.speak(utterance);
-    };
+    }, [gameState?.currentNumber, gameState?.phase, gameState?.settings.language, playVictorySound]);
 
     return null; // Invisible component
 }
 
-// Export utility for other components to play sounds
-export function playCellMarkSound() {
-    try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = ctx.createOscillator();
-        const gainNode = ctx.createGain();
+// ============================================================================
+// EXPORTED SOUND UTILITIES
+// All use the shared audio context to prevent memory leaks
+// ============================================================================
 
-        oscillator.connect(gainNode);
-        gainNode.connect(ctx.destination);
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(SOUNDS.cellMark.frequency, ctx.currentTime);
-
-        gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-
-        oscillator.start(ctx.currentTime);
-        oscillator.stop(ctx.currentTime + 0.1);
-
-        // Haptic
-        if ('vibrate' in navigator) {
-            navigator.vibrate(30);
-        }
-    } catch (e) {
-        // Silent fail
-    }
+/** Sound for marking a cell */
+export function playCellMarkSound(): void {
+    playBeep(SOUNDS.cellMark.frequency, SOUNDS.cellMark.duration, SOUNDS.cellMark.type, 0.2);
+    vibrate(30);
 }
 
-
-// Generic click sound for UI buttons
-export function playClickSound() {
-    try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
-
-        const oscillator = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(ctx.destination);
-
-        oscillator.type = SOUNDS.click.type;
-        oscillator.frequency.setValueAtTime(SOUNDS.click.frequency, ctx.currentTime);
-
-        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-
-        oscillator.start(ctx.currentTime);
-        oscillator.stop(ctx.currentTime + 0.05);
-    } catch (e) {
-        // Silent
-    }
+/** Generic UI click sound */
+export function playClickSound(): void {
+    playBeep(SOUNDS.click.frequency, SOUNDS.click.duration, SOUNDS.click.type, 0.1);
 }
 
-export function playErrorSound() {
-    try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
-
-        const oscillator = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(ctx.destination);
-
-        oscillator.type = SOUNDS.error.type;
-        oscillator.frequency.setValueAtTime(SOUNDS.error.frequency, ctx.currentTime);
-
-        // Buzz sound
-        gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-
-        oscillator.start(ctx.currentTime);
-        oscillator.stop(ctx.currentTime + 0.15);
-
-        if ('vibrate' in navigator) navigator.vibrate(200);
-    } catch (e) {
-        // Silent
-    }
+/** Error/mistake sound */
+export function playErrorSound(): void {
+    playBeep(SOUNDS.error.frequency, SOUNDS.error.duration, SOUNDS.error.type, 0.2);
+    vibrate(200);
 }
 
-// Play victory fanfare manually
-export function playVictoryFanfare() {
-    try {
-        const { frequencies, duration, type } = SOUNDS.bingo;
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
-
-        frequencies.forEach((freq, i) => {
-            setTimeout(() => {
-                const oscillator = ctx.createOscillator();
-                const gainNode = ctx.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(ctx.destination);
-
-                oscillator.type = type;
-                oscillator.frequency.setValueAtTime(freq, ctx.currentTime);
-
-                // Louder and longer sustain
-                gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
-
-                oscillator.start(ctx.currentTime);
-                oscillator.stop(ctx.currentTime + duration / 1000);
-            }, i * 150);
-        });
-
-        // Haptic
-        if ('vibrate' in navigator) navigator.vibrate([100, 50, 100, 50, 200]);
-
-    } catch (e) {
-        // Silent
-    }
+/** Victory fanfare */
+export function playVictoryFanfare(): void {
+    const { frequencies, duration, type } = SOUNDS.bingo;
+    frequencies.forEach((freq, i) => {
+        setTimeout(() => playBeep(freq, duration, type, 0.2), i * 150);
+    });
+    vibrate([100, 50, 100, 50, 200]);
 }
 
-export function playWinSound() { playVictoryFanfare(); }
+/** Alias for victory fanfare */
+export function playWinSound(): void {
+    playVictoryFanfare();
+}
 
-export function playLossSound() {
+/** Sad descending sound for loss */
+export function playLossSound(): void {
     try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
-
+        const ctx = getSharedAudioContext();
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
 
@@ -262,7 +192,6 @@ export function playLossSound() {
         gainNode.connect(ctx.destination);
 
         oscillator.type = 'sawtooth';
-        // Sad descending slide
         oscillator.frequency.setValueAtTime(400, ctx.currentTime);
         oscillator.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.8);
 
@@ -276,14 +205,11 @@ export function playLossSound() {
     }
 }
 
-// Play freeze sound (shatter effect)
-export function playFreezeSound() {
-    try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
-
-        // High pitch shatter
-        [2000, 2500, 3000, 4000].forEach((freq, i) => {
+/** Ice shatter effect for freeze */
+export function playFreezeSound(): void {
+    const ctx = getSharedAudioContext();
+    [2000, 2500, 3000, 4000].forEach((freq, i) => {
+        try {
             const oscillator = ctx.createOscillator();
             const gainNode = ctx.createGain();
 
@@ -298,20 +224,17 @@ export function playFreezeSound() {
 
             oscillator.start(ctx.currentTime + i * 0.05);
             oscillator.stop(ctx.currentTime + i * 0.05 + 0.1);
-        });
-
-        if ('vibrate' in navigator) navigator.vibrate([30, 30, 30]);
-    } catch (e) {
-        // Silent
-    }
+        } catch (e) {
+            // Silent
+        }
+    });
+    vibrate([30, 30, 30]);
 }
 
-// Play splat sound (low squish)
-export function playSplatSound() {
+/** Splat sound for ink */
+export function playSplatSound(): void {
     try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
-
+        const ctx = getSharedAudioContext();
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
 
@@ -319,7 +242,6 @@ export function playSplatSound() {
         gainNode.connect(ctx.destination);
 
         oscillator.type = 'triangle';
-        // Pitch drop for squish effect
         oscillator.frequency.setValueAtTime(400, ctx.currentTime);
         oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
 
@@ -329,17 +251,16 @@ export function playSplatSound() {
         oscillator.start(ctx.currentTime);
         oscillator.stop(ctx.currentTime + 0.3);
 
-        if ('vibrate' in navigator) navigator.vibrate(50);
+        vibrate(50);
     } catch (e) {
         // Silent
     }
 }
 
-export function playBonusSound() {
+/** Bonus chime for speed marks */
+export function playBonusSound(): void {
     try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (ctx.state === 'suspended') ctx.resume();
-
+        const ctx = getSharedAudioContext();
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
 
@@ -347,7 +268,6 @@ export function playBonusSound() {
         gainNode.connect(ctx.destination);
 
         oscillator.type = 'sine';
-        // Rising pitch for bonus
         oscillator.frequency.setValueAtTime(400, ctx.currentTime);
         oscillator.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.3);
 

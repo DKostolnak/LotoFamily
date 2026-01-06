@@ -7,7 +7,7 @@ import LotoCard from './LotoCard';
 import GameHeader from './GameHeader';
 import HostControls from './HostControls';
 import { useWakeLock } from '@/hooks/useWakeLock';
-import { playClickSound, playErrorSound, playFreezeSound, playSplatSound, playBonusSound } from './GameAudioPlayer';
+import { playClickSound, playErrorSound } from './GameAudioPlayer';
 import SabotageOverlay from './SabotageOverlay';
 import { useScreenShake } from './ScreenShakeProvider';
 import Leaderboard from './Leaderboard';
@@ -145,6 +145,8 @@ const GameCardWrapper = memo(({
         </div>
     );
 });
+
+GameCardWrapper.displayName = 'GameCardWrapper';
 
 function PlayerGameScreen({
     gameState,

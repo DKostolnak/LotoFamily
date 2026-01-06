@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { SabotageType } from '@/lib/types';
+import { SABOTAGE_COSTS } from '@/lib/constants';
 import { playClickSound } from './GameAudioPlayer';
 
 interface SabotageShopProps {
@@ -14,18 +15,17 @@ interface SabotageItemConfig {
     type: SabotageType;
     emoji: string;
     label: string;
-    cost: number;
     description: string;
     colorFrom: string;
     colorTo: string;
 }
 
+// Item visuals config - costs come from constants
 const SABOTAGE_ITEMS: SabotageItemConfig[] = [
     {
         type: 'snowball',
         emoji: '❄️',
         label: 'Freeze',
-        cost: 30,
         description: 'Freeze player 5s',
         colorFrom: 'from-blue-400',
         colorTo: 'to-blue-600'
@@ -34,7 +34,6 @@ const SABOTAGE_ITEMS: SabotageItemConfig[] = [
         type: 'ink_splat',
         emoji: '🐙',
         label: 'Ink',
-        cost: 60,
         description: 'Cover card with ink',
         colorFrom: 'from-purple-400',
         colorTo: 'to-purple-600'
@@ -43,7 +42,6 @@ const SABOTAGE_ITEMS: SabotageItemConfig[] = [
         type: 'swap_hand',
         emoji: '🌀',
         label: 'Shuffle',
-        cost: 90,
         description: 'Shuffle their grid',
         colorFrom: 'from-orange-400',
         colorTo: 'to-red-600'
@@ -76,9 +74,10 @@ export default function SabotageShop({ energy, activeItem, onUseItem }: Sabotage
             {/* Shop Items */}
             <div className="flex justify-center gap-3 w-full">
                 {SABOTAGE_ITEMS.map(item => {
-                    const canAfford = energy >= item.cost;
+                    const cost = SABOTAGE_COSTS[item.type];
+                    const canAfford = energy >= cost;
                     const isActive = activeItem === item.type;
-                    const progress = Math.min(100, (energy / item.cost) * 100);
+                    const progress = Math.min(100, (energy / cost) * 100);
 
                     return (
                         <button
@@ -97,7 +96,7 @@ export default function SabotageShop({ energy, activeItem, onUseItem }: Sabotage
                         >
                             {/* Cost Badge */}
                             <div className="absolute -top-2 -right-2 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-white/20">
-                                {item.cost}
+                                {cost}
                             </div>
 
                             {/* Icon */}

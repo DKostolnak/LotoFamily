@@ -4,17 +4,11 @@
 
 import type { Server, Socket } from 'socket.io';
 import type { ServerToClientEvents, ClientToServerEvents, SabotageType, LotoCard, LotoCardGrid } from '../../lib/types';
+import { SABOTAGE_COSTS, FREEZE_DURATION_MS } from '../../lib/constants';
 import * as store from '../store';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
-
-// Sabotage costs
-const SABOTAGE_COSTS: Record<SabotageType, number> = {
-    snowball: 40,
-    ink_splat: 60,
-    swap_hand: 90,
-};
 
 /**
  * Shuffle card positions
@@ -77,7 +71,7 @@ export function handleUseSabotage(
 
     switch (type) {
         case 'snowball':
-            target.activeDebuffs.frozenUntil = Date.now() + 5000;
+            target.activeDebuffs.frozenUntil = Date.now() + FREEZE_DURATION_MS;
             break;
 
         case 'ink_splat':
