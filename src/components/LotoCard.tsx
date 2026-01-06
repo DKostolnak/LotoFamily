@@ -142,7 +142,6 @@ export function LotoCard({
             </div>
         </div>
     );
-    );
 }
 
 export default React.memo(LotoCard);
