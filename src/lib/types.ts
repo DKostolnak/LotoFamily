@@ -38,6 +38,7 @@ export interface Player {
 
   // Sabotage
   energy: number;
+  score: number; // Persistent score across rounds
   activeDebuffs: {
     frozenUntil?: number; // Timestamp
     inkSplats?: { x: number; y: number; id: string }[];

@@ -60,6 +60,7 @@ export function createGame(hostId: string, hostName: string, avatarUrl: string, 
         isConnected: true,
         collectedFlats: [],
         energy: 0,
+        score: 0,
         activeDebuffs: {},
     };
 
@@ -108,6 +109,7 @@ export function addPlayer(state: GameState, playerId: string, playerName: string
         isConnected: true,
         collectedFlats: [],
         energy: 0,
+        score: 0,
         activeDebuffs: {},
     };
 
@@ -202,8 +204,17 @@ export function checkForWinners(state: GameState): { winnerId: string; winningCa
  * Set the winner and end the game
  */
 export function setWinner(state: GameState, winnerId: string): GameState {
+    // Award points for winning (Bingo)
+    const updatedPlayers = state.players.map(p => {
+        if (p.id === winnerId) {
+            return { ...p, score: (p.score || 0) + 1000 };
+        }
+        return p;
+    });
+
     return {
         ...state,
+        players: updatedPlayers,
         phase: 'finished',
         winnerId,
     };
@@ -308,7 +319,21 @@ export function claimFlat(state: GameState, playerId: string, flatType: number):
     // Update player
     const updatedPlayers = state.players.map(p => {
         if (p.id === playerId) {
-            return { ...p, collectedFlats: [...p.collectedFlats, flatType].sort() };
+            let points = 0;
+            // Base points for flats
+            if (flatType === 1) points = 100;
+            if (flatType === 2) points = 200;
+
+            // Bonus for being FIRST
+            // We check the *current state* (before this claim is processed)
+            if (flatType === 1 && !state.flatWinners.flat1) points += 150;
+            if (flatType === 2 && !state.flatWinners.flat2) points += 300;
+
+            return {
+                ...p,
+                collectedFlats: [...p.collectedFlats, flatType].sort(),
+                score: (p.score || 0) + points
+            };
         }
         return p;
     });

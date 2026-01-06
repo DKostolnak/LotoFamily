@@ -12,31 +12,13 @@ import { playClickSound, playErrorSound, playFreezeSound, playSplatSound, playBo
 import SabotageOverlay from './SabotageOverlay';
 import { useScreenShake } from './ScreenShakeProvider';
 import CallerBoard from './CallerBoard';
+// Leaderboard import
+import Leaderboard from './Leaderboard';
 
-interface PlayerGameScreenProps {
-    gameState: GameState;
-    playerId: string;
-    cards: LotoCardType[];
-    onMarkCell: (cardId: string, row: number, col: number) => void;
-    onClaimWin: (cardId: string) => void;
-    onClaimFlat: (flatType: number) => void;
+// ... (Interface remains same)
 
-
-    onUseSabotage: (targetId: string, type: import('@/lib/types').SabotageType) => void;
-
-    // Host Props
-    isHost?: boolean;
-    onCallNumber?: () => void;
-    onPause?: () => void;
-    onResume?: () => void;
-    onEndGame?: () => void;
-}
-
-/**
- * PlayerGameScreen Component
- * Main gameplay screen for players - shows their Loto card(s)
- */
 export default function PlayerGameScreen({
+    // ... props
     gameState,
     playerId,
     cards,
@@ -59,18 +41,9 @@ export default function PlayerGameScreen({
     // State for targeting mode
     const [targetingItem, setTargetingItem] = React.useState<import('@/lib/types').SabotageType | null>(null);
     const [isHostControlsExpanded, setHostControlsExpanded] = React.useState(false);
+    const [showLeaderboard, setShowLeaderboard] = React.useState(false);
 
-    const handleUseItem = (type: import('@/lib/types').SabotageType) => {
-        setTargetingItem(type);
-    };
-
-    const handleSelectTarget = (targetId: string) => {
-        if (targetingItem) {
-            playClickSound();
-            onUseSabotage(targetId, targetingItem);
-            setTargetingItem(null);
-        }
-    };
+    // ... handlers
 
     // Keep screen active during gameplay
     const { requestLock, releaseLock } = useWakeLock();
@@ -87,8 +60,8 @@ export default function PlayerGameScreen({
             {/* Top HUD: Current Number, History, stats */}
             <div className="wooden-panel grid grid-cols-3 items-center px-2 py-2 shrink-0 z-20 shadow-md relative" style={{ borderRadius: 0, minHeight: '60px' }}>
                 {/* Left: Player Info (Compact) */}
-                <div className="flex items-center justify-start min-w-0">
-                    <div className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded-full relative max-w-full">
+                <div className="flex items-center justify-start min-w-0 gap-2">
+                    <div className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded-full relative max-w-[70%]">
                         {/* Energy Bar Indicator */}
                         {(() => {
                             const me = gameState.players.find(p => p.id === playerId);
@@ -111,6 +84,14 @@ export default function PlayerGameScreen({
                             {gameState.players.find(p => p.id === playerId)?.name}
                         </span>
                     </div>
+
+                    {/* Leaderboard Toggle */}
+                    <button
+                        onClick={() => { playClickSound(); setShowLeaderboard(true); }}
+                        className="btn btn-circle btn-xs btn-ghost text-yellow-400 hover:bg-white/10"
+                    >
+                        🏆
+                    </button>
                 </div>
 
                 {/* Center: Current Number (The Star) */}
@@ -130,6 +111,21 @@ export default function PlayerGameScreen({
                     </div>
                 </div>
             </div>
+
+            {/* Leaderboard Modal */}
+            {showLeaderboard && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
+                    <div className="relative w-full max-w-sm">
+                        <Leaderboard players={gameState.players} currentUserId={playerId} />
+                        <button
+                            onClick={() => { playClickSound(); setShowLeaderboard(false); }}
+                            className="absolute -top-3 -right-3 btn btn-circle btn-sm btn-error shadow-lg"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Paused Overlay */}
             {isPaused && (
