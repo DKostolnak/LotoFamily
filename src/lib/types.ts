@@ -1,11 +1,16 @@
 /**
  * Core types for the Loto game engine
+ * Organized by domain: Card, Player, Game, Socket
  */
 
-// European Loto 90 card format: 9 columns x 3 rows
-// Each row has exactly 5 numbers and 4 blank cells
-// Numbers 1-9 in column 1, 10-19 in column 2, ..., 80-90 in column 9
+// ============================================================================
+// CARD TYPES
+// ============================================================================
 
+/**
+ * Single cell on a Loto card
+ * European Loto 90 format: 9 columns x 3 rows
+ */
 export interface LotoCell {
   value: number | null; // null = blank cell
   isMarked: boolean;
@@ -20,9 +25,16 @@ export interface LotoCard {
   playerId: string;
 }
 
-// ...
+// ============================================================================
+// PLAYER TYPES
+// ============================================================================
 
 export type SabotageType = 'snowball' | 'ink_splat' | 'swap_hand';
+
+export interface ActiveDebuffs {
+  frozenUntil?: number; // Timestamp when freeze ends
+  inkSplats?: Array<{ x: number; y: number; id: string }>;
+}
 
 export interface Player {
   id: string;
@@ -33,20 +45,14 @@ export interface Player {
   isHost: boolean;
   isConnected: boolean;
   collectedFlats: number[];
-
-
-
-  // Sabotage
   energy: number;
-  score: number; // Persistent score across rounds
-  activeDebuffs: {
-    frozenUntil?: number; // Timestamp
-    inkSplats?: { x: number; y: number; id: string }[];
-  };
+  score: number;
+  activeDebuffs: ActiveDebuffs;
 }
-// ...
 
-// ...
+// ============================================================================
+// GAME TYPES
+// ============================================================================
 
 export interface CalledNumber {
   value: number;
@@ -54,6 +60,8 @@ export interface CalledNumber {
 }
 
 export type GamePhase = 'lobby' | 'playing' | 'paused' | 'finished';
+export type GameModeType = 'classic' | 'row' | 'pattern' | 'speed';
+export type LanguageCode = 'en' | 'sk' | 'uk' | 'ru';
 
 export interface GameSettings {
   gameMode: GameModeType;
@@ -61,17 +69,14 @@ export interface GameSettings {
   cardsPerPlayer: number;
   autoCallEnabled: boolean;
   autoCallIntervalMs: number;
-  language: 'en' | 'sk' | 'uk' | 'ru';
+  language: LanguageCode;
   crazyMode: boolean;
-  customRoomCode?: string; // Optional custom code
+  customRoomCode?: string;
 }
 
-export type GameModeType = 'classic' | 'row' | 'pattern' | 'speed';
-
-// Track who won which flat first
 export interface FlatWinners {
-  flat1: string | null; // Player ID
-  flat2: string | null;
+  flat1: string | null; // Player ID who won first flat
+  flat2: string | null; // Player ID who won second flat
 }
 
 export interface GameState {
@@ -87,23 +92,26 @@ export interface GameState {
   hostId: string;
   createdAt: number;
   flatWinners: FlatWinners;
-  serverUrl?: string; // Local network URL for others to join
+  serverUrl?: string;
 }
 
-// Socket events
+// ============================================================================
+// SOCKET EVENT TYPES
+// ============================================================================
+
 export type ServerToClientEvents = {
   'game:state': (state: GameState) => void;
   'game:numberCalled': (number: number) => void;
   'game:playerJoined': (player: Player) => void;
   'game:playerLeft': (playerId: string) => void;
   'game:winner': (playerId: string, playerName: string) => void;
-  'game:flatClaimed': (playerId: string, flatType: number) => void; // New event for notification
+  'game:flatClaimed': (playerId: string, flatType: number) => void;
   'game:error': (message: string) => void;
+  'game:sabotageEffect': (targetId: string, type: SabotageType) => void;
   'room:created': (roomCode: string) => void;
   'room:joined': (state: GameState) => void;
   'room:kicked': () => void;
-  'room:closed': () => void; // New event
-  'game:sabotageEffect': (targetId: string, type: SabotageType) => void;
+  'room:closed': () => void;
   'server:info': (url: string) => void;
 };
 
@@ -112,21 +120,23 @@ export type ClientToServerEvents = {
   'room:join': (roomCode: string, playerName: string, avatarUrl: string, token?: string) => void;
   'room:updateProfile': (name: string, avatarUrl: string) => void;
   'room:leave': () => void;
+  'room:kickPlayer': (playerId: string) => void;
+  'room:close': () => void;
   'game:start': () => void;
   'game:callNumber': () => void;
   'game:markCell': (cardId: string, row: number, col: number) => void;
   'game:claimWin': (cardId: string) => void;
   'game:claimFlat': (flatType: number) => void;
-
   'game:pause': () => void;
   'game:resume': () => void;
   'game:restart': () => void;
-  'room:kickPlayer': (playerId: string) => void;
-  'room:close': () => void; // New event
   'game:useSabotage': (targetId: string, type: SabotageType) => void;
 };
 
-// Default game settings
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   gameMode: 'classic',
   maxPlayers: 4,
@@ -136,3 +146,6 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
   language: 'en',
   crazyMode: false,
 };
+
+export const ENERGY_PER_CORRECT_MARK = 5;
+export const INITIAL_PLAYER_ENERGY = 0;
