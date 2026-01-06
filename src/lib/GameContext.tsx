@@ -199,6 +199,20 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             setError('The host has closed the room.');
         });
 
+        // Listen for sabotage effects targeted at us
+        newSocket.on('game:sabotageEffect', (targetId, type) => {
+            // Check if this player is the target
+            if (targetId === newSocket.id) {
+                if (type === 'snowball') {
+                    setError('❄️ You have been FROZEN for 5 seconds!');
+                } else if (type === 'ink_splat') {
+                    setError('🐙 INK ATTACK! Wipe it off!');
+                } else if (type === 'swap_hand') {
+                    setError('🌀 Your cards have been SHUFFLED!');
+                }
+            }
+        });
+
         setSocket(newSocket);
 
         return () => {
