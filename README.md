@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎲 Loto: Family Multiplayer Bingo
 
-## Getting Started
+A modern, polished, and chaotic implementation of the classic European Loto game. Built with Next.js, Socket.io, and TailwindCSS.
 
-First, run the development server:
+![Loto Game](public/og-image.jpg)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 🎮 Gameplay
+*   **Multiplayer**: Real-time Host vs Players via WebSockets.
+*   **Host Mode**: Dedicated controls to call numbers, manage lobby, and pause game.
+*   **Sabotage System**: Spice up the game!
+    *   ❄️ **Freeze**: Stop a player from marking for 5s.
+    *   🐙 **Ink Splat**: Cover their screen in ink.
+    *   🌀 **Chaos Shuffle**: Scramble their ENTIRE board (barrrels included!).
+*   **Crazy Mode**: Cards shuffle automatically on every correct mark!
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🏆 Competition
+*   **Live Leaderboard**: Track who is the Loto Champion.
+*   **Scoring**: Points for winning (1000), Flats (100-300), and First-Claim bonuses.
+*   **Medals**: Gold, Silver, Bronze rankings.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 🎨 Polish & Accessibility
+*   **"Grandma-friendly" UI**: Huge, extra-bold numbers for maximum readability.
+*   **Juicy Visuals**: Screen shake, stamping animations, partial effects.
+*   **Battery Saver**: Optimized rendering for long family sessions.
+*   **Responsive**: Works on Phones, Tablets, and Laptops.
 
-## Learn More
+## 🚀 Getting Started
 
-To learn more about Next.js, take a look at the following resources:
+1.  **Install**: `npm install`
+2.  **Run**: `npm run dev`
+3.  **Play**: Open `http://localhost:3000`
+    *   One device acts as **Host**.
+    *   Others join via **Room Code**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛠️ Tech Stack
+*   **Frontend**: Next.js 15, React, TailwindCSS, Framer Motion (ish)
+*   **Backend**: Custom Node.js Server (Socket.io)
+*   **Deployment**: Ready for Render.com
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*Created for Family Game Night 2026*
