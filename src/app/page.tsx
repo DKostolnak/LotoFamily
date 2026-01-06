@@ -122,6 +122,7 @@ export default function Home() {
           isHost={isHost}
           onNewGame={handleNewGame}
           onBackToLobby={handleBackToLobby}
+          currentUserId={playerId || ''}
         />
       </>
     );

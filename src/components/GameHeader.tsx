@@ -22,19 +22,32 @@ interface GameHeaderProps {
 interface PlayerAvatarProps {
     player: Player;
     size?: 'sm' | 'lg';
+    heatLevel?: number;
 }
 
-const PlayerAvatar = memo(function PlayerAvatar({ player, size = 'lg' }: PlayerAvatarProps) {
+const PlayerAvatar = memo(function PlayerAvatar({ player, size = 'lg', heatLevel = 0 }: PlayerAvatarProps) {
     const isImageUrl = player.avatarUrl &&
         (player.avatarUrl.startsWith('http') || player.avatarUrl.startsWith('data:'));
 
     const sizeClasses = size === 'lg' ? 'w-10 h-10' : 'w-8 h-8';
     const textSize = size === 'lg' ? 'text-xl' : 'text-base';
 
+    // Heat Styles
+    const borderColor = heatLevel === 1 ? 'border-red-500' : heatLevel === 2 ? 'border-orange-500' : 'border-[#8B4513]';
+    const shadowClass = heatLevel === 1 ? 'shadow-[0_0_15px_rgba(239,68,68,0.8)]' : heatLevel === 2 ? 'shadow-[0_0_10px_rgba(249,115,22,0.6)]' : 'shadow-md';
+    const animationClass = heatLevel === 1 ? 'animate-pulse' : '';
+
     return (
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 relative group">
+            {/* Heat Emoji */}
+            {heatLevel > 0 && (
+                <div className={`absolute -top-3 left-1/2 -translate-x-1/2 text-lg z-20 ${heatLevel === 1 ? 'animate-bounce' : ''}`}>
+                    {heatLevel === 1 ? '🔥' : '⚠️'}
+                </div>
+            )}
+
             <div
-                className={`${sizeClasses} rounded-lg border-2 border-[#8B4513] bg-[#D2B48C] flex items-center justify-center shadow-md overflow-hidden`}
+                className={`${sizeClasses} rounded-lg border-2 ${borderColor} bg-[#D2B48C] flex items-center justify-center ${shadowClass} overflow-hidden ${animationClass} transition-all duration-300`}
             >
                 {isImageUrl ? (
                     <img
@@ -48,7 +61,7 @@ const PlayerAvatar = memo(function PlayerAvatar({ player, size = 'lg' }: PlayerA
                     </span>
                 )}
             </div>
-            <span className="text-xs font-bold text-[#5c3a21] max-w-[60px] truncate">
+            <span className={`text-xs font-bold ${heatLevel === 1 ? 'text-red-500' : 'text-[#5c3a21]'} max-w-[60px] truncate`}>
                 {player.name}
             </span>
         </div>
@@ -72,6 +85,19 @@ function GameHeader({
         () => gameState.players.find(p => p.id === playerId),
         [gameState.players, playerId]
     );
+
+    const currentPlayerHeat = useMemo(() => {
+        if (!currentPlayer?.cards) return 0;
+        let minLeft = 999;
+        currentPlayer.cards.forEach(c => {
+            let count = 0;
+            c.grid.forEach(row => row.forEach(cell => {
+                if (cell.value !== null && !cell.isMarked) count++;
+            }));
+            if (count < minLeft) minLeft = count;
+        });
+        return minLeft <= 1 ? 1 : minLeft <= 2 ? 2 : 0;
+    }, [currentPlayer]);
 
     const otherPlayers = useMemo(
         () => gameState.players.filter(p => p.id !== playerId),
@@ -153,7 +179,7 @@ function GameHeader({
             <div className="flex items-center px-2 py-1 gap-2 w-full bg-black/5">
                 {/* Current Player Avatar */}
                 {currentPlayer && (
-                    <PlayerAvatar player={currentPlayer} size="lg" />
+                    <PlayerAvatar player={currentPlayer} size="lg" heatLevel={currentPlayerHeat} />
                 )}
 
                 {/* Separator */}

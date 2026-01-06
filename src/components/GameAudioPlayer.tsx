@@ -248,6 +248,34 @@ export function playVictoryFanfare() {
     }
 }
 
+export function playWinSound() { playVictoryFanfare(); }
+
+export function playLossSound() {
+    try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        oscillator.type = 'sawtooth';
+        // Sad descending slide
+        oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+        oscillator.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.8);
+
+        gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
+
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.8);
+    } catch (e) {
+        // Silent
+    }
+}
+
 // Play freeze sound (shatter effect)
 export function playFreezeSound() {
     try {
@@ -332,4 +360,3 @@ export function playBonusSound() {
         // Silent
     }
 }
-
