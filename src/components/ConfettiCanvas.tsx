@@ -76,10 +76,11 @@ export default function ConfettiCanvas({
 
                 // Reset if fell off screen
                 if (p.y > canvas.height + 20) {
-                    particlesRef.current[i] = createParticle(canvas.width, -20, colors);
-                    // Add initial velocity to simulate continuous rain
-                    particlesRef.current[i].y = -20;
-                    particlesRef.current[i].vy = Math.random() * 5 + 2;
+                    // Reuse existing object
+                    p.y = -20;
+                    p.x = Math.random() * canvas.width;
+                    p.vx = Math.random() * 4 - 2;
+                    p.vy = Math.random() * 5 + 2;
                 }
             });
 
