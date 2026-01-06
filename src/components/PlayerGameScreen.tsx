@@ -287,20 +287,24 @@ function PlayerGameScreen({
 
                     {/* Cards Container - Proper spacing */}
                     <div className="loto-cards-container" style={{ paddingBottom: '8px' }}>
-                        {cards.map((card) => (
-                            <GameCardWrapper
-                                key={card.id}
-                                card={card}
-                                gameState={gameState}
-                                playerId={playerId}
-                                calledNumberValues={calledNumberValues}
-                                onMarkCell={onMarkCell}
-                                onClaimWin={onClaimWin}
-                                onClaimFlat={onClaimFlat}
-                                shake={shake}
-                                t={t}
-                            />
-                        ))}
+                        {cards.map((card) => {
+                            // Create a fingerprint of the grid to detect shuffles
+                            const gridFingerprint = card.grid.flat().map(c => c.value ?? 'x').join('');
+                            return (
+                                <GameCardWrapper
+                                    key={`${card.id}-${gridFingerprint}`}
+                                    card={card}
+                                    gameState={gameState}
+                                    playerId={playerId}
+                                    calledNumberValues={calledNumberValues}
+                                    onMarkCell={onMarkCell}
+                                    onClaimWin={onClaimWin}
+                                    onClaimFlat={onClaimFlat}
+                                    shake={shake}
+                                    t={t}
+                                />
+                            );
+                        })}
                     </div>
                 </div>
             </div>

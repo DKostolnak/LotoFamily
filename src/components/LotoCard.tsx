@@ -251,7 +251,9 @@ function LotoCard({
                         const isSafe = isCalled && (callsCount - 1 - calledIndex < 2);
                         const isMissed = isCalled && !cell.isMarked && !isSafe;
                         const isCorrect = isCalled && cell.isMarked;
-                        const cellKey = `${rowIndex}-${colIndex}`;
+                        // Key includes cell value to force re-render after shuffle
+                        const cellKey = `${rowIndex}-${colIndex}-${cell.value ?? 'empty'}`;
+                        const tappedKey = `${rowIndex}-${colIndex}`;
 
                         return (
                             <LotoCell
@@ -264,8 +266,8 @@ function LotoCard({
                                 isSafe={isSafe}
                                 isMissed={isMissed}
                                 isCorrect={isCorrect}
-                                isTapped={tappedCell === cellKey}
-                                isMistake={mistakeCell === cellKey}
+                                isTapped={tappedCell === tappedKey}
+                                isMistake={mistakeCell === tappedKey}
                                 onClick={handleCellClick}
                             />
                         );
