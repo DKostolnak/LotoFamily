@@ -458,11 +458,6 @@ app.prepare().then(() => {
             // Mark the cell
             let updatedCard = markCell(card, row, col);
 
-            // If Crazy Mode enabled and this was a correct mark, shuffle remaining positions
-            if (game.settings.crazyMode && isCorrectMark) {
-                updatedCard = shuffleCardPositions(updatedCard);
-            }
-
             // Energy Logic: Reward quick reactions
             let energyChange = 0;
             if (isCorrectMark) {
@@ -485,13 +480,24 @@ app.prepare().then(() => {
 
 
             // Update players with the new card AND energy
-            const updatedPlayers = game.players.map(p =>
-                p.id === socket.id ? {
-                    ...p,
-                    cards: p.cards.map(c => c.id === cardId ? updatedCard : c),
-                    energy: newEnergy
-                } : p
-            );
+            const updatedPlayers = game.players.map(p => {
+                if (p.id === socket.id) {
+                    // Update the specific card that was marked
+                    let newCards = p.cards.map(c => c.id === cardId ? updatedCard : c);
+
+                    // If Crazy Mode & Correct Mark -> Shuffle ALL cards
+                    if (game.settings.crazyMode && isCorrectMark) {
+                        newCards = newCards.map(c => shuffleCardPositions(c));
+                    }
+
+                    return {
+                        ...p,
+                        cards: newCards,
+                        energy: newEnergy
+                    };
+                }
+                return p;
+            });
 
             game = { ...game, players: updatedPlayers };
             games.set(roomCode, game);
