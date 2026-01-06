@@ -88,7 +88,15 @@ export default function PlayerGameScreen({
     return (
         <div className="flex flex-col h-screen overflow-hidden bg-[var(--color-bg)]">
             {/* Top HUD: 2-Row Layout */}
-            <div className="wooden-panel flex flex-col shrink-0 z-20 shadow-md relative" style={{ borderRadius: '0 0 16px 16px', padding: '0', overflow: 'hidden' }}>
+            <div
+                className="wooden-panel flex flex-col shrink-0 z-20 shadow-md relative"
+                style={{
+                    borderRadius: '0 0 16px 16px',
+                    padding: '0',
+                    overflow: 'hidden',
+                    paddingTop: 'env(safe-area-inset-top, 0px)'
+                }}
+            >
 
                 {/* Row 1: Controls & Game State */}
                 <div className="flex items-center justify-between px-2 py-1 w-full" style={{ borderBottom: '1px solid rgba(0,0,0,0.1)', minHeight: '48px' }}>
