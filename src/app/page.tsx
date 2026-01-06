@@ -1,13 +1,34 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import MainMenu from '@/components/MainMenu';
-import WaitingLobby from '@/components/WaitingLobby';
-import PlayerGameScreen from '@/components/PlayerGameScreen';
-import HostCallerScreen from '@/components/HostCallerScreen';
-import WinnerCelebration from '@/components/WinnerCelebration';
-import GameAudioPlayer from '@/components/GameAudioPlayer';
 import { useGame } from '@/lib/GameContext';
+
+// Dynamically import heavy components to reduce initial bundle
+const WaitingLobby = dynamic(() => import('@/components/WaitingLobby'), {
+  loading: () => <LoadingSpinner />,
+});
+const PlayerGameScreen = dynamic(() => import('@/components/PlayerGameScreen'), {
+  loading: () => <LoadingSpinner />,
+});
+const HostCallerScreen = dynamic(() => import('@/components/HostCallerScreen'), {
+  loading: () => <LoadingSpinner />,
+});
+const WinnerCelebration = dynamic(() => import('@/components/WinnerCelebration'), {
+  loading: () => <LoadingSpinner />,
+});
+const GameAudioPlayer = dynamic(() => import('@/components/GameAudioPlayer'), {
+  ssr: false, // Audio doesn't need SSR
+});
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center h-screen bg-[var(--color-bg)]">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-gold)]" />
+    </div>
+  );
+}
 
 /**
  * Main App Page
