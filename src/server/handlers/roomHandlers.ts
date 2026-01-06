@@ -4,8 +4,8 @@
  */
 
 import type { Server, Socket } from 'socket.io';
-import type { GameState, GameSettings, ServerToClientEvents, ClientToServerEvents } from '@/lib/types';
-import { createGame, addPlayer, removePlayer } from '@/engine/gameEngine';
+import type { GameState, GameSettings, ServerToClientEvents, ClientToServerEvents } from '../../lib/types';
+import { createGame, addPlayer, removePlayer } from '../../engine/gameEngine';
 import * as store from '../store';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;

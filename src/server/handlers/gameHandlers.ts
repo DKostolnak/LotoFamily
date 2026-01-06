@@ -4,7 +4,7 @@
  */
 
 import type { Server, Socket } from 'socket.io';
-import type { GameState, ServerToClientEvents, ClientToServerEvents, LotoCard, LotoCardGrid } from '@/lib/types';
+import type { GameState, ServerToClientEvents, ClientToServerEvents, LotoCard, LotoCardGrid } from '../../lib/types';
 import {
     startGame as startGameEngine,
     callNextNumber,
@@ -14,8 +14,8 @@ import {
     resumeGame,
     resetGame,
     claimFlat,
-} from '@/engine/gameEngine';
-import { markCell } from '@/engine/lotoCardGenerator';
+} from '../../engine/gameEngine';
+import { markCell } from '../../engine/lotoCardGenerator';
 import * as store from '../store';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;

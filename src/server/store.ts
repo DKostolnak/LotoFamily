@@ -3,7 +3,7 @@
  * Manages game state and auto-call intervals
  */
 
-import type { GameState } from '@/lib/types';
+import type { GameState } from '../lib/types';
 
 // Game state storage (in-memory)
 const games = new Map<string, GameState>();

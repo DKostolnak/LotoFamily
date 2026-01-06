@@ -3,7 +3,7 @@
  */
 
 import type { Server, Socket } from 'socket.io';
-import type { ServerToClientEvents, ClientToServerEvents, SabotageType, LotoCard, LotoCardGrid } from '@/lib/types';
+import type { ServerToClientEvents, ClientToServerEvents, SabotageType, LotoCard, LotoCardGrid } from '../../lib/types';
 import * as store from '../store';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
