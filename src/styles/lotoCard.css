@@ -26,8 +26,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(16px, 4.5vw, 28px);
-    /* Responsive font scaling - BOLD for Grandma */
+    justify-content: center;
+    font-size: clamp(14px, 4vw, 24px);
+    /* Responsive font scaling - BOLD */
     font-weight: 800;
     background: var(--color-cell-number);
     cursor: pointer;
@@ -335,7 +336,7 @@
     }
 
     .loto-cell {
-        font-size: clamp(14px, 4vw, 20px);
+        font-size: clamp(12px, 3.5vw, 18px);
     }
 
     .loto-cell--correct .loto-cell-number {

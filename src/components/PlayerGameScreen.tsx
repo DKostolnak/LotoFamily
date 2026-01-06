@@ -85,10 +85,10 @@ export default function PlayerGameScreen({
     return (
         <div className="flex flex-col h-screen overflow-hidden bg-[var(--color-bg)]">
             {/* Top HUD: Current Number, History, stats */}
-            <div className="wooden-panel flex items-center justify-between px-4 py-2 shrink-0 z-20 shadow-md" style={{ borderRadius: 0 }}>
+            <div className="wooden-panel grid grid-cols-3 items-center px-2 py-2 shrink-0 z-20 shadow-md relative" style={{ borderRadius: 0, minHeight: '60px' }}>
                 {/* Left: Player Info (Compact) */}
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded-full relative">
+                <div className="flex items-center justify-start min-w-0">
+                    <div className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded-full relative max-w-full">
                         {/* Energy Bar Indicator */}
                         {(() => {
                             const me = gameState.players.find(p => p.id === playerId);
@@ -101,29 +101,33 @@ export default function PlayerGameScreen({
                             );
                         })()}
 
-                        <div style={{ width: 24, height: 24, fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-gold)', borderRadius: '50%' }}>
+                        <div className="shrink-0" style={{ width: 24, height: 24, fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-gold)', borderRadius: '50%' }}>
                             {(() => {
                                 const me = gameState.players.find(p => p.id === playerId);
                                 return me?.avatarUrl || me?.name.charAt(0).toUpperCase();
                             })()}
                         </div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                        <span className="truncate" style={{ fontSize: '0.75rem', fontWeight: 600 }}>
                             {gameState.players.find(p => p.id === playerId)?.name}
                         </span>
                     </div>
                 </div>
 
                 {/* Center: Current Number (The Star) */}
-                <div className="absolute left-1/2 -translate-x-1/2 top-2">
-                    <NumberMedallion number={gameState.currentNumber} size="md" />
+                <div className="flex justify-center items-center">
+                    <div className="-mt-1">
+                        <NumberMedallion number={gameState.currentNumber} size="md" />
+                    </div>
                 </div>
 
                 {/* Right: History & Count */}
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-end justify-center min-w-0">
                     <div style={{ fontSize: '0.7rem', opacity: 0.7, marginBottom: '2px' }}>
                         {gameState.calledNumbers.length}/90
                     </div>
-                    <NumberHistory numbers={calledNumberValues} maxVisible={3} />
+                    <div className="scale-90 origin-right">
+                        <NumberHistory numbers={calledNumberValues} maxVisible={3} />
+                    </div>
                 </div>
             </div>
 
