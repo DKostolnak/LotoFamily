@@ -2,8 +2,16 @@
 
 import React, { useState, useMemo, useCallback, memo } from 'react';
 import { LotoCard as LotoCardType } from '@/lib/types';
-import { playCellMarkSound } from './GameAudioPlayer';
+import { playCellMarkSound, playBonusSound, playErrorSound, playClickSound } from './GameAudioPlayer';
 import '@/styles/lotoCard.css';
+
+interface FloatingText {
+    id: number;
+    text: string;
+    x: number;
+    y: number;
+    color: string;
+}
 
 interface LotoCardProps {
     card: LotoCardType;
@@ -27,7 +35,7 @@ interface CellProps {
     isCorrect: boolean;
     isTapped: boolean;
     isMistake: boolean;
-    onClick: (row: number, col: number) => void;
+    onClick: (row: number, col: number, evt: React.MouseEvent) => void;
 }
 
 /**
@@ -62,8 +70,8 @@ const LotoCell = memo(function LotoCell({
             .join(' ');
     }, [isEmpty, isCorrect, isMissed, isMistake, isTapped]);
 
-    const handleClick = useCallback(() => {
-        onClick(row, col);
+    const handleClick = useCallback((e: React.MouseEvent) => {
+        onClick(row, col, e);
     }, [onClick, row, col]);
 
     return (
@@ -101,6 +109,8 @@ function LotoCard({
 }: LotoCardProps) {
     const [tappedCell, setTappedCell] = useState<string | null>(null);
     const [mistakeCell, setMistakeCell] = useState<string | null>(null);
+    const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
+    const floatingIdCounter = React.useRef(0);
 
     // Memoize the called numbers set for O(1) lookups
     const calledSet = useMemo(() => new Set(calledNumbers), [calledNumbers]);
@@ -122,8 +132,16 @@ function LotoCard({
         };
     }, [card.grid, calledSet]);
 
+    const addFloatingText = (text: string, x: number, y: number, color: string) => {
+        const id = floatingIdCounter.current++;
+        setFloatingTexts(prev => [...prev, { id, text, x, y, color }]);
+        setTimeout(() => {
+            setFloatingTexts(prev => prev.filter(ft => ft.id !== id));
+        }, 1000);
+    };
+
     // Stable cell click handler
-    const handleCellClick = useCallback((row: number, col: number) => {
+    const handleCellClick = useCallback((row: number, col: number, evt: React.MouseEvent) => {
         const cell = card.grid[row][col];
         if (cell.value === null) return;
         if (!onCellClick) return;
@@ -131,6 +149,25 @@ function LotoCard({
         const cellKey = `${row}-${col}`;
         const calledIndex = calledNumbers.indexOf(cell.value);
         const isCalled = calledIndex !== -1;
+
+        // Get relative click coordinates for floating text
+        const rect = (evt.target as HTMLElement).getBoundingClientRect();
+        // Since we are inside the card, we want position relative to the card container
+        // But for simplicity, we can just use the click offset within the cell if we position absolute to the cell?
+        // Actually, let's position relative to the cell's center in the loop render, or pass coordinates.
+        // Simplified: render floating text in a container on top layer.
+        // We'll use the mouse event to get exact click pos relative to card roughly,
+        // or just center it on the cell based on row/col logic? 
+        // Let's use event clientX/Y and map to card-relative. 
+        // Actually, just passing "x, y" as row/col index to render logic is easier if we render inside the grid.
+        // But the grid has overflow issues maybe?
+        // Let's rely on the Cell component to tell us where it is? No.
+
+        // Let's just use the clicked element's rect center.
+        // We will render the floating text as a Fixed/Absolute overlay on the card.
+        const cardRect = (evt.currentTarget.closest('.loto-card') as HTMLElement)?.getBoundingClientRect();
+        const x = rect.left - (cardRect?.left || 0) + rect.width / 2;
+        const y = rect.top - (cardRect?.top || 0) + rect.height / 2;
 
         // Already correctly marked
         if (cell.isMarked && isCalled) return;
@@ -143,19 +180,30 @@ function LotoCard({
         // Uncalled number - mistake flash
         if (!isCalled) {
             setMistakeCell(cellKey);
+            playErrorSound();
+            addFloatingText('-10⚡', x, y, '#ef4444'); // Red penalty
             setTimeout(() => setMistakeCell(null), 500);
             return;
         }
 
         // Valid mark
         setTappedCell(cellKey);
-        playCellMarkSound();
+
+        // Points Calculation Visual
+        if (isSafe) {
+            playBonusSound(); // Fast mark!
+            addFloatingText('+15⚡', x, y, '#eab308'); // Gold
+        } else {
+            playCellMarkSound(); // Normal
+            addFloatingText('+5⚡', x, y, '#22c55e'); // Green
+        }
+
         onCellClick(row, col);
         setTimeout(() => setTappedCell(null), 200);
     }, [card.grid, onCellClick, calledNumbers, callsCount]);
 
     return (
-        <div className={`loto-card ${compact ? 'loto-card--compact' : ''}`}>
+        <div className={`loto-card ${compact ? 'loto-card--compact' : ''} relative`}>
             {showHeader && playerName && (
                 <div className="loto-card-header">
                     <div className="loto-card-player">
@@ -178,7 +226,24 @@ function LotoCard({
                 </span>
             </div>
 
-            <div className="loto-card-grid">
+            <div className="loto-card-grid relative">
+                {/* Floating Texts Overlay */}
+                {floatingTexts.map(ft => (
+                    <div
+                        key={ft.id}
+                        className="absolute text-lg font-bold pointer-events-none z-10 animate-fade-up-float"
+                        style={{
+                            left: ft.x,
+                            top: ft.y,
+                            color: ft.color,
+                            transform: 'translate(-50%, -50%)',
+                            textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                        }}
+                    >
+                        {ft.text}
+                    </div>
+                ))}
+
                 {card.grid.map((row, rowIndex) =>
                     row.map((cell, colIndex) => {
                         const calledIndex = cell.value !== null ? calledNumbers.indexOf(cell.value) : -1;
