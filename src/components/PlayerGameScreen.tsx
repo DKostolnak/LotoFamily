@@ -4,15 +4,12 @@ import React from 'react';
 import { GameState, LotoCard as LotoCardType } from '@/lib/types';
 import { translations } from '@/lib/translations';
 import LotoCard from './LotoCard';
-import NumberMedallion from './NumberMedallion';
-import NumberHistory from './NumberHistory';
-import PlayerList from './PlayerList';
+import GameHeader from './GameHeader';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { playClickSound, playErrorSound, playFreezeSound, playSplatSound, playBonusSound } from './GameAudioPlayer';
 import SabotageOverlay from './SabotageOverlay';
 import { useScreenShake } from './ScreenShakeProvider';
 import CallerBoard from './CallerBoard';
-// Leaderboard import
 import Leaderboard from './Leaderboard';
 
 interface PlayerGameScreenProps {
@@ -87,100 +84,14 @@ export default function PlayerGameScreen({
 
     return (
         <div className="flex flex-col h-screen overflow-hidden bg-[var(--color-bg)]">
-            {/* Top HUD: 2-Row Layout */}
-            <div
-                className="wooden-panel flex flex-col shrink-0 z-20 shadow-md relative"
-                style={{
-                    borderRadius: '0 0 16px 16px',
-                    padding: '0',
-                    overflow: 'hidden',
-                    paddingTop: 'env(safe-area-inset-top, 0px)'
-                }}
-            >
-
-                {/* Row 1: Controls & Game State */}
-                <div className="flex items-center justify-between px-2 py-1 w-full" style={{ borderBottom: '1px solid rgba(0,0,0,0.1)', minHeight: '48px' }}>
-
-                    {/* Left: Navigation & Settings */}
-                    <div className="flex items-center gap-1 shrink-0">
-                        <button
-                            className="btn btn-square btn-xs btn-wood"
-                            onClick={() => {
-                                if (confirm(t.leaveConfirm || "Leave game?")) {
-                                    window.location.href = '/';
-                                }
-                            }}
-                        >
-                            ⬅️
-                        </button>
-                        <button
-                            className="btn btn-square btn-xs btn-wood"
-                            onClick={() => { }}
-                        >
-                            🔊
-                        </button>
-                    </div>
-
-                    {/* Center: Current Number */}
-                    <div className="flex-1 flex justify-center">
-                        <div className="rounded-full border-2 border-[#8B4513] bg-[#DEB887] shadow-md" style={{ transform: 'scale(0.85)' }}>
-                            <NumberMedallion number={gameState.currentNumber} size="md" />
-                        </div>
-                    </div>
-
-                    {/* Right: History + Trophy */}
-                    <div className="flex items-center gap-1 shrink-0">
-                        <div className="scale-[0.6] origin-right">
-                            <NumberHistory numbers={calledNumberValues} maxVisible={4} />
-                        </div>
-                        <button
-                            onClick={() => { playClickSound(); setShowLeaderboard(true); }}
-                            className="btn btn-circle btn-xs btn-ghost text-yellow-500"
-                            style={{ fontSize: '1rem' }}
-                        >
-                            🏆
-                        </button>
-                    </div>
-                </div>
-
-                {/* Row 2: Player Status (Me & Others) */}
-                <div className="flex items-center px-2 py-1 gap-2 w-full bg-black/5">
-
-                    {/* Me: Avatar */}
-                    {(() => {
-                        const me = gameState.players.find(p => p.id === playerId);
-                        if (!me) return null;
-                        const isImageUrl = me.avatarUrl && (me.avatarUrl.startsWith('http') || me.avatarUrl.startsWith('data:'));
-                        return (
-                            <div className="flex items-center gap-2 shrink-0">
-                                <div
-                                    className="w-10 h-10 rounded-lg border-2 border-[#8B4513] bg-[#D2B48C] flex items-center justify-center shadow-md overflow-hidden"
-                                >
-                                    {isImageUrl ? (
-                                        <img src={me.avatarUrl} alt={me.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-xl">{me.avatarUrl || me.name.charAt(0)}</span>
-                                    )}
-                                </div>
-                                <span className="text-xs font-bold text-[#5c3a21] max-w-[60px] truncate">{me.name}</span>
-                            </div>
-                        );
-                    })()}
-
-                    {/* Separator */}
-                    <div className="w-px h-8 bg-[#8B4513] opacity-30 shrink-0"></div>
-
-                    {/* Others: Horizontal Scroll */}
-                    <div className="flex-1 overflow-x-auto no-scrollbar">
-                        <PlayerList
-                            players={gameState.players.filter(p => p.id !== playerId)}
-                            currentPlayerId={playerId}
-                            compact={true}
-                            flatWinners={gameState.flatWinners}
-                        />
-                    </div>
-                </div>
-            </div>
+            {/* Game Header */}
+            <GameHeader
+                gameState={gameState}
+                playerId={playerId}
+                calledNumberValues={calledNumberValues}
+                onShowLeaderboard={() => setShowLeaderboard(true)}
+                leaveConfirmText={t.leaveConfirm}
+            />
 
             {/* Leaderboard Modal */}
             {showLeaderboard && (
