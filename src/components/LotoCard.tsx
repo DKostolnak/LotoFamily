@@ -20,7 +20,7 @@ interface LotoCardProps {
  * LotoCard Component
  * Displays a European Loto 90 card (9 columns x 3 rows) with tap feedback
  */
-export default function LotoCard({
+export function LotoCard({
     card,
     onCellClick,
     highlightedNumber,
@@ -142,5 +142,7 @@ export default function LotoCard({
             </div>
         </div>
     );
+    );
 }
 
+export default React.memo(LotoCard);

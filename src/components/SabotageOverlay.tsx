@@ -8,19 +8,34 @@ interface SabotageOverlayProps {
 import { useScreenShake } from './ScreenShakeProvider';
 
 export default function SabotageOverlay({ frozenUntil, inkSplats }: SabotageOverlayProps) {
-    const [now, setNow] = useState(Date.now());
+    const [isFrozen, setIsFrozen] = useState(false);
     const [clearedSplats, setClearedSplats] = useState<Set<string>>(new Set());
     const { shake } = useScreenShake();
     const prevFrozenRef = React.useRef(false);
     const prevSplatsLengthRef = React.useRef(0);
 
-    // Timer for freeze countdown
+    // Efficiently handle freeze state without constant polling
     useEffect(() => {
-        const interval = setInterval(() => setNow(Date.now()), 100);
-        return () => clearInterval(interval);
-    }, []);
+        if (!frozenUntil) {
+            setIsFrozen(false);
+            return;
+        }
 
-    const isFrozen = frozenUntil && frozenUntil > now;
+        const checkFreeze = () => {
+            const now = Date.now();
+            if (frozenUntil > now) {
+                setIsFrozen(true);
+                // Schedule unfreeze exactly when needed
+                const timeLeft = frozenUntil - now;
+                const timer = setTimeout(() => setIsFrozen(false), timeLeft);
+                return () => clearTimeout(timer);
+            } else {
+                setIsFrozen(false);
+            }
+        };
+
+        return checkFreeze();
+    }, [frozenUntil]);
     const activeSplats = inkSplats?.filter(s => !clearedSplats.has(s.id)) || [];
 
     // Trigger Shake on Freeze
