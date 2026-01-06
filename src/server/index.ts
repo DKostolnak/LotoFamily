@@ -3,7 +3,12 @@
  * Clean exports for all server functionality
  */
 
+// Store
+export * from './store';
+
+// Utilities
 export * from './utils';
 export * from './cardUtils';
-export * from './roomManager';
-export * from './sabotageService';
+
+// Handlers
+export * from './handlers';
