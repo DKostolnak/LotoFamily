@@ -8,17 +8,20 @@ interface PlayerListProps {
     currentPlayerId?: string;
     compact?: boolean;
     flatWinners?: FlatWinners;
+    onPlayerClick?: (player: Player) => void;
 }
 
 /**
  * PlayerList Component
- * Displays connected players with avatars and flat indicators
+ * Displays connected players with avatars and flat indicators.
+ * Supports clicking on avatars to view details.
  */
 export default function PlayerList({
     players,
     currentPlayerId,
     compact = false,
     flatWinners,
+    onPlayerClick,
 }: PlayerListProps) {
     return (
         <div className={`flex ${compact ? 'gap-sm' : 'gap-md'} items-start`}>
@@ -47,9 +50,10 @@ export default function PlayerList({
                 const heatLevel = minNumbersLeft <= 1 ? 1 : minNumbersLeft <= 2 ? 2 : 0; // 1=Critical, 2=Warning
 
                 return (
-                    <div
+                    <button
                         key={player.id}
-                        className={`flex flex-col items-center gap-xs ${player.isHost ? 'host-badge' : ''}`}
+                        className={`flex flex-col items-center gap-xs border-none bg-transparent p-0 cursor-pointer transition-transform active:scale-95 ${player.isHost ? 'host-badge' : ''}`}
+                        onClick={() => onPlayerClick?.(player)}
                         style={{ opacity: player.isConnected ? 1 : 0.5 }}
                     >
                         {/* Heat Indicator (Fire/Emoji) */}
@@ -131,7 +135,7 @@ export default function PlayerList({
                                 {player.name}
                             </span>
                         )}
-                    </div>
+                    </button>
                 );
             })}
         </div>

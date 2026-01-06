@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useCallback, useState, useEffect, memo } from 'react';
-import { GameState, LotoCard as LotoCardType, SabotageType } from '@/lib/types';
+import { GameState, LotoCard as LotoCardType, SabotageType, Player } from '@/lib/types';
 import { translations } from '@/lib/translations';
 import LotoCard from './LotoCard';
 import GameHeader from './GameHeader';
@@ -13,6 +13,7 @@ import { useScreenShake } from './ScreenShakeProvider';
 import Leaderboard from './Leaderboard';
 import SabotageShop from './SabotageShop';
 import GameProgress from './GameProgress';
+import PlayerStatsModal from './PlayerStatsModal';
 
 interface PlayerGameScreenProps {
     gameState: GameState;
@@ -190,6 +191,7 @@ function PlayerGameScreen({
     // State for targeting mode and modals
     const [targetingItem, setTargetingItem] = useState<SabotageType | null>(null);
     const [showLeaderboard, setShowLeaderboard] = useState(false);
+    const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
     // Stable callbacks
     const handleUseItem = useCallback((type: SabotageType) => {
@@ -231,8 +233,18 @@ function PlayerGameScreen({
                 playerId={playerId}
                 calledNumberValues={calledNumberValues}
                 onShowLeaderboard={() => setShowLeaderboard(true)}
+                onPlayerClick={setSelectedPlayer}
                 leaveConfirmText={t.leaveConfirm}
             />
+
+            {/* Player Stats Modal */}
+            {selectedPlayer && (
+                <PlayerStatsModal
+                    player={selectedPlayer}
+                    currentUserId={playerId}
+                    onClose={() => setSelectedPlayer(null)}
+                />
+            )}
 
             {/* Leaderboard Modal */}
             {showLeaderboard && (
@@ -261,10 +273,6 @@ function PlayerGameScreen({
             {/* Main Content Area: Cards */}
             <div className="flex-1 relative w-full flex flex-col items-center justify-center overflow-y-auto overflow-x-hidden" style={{ padding: '8px 4px' }}>
                 <div className="flex flex-col gap-2 w-full max-w-md" style={{ height: 'auto' }}>
-                    {/* Bonus Bar (Floating or just above cards? Let's put above) */}
-
-
-                    {/* Sabotage Shop */}
                     {/* Sabotage Shop */}
                     {currentPlayer && (
                         <div className="mt-1">
@@ -276,7 +284,6 @@ function PlayerGameScreen({
                         </div>
                     )}
 
-                    {/* Progress Indicator */}
                     {/* Progress Indicator */}
                     <div className="mb-1">
                         <GameProgress

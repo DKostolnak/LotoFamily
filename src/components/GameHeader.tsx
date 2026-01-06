@@ -12,6 +12,7 @@ interface GameHeaderProps {
     playerId: string;
     calledNumberValues: number[];
     onShowLeaderboard: () => void;
+    onPlayerClick?: (player: Player) => void;
     leaveConfirmText?: string;
 }
 
@@ -78,6 +79,7 @@ function GameHeader({
     playerId,
     calledNumberValues,
     onShowLeaderboard,
+    onPlayerClick,
     leaveConfirmText = "Leave game?",
 }: GameHeaderProps) {
     // Memoize derived data
@@ -205,7 +207,10 @@ function GameHeader({
             <div className="flex items-center px-4 py-2 gap-3 w-full bg-black/20 backdrop-blur-sm">
                 {/* Current Player Avatar */}
                 {currentPlayer && (
-                    <div className="shrink-0 transform scale-100 hover:scale-105 transition-transform">
+                    <div
+                        className="shrink-0 transform scale-100 hover:scale-105 transition-transform cursor-pointer"
+                        onClick={() => { playClickSound(); onPlayerClick?.(currentPlayer); }}
+                    >
                         <PlayerAvatar player={currentPlayer} size="lg" heatLevel={currentPlayerHeat} />
                     </div>
                 )}
@@ -220,6 +225,7 @@ function GameHeader({
                         currentPlayerId={playerId}
                         compact={true}
                         flatWinners={gameState.flatWinners}
+                        onPlayerClick={(p) => { playClickSound(); onPlayerClick?.(p); }}
                     />
                 </div>
             </div>

@@ -8,6 +8,7 @@ import { useToast } from './ToastProvider';
 import { useGame } from '@/lib/GameContext';
 import { playClickSound } from './GameAudioPlayer';
 import AvatarPicker from './AvatarPicker';
+import PlayerStatsModal from './PlayerStatsModal';
 
 interface WaitingLobbyProps {
     gameState: GameState;
@@ -36,6 +37,7 @@ export default function WaitingLobby({
 
     const [isEditingProfile, setIsEditingProfile] = React.useState(false);
     const [tempName, setTempName] = React.useState(currentPlayer?.name || '');
+    const [selectedPlayer, setSelectedPlayer] = React.useState<Player | null>(null);
 
     const t = translations[gameState.settings.language || 'en'];
 
@@ -154,62 +156,36 @@ export default function WaitingLobby({
                 <h3 style={{ fontSize: '0.9rem', marginBottom: '8px', marginTop: 0 }}>
                     {t.playersReady} ({gameState.players.length}/{gameState.settings.maxPlayers})
                 </h3>
-                <div className="flex flex-wrap gap-2">
-                    {gameState.players.map((player) => (
-                        <button
-                            key={player.id}
-                            className={`flex items-center gap-1 border-none cursor-pointer ${player.id === currentPlayerId ? 'hover:scale-105 active:scale-95' : ''}`}
-                            onClick={() => player.id === currentPlayerId && setIsEditingProfile(!isEditingProfile)}
-                            style={{
-                                background: player.id === currentPlayerId ? 'var(--color-gold-light)' : 'var(--color-cell-empty)',
-                                fontSize: '0.8rem',
-                                padding: '4px 8px',
-                                borderRadius: '6px',
-                                transition: 'transform 0.2s',
-                                color: 'inherit'
-                            }}
-                        >
-                            <div
-                                className={`avatar ${player.isHost ? 'host-badge' : ''}`}
-                                style={{
-                                    width: 24,
-                                    height: 24,
-                                    fontSize: '0.7rem',
-                                    flexShrink: 0,
-                                    background: 'rgba(255,255,255,0.1)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '50%'
-                                }}
-                            >
-                                {player.avatarUrl || player.name.charAt(0).toUpperCase()}
-                            </div>
-                            <span style={{ fontWeight: 600 }}>{player.name}</span>
-                            {player.id === currentPlayerId && <span style={{ opacity: 0.6 }}>✏️</span>}
-                            {isHost && player.id !== currentPlayerId && (
-                                <div
-                                    role="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleKick(player.id, player.name);
-                                    }}
-                                    style={{
-                                        marginLeft: 'auto',
-                                        padding: '4px',
-                                        color: 'var(--color-red)',
-                                        opacity: 0.7,
-                                        fontSize: '0.8rem'
-                                    }}
-                                    title="Kick Player"
-                                >
-                                    ❌
-                                </div>
-                            )}
-                        </button>
-                    ))}
+
+                <div className="flex justify-center w-full">
+                    <PlayerList
+                        players={gameState.players}
+                        currentPlayerId={currentPlayerId}
+                        compact={true}
+                        onPlayerClick={(p) => {
+                            playClickSound();
+                            if (p.id === currentPlayerId) {
+                                setIsEditingProfile(true);
+                            } else {
+                                setSelectedPlayer(p);
+                            }
+                        }}
+                    />
                 </div>
             </div>
+
+            {/* Player Stats Modal */}
+            {selectedPlayer && (
+                <PlayerStatsModal
+                    player={selectedPlayer}
+                    currentUserId={currentPlayerId}
+                    onClose={() => setSelectedPlayer(null)}
+                    onKick={isHost && selectedPlayer?.id !== currentPlayerId ? (pid) => {
+                        handleKick(pid, selectedPlayer.name);
+                        setSelectedPlayer(null);
+                    } : undefined}
+                />
+            )}
 
 
             {/* Actions - centered in remaining space */}
