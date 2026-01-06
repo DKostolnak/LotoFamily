@@ -63,6 +63,7 @@ export interface GameSettings {
   autoCallIntervalMs: number;
   language: 'en' | 'sk' | 'uk' | 'ru';
   crazyMode: boolean;
+  customRoomCode?: string; // Optional custom code
 }
 
 export type GameModeType = 'classic' | 'row' | 'pattern' | 'speed';

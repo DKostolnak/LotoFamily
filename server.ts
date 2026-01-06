@@ -154,7 +154,32 @@ app.prepare().then(() => {
 
         // Join a room (player must have already created/joined via UI and received room code)
         socket.on("room:create", (playerName, avatarUrl, settings, token) => {
-            const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            let roomCode: string;
+
+            // HANDLE CUSTOM ROOM CODE
+            if (settings.customRoomCode && typeof settings.customRoomCode === 'string') {
+                const requestedCode = settings.customRoomCode.trim().toUpperCase();
+
+                // Validate format (3-10 Alphanumeric)
+                if (!/^[A-Z0-9]{3,10}$/.test(requestedCode)) {
+                    socket.emit("game:error", "Invalid Room Code. Use 3-10 letters/numbers.");
+                    return;
+                }
+
+                // Check availability
+                if (games.has(requestedCode)) {
+                    socket.emit("game:error", "Room Code already taken. Try another.");
+                    return;
+                }
+
+                roomCode = requestedCode;
+            } else {
+                // Generate random code (6 chars)
+                do {
+                    roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                } while (games.has(roomCode));
+            }
+
             const playerId = socket.id;
 
             const newGame = createGame(playerId, playerName, avatarUrl, {

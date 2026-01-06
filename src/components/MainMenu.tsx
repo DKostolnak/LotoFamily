@@ -85,10 +85,10 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         };
 
         onCreateGame(playerName.trim(), {
-            autoCallEnabled,
             autoCallIntervalMs: intervalMap[autoCallSpeed],
             language,
-            crazyMode
+            crazyMode,
+            customRoomCode: roomCode.length > 0 ? roomCode : undefined
         });
 
         // Save name to localStorage
@@ -241,6 +241,33 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                         onSelect={setPlayerAvatar}
                         label={t.selectAvatar}
                     />
+
+                    {mode === 'create' && (
+                        <div>
+                            <label
+                                htmlFor="customCode"
+                                style={{
+                                    display: 'block',
+                                    marginBottom: 'var(--space-xs)',
+                                    fontWeight: 600,
+                                    fontSize: 'var(--font-size-sm)',
+                                    opacity: 0.8
+                                }}
+                            >
+                                {t.roomCode} (Optional)
+                            </label>
+                            <input
+                                id="customCode"
+                                type="text"
+                                className="input"
+                                placeholder="AUTO"
+                                value={roomCode}
+                                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                                maxLength={8}
+                                style={{ textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {mode === 'create' && (
