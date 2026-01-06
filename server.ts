@@ -19,7 +19,7 @@ const localIp = getLocalIp();
 const serverUrl = `http://${localIp}:3000`;
 console.log(`\x1b[36m[Server] Running on: ${serverUrl}\x1b[0m`);
 import { Server } from "socket.io";
-import type { GameState, GameSettings, Player, ServerToClientEvents, ClientToServerEvents, LotoCard } from "./src/lib/types.ts";
+import type { GameState, GameSettings, Player, ServerToClientEvents, ClientToServerEvents, LotoCard, LotoCardGrid } from "./src/lib/types.ts";
 import {
     createGame,
     addPlayer,
@@ -45,37 +45,22 @@ const port = parseInt(process.env.PORT || "3000", 10);
  * Keeps marked cells in place, only shuffles positions of unmarked numbers
  */
 function shuffleCardPositions(card: LotoCard): LotoCard {
-    // Collect all movable positions (those that are NOT marked)
-    // This includes both unmarked numbers AND empty spaces (nulls)
-    const movablePositions: { row: number; col: number }[] = [];
-    const movableValues: (number | null)[] = [];
+    // Collect ALL cells (marked, unmarked, and empty)
+    // We flatten the grid to treat it as a bag of 27 positions
+    const allCells = card.grid.flat().map(cell => ({ ...cell }));
 
-    for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 9; col++) {
-            const cell = card.grid[row][col];
-            // If it's NOT marked, it can move (including nulls)
-            if (!cell.isMarked) {
-                movablePositions.push({ row, col });
-                movableValues.push(cell.value);
-            }
-        }
-    }
-
-    // If nothing to shuffle, return original
-    if (movablePositions.length <= 1) return card;
-
-    // Shuffle the values array (Fisher-Yates)
-    for (let i = movableValues.length - 1; i > 0; i--) {
+    // Shuffle the entire set of cells (Fisher-Yates)
+    for (let i = allCells.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [movableValues[i], movableValues[j]] = [movableValues[j], movableValues[i]];
+        [allCells[i], allCells[j]] = [allCells[j], allCells[i]];
     }
 
-    // Reassign shuffled values to the movable positions
-    const newGrid = card.grid.map(row => row.map(cell => ({ ...cell })));
-    movablePositions.forEach((pos, idx) => {
-        // We only update the value. The isMarked is already false for these positions.
-        newGrid[pos.row][pos.col].value = movableValues[idx];
-    });
+    // Reconstruct the 3x9 grid
+    const newGrid: LotoCardGrid = [
+        allCells.slice(0, 9),
+        allCells.slice(9, 18),
+        allCells.slice(18, 27)
+    ] as any; // Type casting safely now that we have the type
 
     return { ...card, grid: newGrid };
 }
