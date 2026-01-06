@@ -1,21 +1,53 @@
 /**
- * Game Engine - Core game logic
- * 
- * Handles game state management, number calling, and win detection
+ * Game Engine - Core game logic for Loto 90
+ *
+ * Handles:
+ * - Game state management
+ * - Player management
+ * - Number calling
+ * - Win detection
+ * - Flat (intermediate prize) claiming
  */
 
-import { DEFAULT_GAME_SETTINGS, type GameState, type GameSettings, type Player, type CalledNumber } from '../lib/types.ts';
-import { generateCards, getCardNumbers } from './lotoCardGenerator.ts';
-import { checkPlayerWin } from './gameModes.ts';
+import {
+    DEFAULT_GAME_SETTINGS,
+    type GameState,
+    type GameSettings,
+    type Player,
+    type CalledNumber,
+} from '../lib/types';
+import { generateCards } from './lotoCardGenerator';
+import { checkPlayerWin } from './gameModes';
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+/** Characters for room code generation (excluding ambiguous chars I, O, 0, 1) */
+const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const ROOM_CODE_LENGTH = 6;
+
+/** Points awarded for various achievements */
+const POINTS = {
+    WIN: 1000,
+    FLAT_1: 100,
+    FLAT_2: 200,
+    FLAT_1_FIRST_BONUS: 150,
+    FLAT_2_FIRST_BONUS: 300,
+} as const;
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
 
 /**
- * Generate a random room code (6 characters)
+ * Generate a random room code
+ * @returns 6-character alphanumeric code
  */
 export function generateRoomCode(): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed ambiguous chars (I, O, 0, 1)
     let code = '';
-    for (let i = 0; i < 6; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
+        code += ROOM_CODE_CHARS.charAt(Math.floor(Math.random() * ROOM_CODE_CHARS.length));
     }
     return code;
 }
@@ -28,45 +60,66 @@ export function generatePlayerId(): string {
 }
 
 /**
- * Initialize a shuffled array of numbers 1-90
+ * Initialize a shuffled array of numbers 1-90 using Fisher-Yates
  */
 function initializeNumberPool(): number[] {
-    const numbers: number[] = [];
-    for (let i = 1; i <= 90; i++) {
-        numbers.push(i);
-    }
+    const numbers: number[] = Array.from({ length: 90 }, (_, i) => i + 1);
+
     // Fisher-Yates shuffle
     for (let i = numbers.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
     }
+
     return numbers;
 }
 
 /**
- * Create a new game state
+ * Create a new player object
  */
-export function createGame(hostId: string, hostName: string, avatarUrl: string, settings?: Partial<GameSettings>, token?: string): GameState {
-    const gameSettings: GameSettings = { ...DEFAULT_GAME_SETTINGS, ...settings };
-    const roomCode = generateRoomCode();
-
-    const hostPlayer: Player = {
-        id: hostId,
-        name: hostName,
+function createPlayer(
+    id: string,
+    name: string,
+    avatarUrl: string,
+    cardsPerPlayer: number,
+    isHost: boolean,
+    token?: string
+): Player {
+    return {
+        id,
+        name,
         avatarUrl,
         token,
-        cards: generateCards(hostId, gameSettings.cardsPerPlayer),
-        isHost: true,
+        cards: generateCards(id, cardsPerPlayer),
+        isHost,
         isConnected: true,
         collectedFlats: [],
         energy: 0,
         score: 0,
         activeDebuffs: {},
     };
+}
+
+// ============================================================================
+// GAME STATE FUNCTIONS
+// ============================================================================
+
+/**
+ * Create a new game state
+ */
+export function createGame(
+    hostId: string,
+    hostName: string,
+    avatarUrl: string,
+    settings?: Partial<GameSettings>,
+    token?: string
+): GameState {
+    const gameSettings: GameSettings = { ...DEFAULT_GAME_SETTINGS, ...settings };
+    const hostPlayer = createPlayer(hostId, hostName, avatarUrl, gameSettings.cardsPerPlayer, true, token);
 
     return {
         roomId: 'room_' + Math.random().toString(36).substring(2, 11),
-        roomCode,
+        roomCode: generateRoomCode(),
         phase: 'lobby',
         settings: gameSettings,
         players: [hostPlayer],
@@ -82,36 +135,32 @@ export function createGame(hostId: string, hostName: string, avatarUrl: string, 
 
 /**
  * Add a player to the game
+ * @returns Updated state or null if player cannot join
  */
-export function addPlayer(state: GameState, playerId: string, playerName: string, avatarUrl: string, token?: string): GameState | null {
-    // Check if game is in lobby phase
-    if (state.phase !== 'lobby') {
-        return null;
-    }
+export function addPlayer(
+    state: GameState,
+    playerId: string,
+    playerName: string,
+    avatarUrl: string,
+    token?: string
+): GameState | null {
+    // Validate game phase
+    if (state.phase !== 'lobby') return null;
 
     // Check max players
-    if (state.players.length >= state.settings.maxPlayers) {
-        return null;
-    }
+    if (state.players.length >= state.settings.maxPlayers) return null;
 
-    // Check if player already exists
-    if (state.players.some(p => p.id === playerId)) {
-        return null;
-    }
+    // Check for duplicate player
+    if (state.players.some(p => p.id === playerId)) return null;
 
-    const newPlayer: Player = {
-        id: playerId,
-        name: playerName,
+    const newPlayer = createPlayer(
+        playerId,
+        playerName,
         avatarUrl,
-        token,
-        cards: generateCards(playerId, state.settings.cardsPerPlayer),
-        isHost: false,
-        isConnected: true,
-        collectedFlats: [],
-        energy: 0,
-        score: 0,
-        activeDebuffs: {},
-    };
+        state.settings.cardsPerPlayer,
+        false,
+        token
+    );
 
     return {
         ...state,
@@ -121,11 +170,12 @@ export function addPlayer(state: GameState, playerId: string, playerName: string
 
 /**
  * Remove a player from the game
+ * Automatically assigns new host if host leaves
  */
 export function removePlayer(state: GameState, playerId: string): GameState {
     const updatedPlayers = state.players.filter(p => p.id !== playerId);
 
-    // If host left and game hasn't started, assign new host
+    // Assign new host if needed
     let newHostId = state.hostId;
     if (playerId === state.hostId && updatedPlayers.length > 0) {
         newHostId = updatedPlayers[0].id;
@@ -139,27 +189,28 @@ export function removePlayer(state: GameState, playerId: string): GameState {
     };
 }
 
+// ============================================================================
+// GAME FLOW FUNCTIONS
+// ============================================================================
+
 /**
- * Start the game
+ * Start the game (transition from lobby to playing)
  */
 export function startGame(state: GameState): GameState {
-    if (state.phase !== 'lobby') {
-        return state;
-    }
+    if (state.phase !== 'lobby') return state;
 
     return {
         ...state,
         phase: 'playing',
-        remainingNumbers: initializeNumberPool(), // Fresh shuffle
+        remainingNumbers: initializeNumberPool(),
         calledNumbers: [],
         currentNumber: null,
     };
 }
 
 /**
- * Call the next number
+ * Call the next number from the pool
  */
-// ...
 export function callNextNumber(state: GameState): GameState {
     if (state.phase !== 'playing' || state.remainingNumbers.length === 0) {
         return state;
@@ -172,51 +223,11 @@ export function callNextNumber(state: GameState): GameState {
         timestamp: Date.now(),
     };
 
-
-
     return {
         ...state,
         currentNumber: nextNumber,
         calledNumbers: [...state.calledNumbers, calledNumber],
         remainingNumbers: remaining,
-        players: state.players,
-    };
-}
-
-/**
- * Check for winners after a number is called
- */
-export function checkForWinners(state: GameState): { winnerId: string; winningCardId: string } | null {
-    const calledNumberValues = state.calledNumbers.map(cn => cn.value);
-
-    for (const player of state.players) {
-        // Main win check (3 rows / Full Card)
-        const winningCard = checkPlayerWin(player.cards, calledNumberValues, state.settings.gameMode);
-        if (winningCard) {
-            return { winnerId: player.id, winningCardId: winningCard.id };
-        }
-    }
-
-    return null;
-}
-
-/**
- * Set the winner and end the game
- */
-export function setWinner(state: GameState, winnerId: string): GameState {
-    // Award points for winning (Bingo)
-    const updatedPlayers = state.players.map(p => {
-        if (p.id === winnerId) {
-            return { ...p, score: (p.score || 0) + 1000 };
-        }
-        return p;
-    });
-
-    return {
-        ...state,
-        players: updatedPlayers,
-        phase: 'finished',
-        winnerId,
     };
 }
 
@@ -224,27 +235,22 @@ export function setWinner(state: GameState, winnerId: string): GameState {
  * Pause the game
  */
 export function pauseGame(state: GameState): GameState {
-    if (state.phase !== 'playing') {
-        return state;
-    }
+    if (state.phase !== 'playing') return state;
     return { ...state, phase: 'paused' };
 }
 
 /**
- * Resume the game
+ * Resume a paused game
  */
 export function resumeGame(state: GameState): GameState {
-    if (state.phase !== 'paused') {
-        return state;
-    }
+    if (state.phase !== 'paused') return state;
     return { ...state, phase: 'playing' };
 }
 
 /**
- * Reset game for a new round (keep players, reset numbers)
+ * Reset game for a new round (keep players, reset board)
  */
 export function resetGame(state: GameState): GameState {
-    // Regenerate cards for all players
     const playersWithNewCards = state.players.map(player => ({
         ...player,
         cards: generateCards(player.id, state.settings.cardsPerPlayer),
@@ -263,8 +269,52 @@ export function resetGame(state: GameState): GameState {
     };
 }
 
+// ============================================================================
+// WIN DETECTION
+// ============================================================================
+
 /**
- * Helper: Check if a player has N rows completed on any single card
+ * Check for winners after a number is called
+ * @returns Winner info or null if no winner
+ */
+export function checkForWinners(state: GameState): { winnerId: string; winningCardId: string } | null {
+    const calledNumberValues = state.calledNumbers.map(cn => cn.value);
+
+    for (const player of state.players) {
+        const winningCard = checkPlayerWin(player.cards, calledNumberValues, state.settings.gameMode);
+        if (winningCard) {
+            return { winnerId: player.id, winningCardId: winningCard.id };
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Set the winner and end the game
+ */
+export function setWinner(state: GameState, winnerId: string): GameState {
+    const updatedPlayers = state.players.map(p => {
+        if (p.id === winnerId) {
+            return { ...p, score: (p.score || 0) + POINTS.WIN };
+        }
+        return p;
+    });
+
+    return {
+        ...state,
+        players: updatedPlayers,
+        phase: 'finished',
+        winnerId,
+    };
+}
+
+// ============================================================================
+// FLAT CLAIMING
+// ============================================================================
+
+/**
+ * Count completed rows for a player across all cards
  */
 function getCompletedRowCount(player: Player, calledNumbers: number[]): number {
     const calledSet = new Set(calledNumbers);
@@ -273,73 +323,54 @@ function getCompletedRowCount(player: Player, calledNumbers: number[]): number {
     for (const card of player.cards) {
         let cardRows = 0;
         for (const row of card.grid) {
-            let rowComplete = true;
-            for (const cell of row) {
-                if (cell.value !== null && !calledSet.has(cell.value)) {
-                    rowComplete = false;
-                    break;
-                }
-            }
+            const rowComplete = row.every(
+                cell => cell.value === null || calledSet.has(cell.value)
+            );
             if (rowComplete) cardRows++;
         }
-        if (cardRows > maxRows) maxRows = cardRows;
+        maxRows = Math.max(maxRows, cardRows);
     }
+
     return maxRows;
 }
 
 /**
- * Claim a flat (Intermediate Prize)
+ * Claim a flat (intermediate prize for completing rows)
  */
 export function claimFlat(state: GameState, playerId: string, flatType: number): GameState {
     const player = state.players.find(p => p.id === playerId);
     if (!player || state.phase !== 'playing') return state;
 
-    // Validation: Does player actually have this flat level?
+    // Validate player has completed required rows
     const calledNumberValues = state.calledNumbers.map(c => c.value);
     const maxRows = getCompletedRowCount(player, calledNumberValues);
 
-    if (maxRows < flatType) {
-        // Player tried to claim a flat they don't have completed
-        return state;
-    }
+    if (maxRows < flatType) return state;
 
-    // Allow claim if not already claimed
-    if (player.collectedFlats.includes(flatType)) {
-        return state;
-    }
+    // Check if already claimed
+    if (player.collectedFlats.includes(flatType)) return state;
 
-    // Check specific player count rules? 
-    // "If there are 3 players... only 2 and 3 room flats counted"
-    // "If 2 players... only 3 room flat counted"
-    // Implementation: We won't block the claim action itself for visual feedback, 
-    // but maybe we don't award the "Green Bar" (First Winner) if it's not a "counted" flat?
-    // User request: "If the bar is green, it means that the player has collected the “Flat” first."
-    // Let's simplified logic: Allow all claims, but UI decides simple tracking.
+    // Calculate points
+    const isFirst = flatType === 1 ? !state.flatWinners.flat1 : !state.flatWinners.flat2;
+    let points = flatType === 1 ? POINTS.FLAT_1 : POINTS.FLAT_2;
+    if (isFirst) {
+        points += flatType === 1 ? POINTS.FLAT_1_FIRST_BONUS : POINTS.FLAT_2_FIRST_BONUS;
+    }
 
     // Update player
     const updatedPlayers = state.players.map(p => {
         if (p.id === playerId) {
-            let points = 0;
-            // Base points for flats
-            if (flatType === 1) points = 100;
-            if (flatType === 2) points = 200;
-
-            // Bonus for being FIRST
-            // We check the *current state* (before this claim is processed)
-            if (flatType === 1 && !state.flatWinners.flat1) points += 150;
-            if (flatType === 2 && !state.flatWinners.flat2) points += 300;
-
             return {
                 ...p,
                 collectedFlats: [...p.collectedFlats, flatType].sort(),
-                score: (p.score || 0) + points
+                score: (p.score || 0) + points,
             };
         }
         return p;
     });
 
-    // Check if they are the FIRST to claim this flat
-    let updatedFlatWinners = { ...state.flatWinners };
+    // Update flat winners
+    const updatedFlatWinners = { ...state.flatWinners };
     if (flatType === 1 && !updatedFlatWinners.flat1) {
         updatedFlatWinners.flat1 = playerId;
     } else if (flatType === 2 && !updatedFlatWinners.flat2) {
@@ -352,5 +383,3 @@ export function claimFlat(state: GameState, playerId: string, flatType: number):
         flatWinners: updatedFlatWinners,
     };
 }
-
-
