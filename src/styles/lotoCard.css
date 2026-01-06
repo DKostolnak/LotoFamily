@@ -60,17 +60,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    justify-content: center;
-    font-size: clamp(20px, 6vw, 36px);
-    /* Responsive font scaling - BOLD */
+    font-size: clamp(14px, 4.5vw, 28px);
     font-weight: 800;
     background: var(--color-cell-number);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background 0.15s ease, transform 0.1s ease;
     position: relative;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    will-change: transform;
+    /* Prevent layout shift from pseudo-elements */
+    overflow: visible;
+    contain: layout style;
+    min-width: 0;
+    min-height: 0;
 }
 
 .loto-cell:active {
@@ -164,7 +166,9 @@
     z-index: -1;
     opacity: 1;
     border: 1px solid #754c24;
-    /* Dark wood rim */
+    /* Prevent layout shift */
+    pointer-events: none;
+    will-change: transform, opacity;
 
     /* Stamp Animation - Drop from above with bounce */
     animation: stamp-land 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
