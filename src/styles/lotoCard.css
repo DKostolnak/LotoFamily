@@ -26,9 +26,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(12px, 3vw, 20px);
-    /* Responsive font scaling */
-    font-weight: 600;
+    font-size: clamp(16px, 4.5vw, 28px);
+    /* Responsive font scaling - BOLD for Grandma */
+    font-weight: 800;
     background: var(--color-cell-number);
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -335,11 +335,11 @@
     }
 
     .loto-cell {
-        font-size: clamp(10px, 2.5vw, 14px);
+        font-size: clamp(14px, 4vw, 20px);
     }
 
     .loto-cell--correct .loto-cell-number {
-        font-size: 1em;
+        font-size: 1.2em;
     }
 
     .loto-card--compact {
@@ -358,6 +358,6 @@
     }
 
     .loto-cell {
-        font-size: clamp(9px, 2vw, 12px);
+        font-size: clamp(12px, 3.5vw, 16px);
     }
 }
