@@ -11,6 +11,38 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Card Progress Bar */
+.loto-card-progress {
+    position: relative;
+    height: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+
+.loto-card-progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-gold) 0%, #4ade80 100%);
+    border-radius: 8px;
+    transition: width 0.3s ease-out;
+}
+
+.loto-card-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+}
+
 .loto-card-grid {
     display: grid;
     grid-template-columns: repeat(9, 1fr);
@@ -187,6 +219,25 @@
     100% {
         background: var(--color-cell-number);
         transform: scale(1);
+    }
+}
+
+/* Callable cells - Number has been called but not yet marked */
+.loto-cell--callable {
+    animation: pulse-glow 1s ease-in-out infinite;
+    box-shadow: 0 0 0 2px var(--color-gold), 0 0 12px rgba(255, 193, 7, 0.6);
+    z-index: 2;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 2px var(--color-gold), 0 0 8px rgba(255, 193, 7, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 3px var(--color-gold), 0 0 16px rgba(255, 193, 7, 0.8);
     }
 }
 

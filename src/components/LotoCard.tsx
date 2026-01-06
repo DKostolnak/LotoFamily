@@ -82,6 +82,26 @@ export function LotoCard({
                 </div>
             )}
 
+            {/* Progress Bar - Shows how close to full card */}
+            {(() => {
+                const totalNumbers = card.grid.flat().filter(c => c.value !== null).length;
+                const markedCount = card.grid.flat().filter(c => c.value !== null && c.isMarked && calledNumbers.includes(c.value)).length;
+                const progress = totalNumbers > 0 ? (markedCount / totalNumbers) * 100 : 0;
+                const remaining = totalNumbers - markedCount;
+
+                return (
+                    <div className="loto-card-progress">
+                        <div
+                            className="loto-card-progress-bar"
+                            style={{ width: `${progress}%` }}
+                        />
+                        <span className="loto-card-progress-text">
+                            {remaining === 0 ? '🎉 FULL!' : `${remaining} left`}
+                        </span>
+                    </div>
+                );
+            })()}
+
             <div className="loto-card-grid">
                 {card.grid.map((row, rowIndex) =>
                     row.map((cell, colIndex) => {
@@ -103,6 +123,9 @@ export function LotoCard({
                         const isTapped = tappedCell === cellKey;
                         const isMistake = mistakeCell === cellKey;
 
+                        // Highlight unmarked but callable numbers (in safe window)
+                        const isCallable = isCalled && !isMarked && isSafe;
+
                         const cellClasses = [
                             'loto-cell',
                             isEmpty && 'loto-cell--empty',
@@ -111,6 +134,7 @@ export function LotoCard({
                             isMissed && 'loto-cell--missed',
                             isMistake && 'loto-cell--mistake',
                             isTapped && 'loto-cell--tapped',
+                            isCallable && 'loto-cell--callable',
                         ]
                             .filter(Boolean)
                             .join(' ');
