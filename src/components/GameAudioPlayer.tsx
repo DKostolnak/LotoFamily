@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { GameState } from '@/lib/types';
+import { vibrateIfAllowed } from '@/lib/battery';
 
 interface GameAudioPlayerProps {
     gameState: GameState | null;
@@ -65,12 +66,10 @@ function playBeep(frequency: number, duration: number, type: OscillatorType = 's
 }
 
 /**
- * Haptic feedback utility
+ * Haptic feedback utility - uses battery-aware vibration
  */
 function vibrate(pattern: number | number[]): void {
-    if ('vibrate' in navigator) {
-        navigator.vibrate(pattern);
-    }
+    vibrateIfAllowed(pattern);
 }
 
 /**

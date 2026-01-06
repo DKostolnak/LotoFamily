@@ -681,3 +681,33 @@ body {
 .tooltip-bottom:focus-visible::before {
   transform: translateX(-50%) translateY(4px) scale(1);
 }
+
+/* ============================================================================
+   BATTERY SAVING - Respect prefers-reduced-motion
+   Disables animations for users who prefer reduced motion (accessibility)
+   or have battery saver mode enabled
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-pulse,
+  .animate-spin,
+  .animate-bounce,
+  .animate-fadeIn,
+  .animate-bounceIn,
+  .animate-shake-light,
+  .animate-shake-medium,
+  .animate-shake-heavy,
+  .animate-fade-up-float {
+    animation: none !important;
+  }
+}

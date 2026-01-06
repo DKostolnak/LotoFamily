@@ -2,49 +2,50 @@ import { useState, useEffect, useCallback } from 'react';
 
 /**
  * Hook to manage Screen Wake Lock API
- * Keeps the screen valid and prevents dimming during gameplay.
- * Handles visibility changes (re-acquiring lock when tab becomes active).
+ * Keeps the screen awake ONLY during active gameplay.
+ * Releases lock when game is paused or in lobby to save battery.
  */
 export function useWakeLock() {
     const [isLocked, setIsLocked] = useState(false);
-    const [scentinel, setSentinel] = useState<WakeLockSentinel | null>(null);
+    const [sentinel, setSentinel] = useState<WakeLockSentinel | null>(null);
 
     const requestLock = useCallback(async () => {
+        // Only request if not already locked
+        if (sentinel) return;
+
         // Feature check
         if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
             try {
                 const lock = await navigator.wakeLock.request('screen');
                 setSentinel(lock);
                 setIsLocked(true);
-                console.log('Wake Lock acquired');
 
                 lock.addEventListener('release', () => {
                     setIsLocked(false);
-                    console.log('Wake Lock released');
+                    setSentinel(null);
                 });
             } catch (err) {
-                console.warn(`${(err as Error).name}, ${(err as Error).message}`);
+                // User denied or low battery - silently ignore
             }
-        } else {
-            console.log('Wake Lock API not supported');
         }
-    }, []);
+    }, [sentinel]);
 
     const releaseLock = useCallback(async () => {
-        if (scentinel) {
+        if (sentinel) {
             try {
-                await scentinel.release();
+                await sentinel.release();
                 setSentinel(null);
+                setIsLocked(false);
             } catch (err) {
-                console.error(err);
+                // Silent fail
             }
         }
-    }, [scentinel]);
+    }, [sentinel]);
 
-    // Handle visibility change (locks are released when tab is hidden)
+    // Handle visibility change (re-acquire when tab becomes visible)
     useEffect(() => {
         const handleVisibilityChange = async () => {
-            if (scentinel !== null && document.visibilityState === 'visible') {
+            if (sentinel !== null && document.visibilityState === 'visible') {
                 await requestLock();
             }
         };
@@ -53,16 +54,16 @@ export function useWakeLock() {
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [scentinel, requestLock]);
+    }, [sentinel, requestLock]);
 
-    // Cleanup on unmount
+    // Cleanup on unmount - release lock to save battery
     useEffect(() => {
         return () => {
-            if (scentinel) {
-                scentinel.release();
+            if (sentinel) {
+                sentinel.release();
             }
         };
-    }, [scentinel]);
+    }, [sentinel]);
 
     return { isLocked, requestLock, releaseLock };
 }
