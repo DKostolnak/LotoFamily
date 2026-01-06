@@ -259,8 +259,8 @@ function PlayerGameScreen({
             )}
 
             {/* Main Content Area: Cards */}
-            <div className="flex-1 relative w-full flex flex-col items-center justify-center overflow-hidden" style={{ padding: '8px' }}>
-                <div className="flex flex-col gap-2 h-full justify-center" style={{ width: '100%', maxWidth: 'min(100%, 380px)' }}>
+            <div className="flex-1 relative w-full flex flex-col items-center justify-center overflow-y-auto overflow-x-hidden" style={{ padding: '8px 4px' }}>
+                <div className="flex flex-col gap-2 w-full max-w-md" style={{ height: 'auto' }}>
                     {/* Bonus Bar (Floating or just above cards? Let's put above) */}
 
 
@@ -285,8 +285,8 @@ function PlayerGameScreen({
                         />
                     </div>
 
-                    {/* Cards Container - Significant separation */}
-                    <div className="flex-1 flex flex-col gap-8 justify-center min-h-0 px-2" style={{ paddingBottom: '16px' }}>
+                    {/* Cards Container - Proper spacing */}
+                    <div className="loto-cards-container" style={{ paddingBottom: '8px' }}>
                         {cards.map((card) => (
                             <GameCardWrapper
                                 key={card.id}
