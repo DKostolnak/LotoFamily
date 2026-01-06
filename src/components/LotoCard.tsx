@@ -123,9 +123,6 @@ export function LotoCard({
                         const isTapped = tappedCell === cellKey;
                         const isMistake = mistakeCell === cellKey;
 
-                        // Highlight unmarked but callable numbers (in safe window)
-                        const isCallable = isCalled && !isMarked && isSafe;
-
                         const cellClasses = [
                             'loto-cell',
                             isEmpty && 'loto-cell--empty',
@@ -134,7 +131,6 @@ export function LotoCard({
                             isMissed && 'loto-cell--missed',
                             isMistake && 'loto-cell--mistake',
                             isTapped && 'loto-cell--tapped',
-                            isCallable && 'loto-cell--callable',
                         ]
                             .filter(Boolean)
                             .join(' ');
