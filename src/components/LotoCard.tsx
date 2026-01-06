@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { LotoCard as LotoCardType } from '@/lib/types';
 import { playCellMarkSound } from './GameAudioPlayer';
 import '@/styles/lotoCard.css';
@@ -16,11 +16,80 @@ interface LotoCardProps {
     highlightAllCalled?: boolean;
 }
 
+interface CellProps {
+    value: number | null;
+    isMarked: boolean;
+    row: number;
+    col: number;
+    isCalled: boolean;
+    isSafe: boolean;
+    isMissed: boolean;
+    isCorrect: boolean;
+    isTapped: boolean;
+    isMistake: boolean;
+    onClick: (row: number, col: number) => void;
+}
+
+/**
+ * Memoized Cell Component - Only re-renders when its props change
+ */
+const LotoCell = memo(function LotoCell({
+    value,
+    isMarked,
+    row,
+    col,
+    isCalled,
+    isSafe,
+    isMissed,
+    isCorrect,
+    isTapped,
+    isMistake,
+    onClick,
+}: CellProps) {
+    const isEmpty = value === null;
+
+    const cellClasses = useMemo(() => {
+        return [
+            'loto-cell',
+            isEmpty && 'loto-cell--empty',
+            isCorrect && 'loto-cell--correct',
+            isCorrect && 'loto-cell--marked',
+            isMissed && 'loto-cell--missed',
+            isMistake && 'loto-cell--mistake',
+            isTapped && 'loto-cell--tapped',
+        ]
+            .filter(Boolean)
+            .join(' ');
+    }, [isEmpty, isCorrect, isMissed, isMistake, isTapped]);
+
+    const handleClick = useCallback(() => {
+        onClick(row, col);
+    }, [onClick, row, col]);
+
+    return (
+        <div
+            className={cellClasses}
+            onClick={handleClick}
+            role={isEmpty ? undefined : 'button'}
+            tabIndex={isEmpty ? undefined : 0}
+            aria-label={
+                isEmpty ? undefined : `Number ${value}${isMarked ? ', marked' : ''}`
+            }
+            style={{
+                transform: isTapped ? 'scale(0.9)' : undefined,
+                transition: 'transform 0.1s ease-out',
+            }}
+        >
+            {value !== null && <span className="loto-cell-number">{value}</span>}
+        </div>
+    );
+});
+
 /**
  * LotoCard Component
  * Displays a European Loto 90 card (9 columns x 3 rows) with tap feedback
  */
-export function LotoCard({
+function LotoCard({
     card,
     onCellClick,
     highlightedNumber,
@@ -33,41 +102,57 @@ export function LotoCard({
     const [tappedCell, setTappedCell] = useState<string | null>(null);
     const [mistakeCell, setMistakeCell] = useState<string | null>(null);
 
-    const handleCellClick = (row: number, col: number) => {
+    // Memoize the called numbers set for O(1) lookups
+    const calledSet = useMemo(() => new Set(calledNumbers), [calledNumbers]);
+    const callsCount = calledNumbers.length;
+
+    // Memoize progress calculation
+    const { totalNumbers, markedCount, progress, remaining } = useMemo(() => {
+        const cells = card.grid.flat();
+        const total = cells.filter(c => c.value !== null).length;
+        const marked = cells.filter(c =>
+            c.value !== null && c.isMarked && calledSet.has(c.value)
+        ).length;
+
+        return {
+            totalNumbers: total,
+            markedCount: marked,
+            progress: total > 0 ? (marked / total) * 100 : 0,
+            remaining: total - marked,
+        };
+    }, [card.grid, calledSet]);
+
+    // Stable cell click handler
+    const handleCellClick = useCallback((row: number, col: number) => {
         const cell = card.grid[row][col];
-        // Empty cells are never clickable
         if (cell.value === null) return;
         if (!onCellClick) return;
 
         const cellKey = `${row}-${col}`;
-
-        // Check if this number was called and where in the history
         const calledIndex = calledNumbers.indexOf(cell.value);
         const isCalled = calledIndex !== -1;
 
-        // Check if this is already correctly marked (wooden barrel - permanent)
+        // Already correctly marked
         if (cell.isMarked && isCalled) return;
 
-        // Check if this is a missed number (called but not marked in time - permanent X)
-        const callsCount = calledNumbers.length;
+        // Check if missed
         const isSafe = isCalled && (callsCount - 1 - calledIndex < 2);
         const isMissed = isCalled && !cell.isMarked && !isSafe;
         if (isMissed) return;
 
-        // If number hasn't been called yet - show red flash (mistake) but don't mark
+        // Uncalled number - mistake flash
         if (!isCalled) {
             setMistakeCell(cellKey);
-            // Brief red flash, then disappear
             setTimeout(() => setMistakeCell(null), 500);
             return;
         }
 
-        // Number was called and is within safe window - mark it (wooden barrel)
+        // Valid mark
         setTappedCell(cellKey);
         playCellMarkSound();
         onCellClick(row, col);
         setTimeout(() => setTappedCell(null), 200);
-    };
+    }, [card.grid, onCellClick, calledNumbers, callsCount]);
 
     return (
         <div className={`loto-card ${compact ? 'loto-card--compact' : ''}`}>
@@ -82,80 +167,42 @@ export function LotoCard({
                 </div>
             )}
 
-            {/* Progress Bar - Shows how close to full card */}
-            {(() => {
-                const totalNumbers = card.grid.flat().filter(c => c.value !== null).length;
-                const markedCount = card.grid.flat().filter(c => c.value !== null && c.isMarked && calledNumbers.includes(c.value)).length;
-                const progress = totalNumbers > 0 ? (markedCount / totalNumbers) * 100 : 0;
-                const remaining = totalNumbers - markedCount;
-
-                return (
-                    <div className="loto-card-progress">
-                        <div
-                            className="loto-card-progress-bar"
-                            style={{ width: `${progress}%` }}
-                        />
-                        <span className="loto-card-progress-text">
-                            {remaining === 0 ? '🎉 FULL!' : `${remaining} left`}
-                        </span>
-                    </div>
-                );
-            })()}
+            {/* Progress Bar */}
+            <div className="loto-card-progress">
+                <div
+                    className="loto-card-progress-bar"
+                    style={{ width: `${progress}%` }}
+                />
+                <span className="loto-card-progress-text">
+                    {remaining === 0 ? '🎉 FULL!' : `${remaining} left`}
+                </span>
+            </div>
 
             <div className="loto-card-grid">
                 {card.grid.map((row, rowIndex) =>
                     row.map((cell, colIndex) => {
-                        const isEmpty = cell.value === null;
-                        const isMarked = cell.isMarked;
                         const calledIndex = cell.value !== null ? calledNumbers.indexOf(cell.value) : -1;
                         const isCalled = calledIndex !== -1;
-
-                        // "Missed" cross only appears if the number is older than the last 2 calls
-                        const callsCount = calledNumbers.length;
                         const isSafe = isCalled && (callsCount - 1 - calledIndex < 2);
-
-                        // Missed = called but not marked and out of safe window
-                        const isMissed = isCalled && !isMarked && !isSafe;
-                        // Correct = called and marked (wooden barrel)
-                        const isCorrect = isCalled && isMarked;
-
+                        const isMissed = isCalled && !cell.isMarked && !isSafe;
+                        const isCorrect = isCalled && cell.isMarked;
                         const cellKey = `${rowIndex}-${colIndex}`;
-                        const isTapped = tappedCell === cellKey;
-                        const isMistake = mistakeCell === cellKey;
-
-                        const cellClasses = [
-                            'loto-cell',
-                            isEmpty && 'loto-cell--empty',
-                            isCorrect && 'loto-cell--correct',
-                            isCorrect && 'loto-cell--marked',
-                            isMissed && 'loto-cell--missed',
-                            isMistake && 'loto-cell--mistake',
-                            isTapped && 'loto-cell--tapped',
-                        ]
-                            .filter(Boolean)
-                            .join(' ');
 
                         return (
-                            <div
+                            <LotoCell
                                 key={cellKey}
-                                className={cellClasses}
-                                onClick={() => handleCellClick(rowIndex, colIndex)}
-                                role={isEmpty ? undefined : 'button'}
-                                tabIndex={isEmpty ? undefined : 0}
-                                aria-label={
-                                    isEmpty
-                                        ? undefined
-                                        : `Number ${cell.value}${isMarked ? ', marked' : ''}`
-                                }
-                                style={{
-                                    transform: isTapped ? 'scale(0.9)' : undefined,
-                                    transition: 'transform 0.1s ease-out',
-                                }}
-                            >
-                                {cell.value !== null && (
-                                    <span className="loto-cell-number">{cell.value}</span>
-                                )}
-                            </div>
+                                value={cell.value}
+                                isMarked={cell.isMarked}
+                                row={rowIndex}
+                                col={colIndex}
+                                isCalled={isCalled}
+                                isSafe={isSafe}
+                                isMissed={isMissed}
+                                isCorrect={isCorrect}
+                                isTapped={tappedCell === cellKey}
+                                isMistake={mistakeCell === cellKey}
+                                onClick={handleCellClick}
+                            />
                         );
                     })
                 )}
@@ -164,4 +211,5 @@ export function LotoCard({
     );
 }
 
-export default React.memo(LotoCard);
+export { LotoCard };
+export default memo(LotoCard);

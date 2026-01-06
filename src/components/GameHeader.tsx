@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useCallback, memo } from 'react';
 import { GameState, Player, FlatWinners } from '@/lib/types';
 import NumberMedallion from './NumberMedallion';
 import NumberHistory from './NumberHistory';
@@ -16,25 +16,79 @@ interface GameHeaderProps {
 }
 
 /**
+ * PlayerAvatar Component (Memoized)
+ * Displays a single player's avatar with name.
+ */
+interface PlayerAvatarProps {
+    player: Player;
+    size?: 'sm' | 'lg';
+}
+
+const PlayerAvatar = memo(function PlayerAvatar({ player, size = 'lg' }: PlayerAvatarProps) {
+    const isImageUrl = player.avatarUrl &&
+        (player.avatarUrl.startsWith('http') || player.avatarUrl.startsWith('data:'));
+
+    const sizeClasses = size === 'lg' ? 'w-10 h-10' : 'w-8 h-8';
+    const textSize = size === 'lg' ? 'text-xl' : 'text-base';
+
+    return (
+        <div className="flex items-center gap-2 shrink-0">
+            <div
+                className={`${sizeClasses} rounded-lg border-2 border-[#8B4513] bg-[#D2B48C] flex items-center justify-center shadow-md overflow-hidden`}
+            >
+                {isImageUrl ? (
+                    <img
+                        src={player.avatarUrl}
+                        alt={player.name}
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <span className={textSize}>
+                        {player.avatarUrl || player.name.charAt(0)}
+                    </span>
+                )}
+            </div>
+            <span className="text-xs font-bold text-[#5c3a21] max-w-[60px] truncate">
+                {player.name}
+            </span>
+        </div>
+    );
+});
+
+/**
  * GameHeader Component
  * Displays the top HUD with current number, history, and player avatars.
  * Handles safe-area insets for iPhone notch/Dynamic Island.
  */
-export default function GameHeader({
+function GameHeader({
     gameState,
     playerId,
     calledNumberValues,
     onShowLeaderboard,
     leaveConfirmText = "Leave game?",
 }: GameHeaderProps) {
-    const currentPlayer = gameState.players.find(p => p.id === playerId);
-    const otherPlayers = gameState.players.filter(p => p.id !== playerId);
+    // Memoize derived data
+    const currentPlayer = useMemo(
+        () => gameState.players.find(p => p.id === playerId),
+        [gameState.players, playerId]
+    );
 
-    const handleLeaveClick = () => {
+    const otherPlayers = useMemo(
+        () => gameState.players.filter(p => p.id !== playerId),
+        [gameState.players, playerId]
+    );
+
+    // Stable callbacks
+    const handleLeaveClick = useCallback(() => {
         if (confirm(leaveConfirmText)) {
             window.location.href = '/';
         }
-    };
+    }, [leaveConfirmText]);
+
+    const handleShowLeaderboard = useCallback(() => {
+        playClickSound();
+        onShowLeaderboard();
+    }, [onShowLeaderboard]);
 
     return (
         <div
@@ -85,7 +139,7 @@ export default function GameHeader({
                         <NumberHistory numbers={calledNumberValues} maxVisible={4} />
                     </div>
                     <button
-                        onClick={() => { playClickSound(); onShowLeaderboard(); }}
+                        onClick={handleShowLeaderboard}
                         className="btn btn-circle btn-xs btn-ghost text-yellow-500"
                         style={{ fontSize: '1rem' }}
                         aria-label="Show leaderboard"
@@ -119,42 +173,4 @@ export default function GameHeader({
     );
 }
 
-/**
- * PlayerAvatar Component
- * Displays a single player's avatar with name.
- */
-interface PlayerAvatarProps {
-    player: Player;
-    size?: 'sm' | 'lg';
-}
-
-function PlayerAvatar({ player, size = 'lg' }: PlayerAvatarProps) {
-    const isImageUrl = player.avatarUrl &&
-        (player.avatarUrl.startsWith('http') || player.avatarUrl.startsWith('data:'));
-
-    const sizeClasses = size === 'lg' ? 'w-10 h-10' : 'w-8 h-8';
-    const textSize = size === 'lg' ? 'text-xl' : 'text-base';
-
-    return (
-        <div className="flex items-center gap-2 shrink-0">
-            <div
-                className={`${sizeClasses} rounded-lg border-2 border-[#8B4513] bg-[#D2B48C] flex items-center justify-center shadow-md overflow-hidden`}
-            >
-                {isImageUrl ? (
-                    <img
-                        src={player.avatarUrl}
-                        alt={player.name}
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
-                    <span className={textSize}>
-                        {player.avatarUrl || player.name.charAt(0)}
-                    </span>
-                )}
-            </div>
-            <span className="text-xs font-bold text-[#5c3a21] max-w-[60px] truncate">
-                {player.name}
-            </span>
-        </div>
-    );
-}
+export default memo(GameHeader);
