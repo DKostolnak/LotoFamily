@@ -480,13 +480,14 @@ app.prepare().then(() => {
 
 
             // Update players with the new card AND energy
-            const updatedPlayers = game.players.map(p => {
+            const safeGame = game!; // Capture for closure
+            const updatedPlayers = game!.players.map(p => {
                 if (p.id === socket.id) {
                     // Update the specific card that was marked
                     let newCards = p.cards.map(c => c.id === cardId ? updatedCard : c);
 
                     // If Crazy Mode & Correct Mark -> Shuffle ALL cards
-                    if (game.settings.crazyMode && isCorrectMark) {
+                    if (safeGame.settings.crazyMode && isCorrectMark) {
                         newCards = newCards.map(c => shuffleCardPositions(c));
                     }
 
