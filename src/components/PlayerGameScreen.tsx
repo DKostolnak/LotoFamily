@@ -87,57 +87,104 @@ export default function PlayerGameScreen({
 
     return (
         <div className="flex flex-col h-screen overflow-hidden bg-[var(--color-bg)]">
-            {/* Top HUD: Current Number, History, stats */}
-            <div className="wooden-panel grid grid-cols-3 items-center px-2 py-2 shrink-0 z-20 shadow-md relative" style={{ borderRadius: 0, minHeight: '60px' }}>
-                {/* Left: Player Info (Compact) */}
-                <div className="flex items-center justify-start min-w-0 gap-2">
-                    <div className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded-full relative max-w-[70%]">
-                        {/* Energy Bar Indicator */}
-                        {(() => {
-                            const me = gameState.players.find(p => p.id === playerId);
-                            const energy = me?.energy || 0;
-                            return (
-                                <div
-                                    className="absolute bottom-0 left-0 h-1 bg-yellow-400 transition-all duration-300 rounded-full"
-                                    style={{ width: `${Math.min(100, energy)}%` }}
-                                />
-                            );
-                        })()}
+            {/* Top HUD: 2-Row Layout */}
+            <div className="wooden-panel flex flex-col shrink-0 z-20 shadow-md relative" style={{ borderRadius: '0 0 16px 16px', padding: '0', overflow: 'hidden' }}>
 
-                        <div className="shrink-0" style={{ width: 24, height: 24, fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-gold)', borderRadius: '50%' }}>
-                            {(() => {
-                                const me = gameState.players.find(p => p.id === playerId);
-                                return me?.avatarUrl || me?.name.charAt(0).toUpperCase();
-                            })()}
+                {/* Row 1: Controls & Game State */}
+                <div className="flex items-center justify-between px-3 py-2 w-full relative" style={{ borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+
+                    {/* Left: Navigation & Settings */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            className="btn btn-square btn-sm btn-wood shadow-lg"
+                            onClick={() => {
+                                if (confirm(t.leaveConfirm || "Leave game?")) {
+                                    window.location.href = '/';
+                                }
+                            }}
+                        >
+                            <span style={{ fontSize: '1.2rem' }}>⬅️</span>
+                        </button>
+                        <button
+                            className="btn btn-square btn-sm btn-wood shadow-lg"
+                            onClick={() => {
+                                // Toggle sound logic (placeholder if not in global context yet)
+                                // create a simple mute toggle if needed, for now just a visual
+                            }}
+                            style={{ opacity: 0.8 }}
+                        >
+                            <span style={{ fontSize: '1.2rem' }}>🔊</span>
+                        </button>
+                    </div>
+
+                    {/* Center: Current Number (Absolute Center to stay aligned) */}
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10" style={{ marginTop: '12px' }}>
+                        <div className="shadow-xl rounded-full border-4 border-[#8B4513] bg-[#DEB887]">
+                            <NumberMedallion number={gameState.currentNumber} size="lg" />
                         </div>
-                        <span className="truncate" style={{ fontSize: '0.75rem', fontWeight: 600 }}>
-                            {gameState.players.find(p => p.id === playerId)?.name}
-                        </span>
                     </div>
 
-                    {/* Leaderboard Toggle */}
-                    <button
-                        onClick={() => { playClickSound(); setShowLeaderboard(true); }}
-                        className="btn btn-circle btn-xs btn-ghost text-yellow-400 hover:bg-white/10"
-                    >
-                        🏆
-                    </button>
+                    {/* Right: History */}
+                    <div className="flex items-center gap-1">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] uppercase font-bold text-[#5c3a21] opacity-80" style={{ marginBottom: -2 }}>Last 4</span>
+                            <div className="scale-90 origin-right">
+                                <NumberHistory numbers={calledNumberValues} maxVisible={4} />
+                            </div>
+                        </div>
+                        {/* Leaderboard Toggle (Small) */}
+                        <button
+                            onClick={() => { playClickSound(); setShowLeaderboard(true); }}
+                            className="btn btn-circle btn-xs btn-ghost text-yellow-600 hover:bg-white/20 ml-1"
+                        >
+                            🏆
+                        </button>
+                    </div>
                 </div>
 
-                {/* Center: Current Number (The Star) */}
-                <div className="flex justify-center items-center">
-                    <div className="-mt-1">
-                        <NumberMedallion number={gameState.currentNumber} size="md" />
-                    </div>
-                </div>
+                {/* Row 2: Player Status (Me & Others) */}
+                <div className="flex items-center px-3 py-2 gap-3 w-full bg-black/5">
 
-                {/* Right: History & Count */}
-                <div className="flex flex-col items-end justify-center min-w-0">
-                    <div style={{ fontSize: '0.7rem', opacity: 0.7, marginBottom: '2px' }}>
-                        {gameState.calledNumbers.length}/90
-                    </div>
-                    <div className="scale-90 origin-right">
-                        <NumberHistory numbers={calledNumberValues} maxVisible={3} />
+                    {/* Me: Large Avatar */}
+                    {(() => {
+                        const me = gameState.players.find(p => p.id === playerId);
+                        if (!me) return null;
+                        return (
+                            <div className="flex flex-col items-center shrink-0 relative group">
+                                <div
+                                    className="avatar shadow-lg border-2 border-[#8B4513]"
+                                    style={{
+                                        width: '56px', height: '56px',
+                                        borderRadius: '8px', overflow: 'hidden',
+                                        background: '#D2B48C'
+                                    }}
+                                >
+                                    {me.avatarUrl ? (
+                                        <img src={me.avatarUrl} alt={me.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="w-full h-full flex items-center justify-center text-xl font-bold text-[#5c3a21]">{me.name.charAt(0)}</span>
+                                    )}
+                                </div>
+                                <div className="absolute -bottom-2 bg-[#8B4513] text-[#DEB887] text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm whitespace-nowrap max-w-[70px] truncate border border-[#DEB887]">
+                                    {me.name}
+                                </div>
+
+                                {/* Energy Ring/Bar could go here too */}
+                            </div>
+                        );
+                    })()}
+
+                    {/* Separator */}
+                    <div className="w-px h-10 bg-[#8B4513] opacity-30 shrink-0 mx-1"></div>
+
+                    {/* Others: Horizontal Scroll */}
+                    <div className="flex-1 overflow-x-auto no-scrollbar mask-gradient-right">
+                        <PlayerList
+                            players={gameState.players.filter(p => p.id !== playerId)}
+                            currentPlayerId={playerId}
+                            compact={true}
+                            flatWinners={gameState.flatWinners}
+                        />
                     </div>
                 </div>
             </div>

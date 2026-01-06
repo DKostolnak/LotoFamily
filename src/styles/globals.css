@@ -206,6 +206,19 @@ body {
   background: linear-gradient(180deg, #ffd54f 0%, var(--color-gold) 100%);
 }
 
+.btn-wood {
+  background: #DEB887;
+  border: 2px solid #8B4513;
+  color: #5c3a21;
+  box-shadow: 0 4px 0 #8B4513;
+  transition: all 0.1s;
+}
+
+.btn-wood:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #8B4513;
+}
+
 .btn-secondary {
   background: linear-gradient(180deg, var(--color-wood-light) 0%, var(--color-wood-medium) 100%);
   color: var(--color-text-light);
