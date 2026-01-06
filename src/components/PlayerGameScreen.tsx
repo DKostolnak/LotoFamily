@@ -91,51 +91,44 @@ export default function PlayerGameScreen({
             <div className="wooden-panel flex flex-col shrink-0 z-20 shadow-md relative" style={{ borderRadius: '0 0 16px 16px', padding: '0', overflow: 'hidden' }}>
 
                 {/* Row 1: Controls & Game State */}
-                <div className="flex items-center justify-between px-3 py-2 w-full relative" style={{ borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+                <div className="flex items-center justify-between px-2 py-1 w-full" style={{ borderBottom: '1px solid rgba(0,0,0,0.1)', minHeight: '48px' }}>
 
                     {/* Left: Navigation & Settings */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 shrink-0">
                         <button
-                            className="btn btn-square btn-sm btn-wood shadow-lg"
+                            className="btn btn-square btn-xs btn-wood"
                             onClick={() => {
                                 if (confirm(t.leaveConfirm || "Leave game?")) {
                                     window.location.href = '/';
                                 }
                             }}
                         >
-                            <span style={{ fontSize: '1.2rem' }}>⬅️</span>
+                            ⬅️
                         </button>
                         <button
-                            className="btn btn-square btn-sm btn-wood shadow-lg"
-                            onClick={() => {
-                                // Toggle sound logic (placeholder if not in global context yet)
-                                // create a simple mute toggle if needed, for now just a visual
-                            }}
-                            style={{ opacity: 0.8 }}
+                            className="btn btn-square btn-xs btn-wood"
+                            onClick={() => { }}
                         >
-                            <span style={{ fontSize: '1.2rem' }}>🔊</span>
+                            🔊
                         </button>
                     </div>
 
-                    {/* Center: Current Number (Absolute Center to stay aligned) */}
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10" style={{ marginTop: '12px' }}>
-                        <div className="shadow-xl rounded-full border-4 border-[#8B4513] bg-[#DEB887]">
-                            <NumberMedallion number={gameState.currentNumber} size="lg" />
+                    {/* Center: Current Number */}
+                    <div className="flex-1 flex justify-center">
+                        <div className="rounded-full border-2 border-[#8B4513] bg-[#DEB887] shadow-md" style={{ transform: 'scale(0.85)' }}>
+                            <NumberMedallion number={gameState.currentNumber} size="md" />
                         </div>
                     </div>
 
-                    {/* Right: History */}
-                    <div className="flex items-center gap-1">
-                        <div className="flex flex-col items-end">
-                            <span className="text-[10px] uppercase font-bold text-[#5c3a21] opacity-80" style={{ marginBottom: -2 }}>Last 4</span>
-                            <div className="scale-90 origin-right">
-                                <NumberHistory numbers={calledNumberValues} maxVisible={4} />
-                            </div>
+                    {/* Right: History + Trophy */}
+                    <div className="flex items-center gap-1 shrink-0">
+                        <div className="scale-[0.6] origin-right">
+                            <NumberHistory numbers={calledNumberValues} maxVisible={4} />
                         </div>
-                        {/* Leaderboard Toggle (Small) */}
                         <button
                             onClick={() => { playClickSound(); setShowLeaderboard(true); }}
-                            className="btn btn-circle btn-xs btn-ghost text-yellow-600 hover:bg-white/20 ml-1"
+                            className="btn btn-circle btn-xs btn-ghost text-yellow-500"
+                            style={{ fontSize: '1rem' }}
                         >
                             🏆
                         </button>
@@ -143,41 +136,34 @@ export default function PlayerGameScreen({
                 </div>
 
                 {/* Row 2: Player Status (Me & Others) */}
-                <div className="flex items-center px-2 py-1 md:px-3 md:py-2 gap-2 md:gap-3 w-full bg-black/5">
+                <div className="flex items-center px-2 py-1 gap-2 w-full bg-black/5">
 
-                    {/* Me: Large Avatar */}
+                    {/* Me: Avatar */}
                     {(() => {
                         const me = gameState.players.find(p => p.id === playerId);
                         if (!me) return null;
+                        const isImageUrl = me.avatarUrl && (me.avatarUrl.startsWith('http') || me.avatarUrl.startsWith('data:'));
                         return (
-                            <div className="flex flex-col items-center shrink-0 relative group">
+                            <div className="flex items-center gap-2 shrink-0">
                                 <div
-                                    className="avatar shadow-lg border-2 border-[#8B4513]"
-                                    style={{
-                                        borderRadius: '8px', overflow: 'hidden',
-                                        background: '#D2B48C'
-                                    }}
+                                    className="w-10 h-10 rounded-lg border-2 border-[#8B4513] bg-[#D2B48C] flex items-center justify-center shadow-md overflow-hidden"
                                 >
-                                    <div className="w-10 h-10 md:w-14 md:h-14">
-                                        {me.avatarUrl ? (
-                                            <img src={me.avatarUrl} alt={me.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="w-full h-full flex items-center justify-center text-lg md:text-xl font-bold text-[#5c3a21]">{me.name.charAt(0)}</span>
-                                        )}
-                                    </div>
+                                    {isImageUrl ? (
+                                        <img src={me.avatarUrl} alt={me.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-xl">{me.avatarUrl || me.name.charAt(0)}</span>
+                                    )}
                                 </div>
-                                <div className="absolute -bottom-2 bg-[#8B4513] text-[#DEB887] text-[8px] md:text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm whitespace-nowrap max-w-[60px] md:max-w-[70px] truncate border border-[#DEB887]">
-                                    {me.name}
-                                </div>
+                                <span className="text-xs font-bold text-[#5c3a21] max-w-[60px] truncate">{me.name}</span>
                             </div>
                         );
                     })()}
 
                     {/* Separator */}
-                    <div className="w-px h-8 md:h-10 bg-[#8B4513] opacity-30 shrink-0 mx-0.5 md:mx-1"></div>
+                    <div className="w-px h-8 bg-[#8B4513] opacity-30 shrink-0"></div>
 
                     {/* Others: Horizontal Scroll */}
-                    <div className="flex-1 overflow-x-auto no-scrollbar mask-gradient-right">
+                    <div className="flex-1 overflow-x-auto no-scrollbar">
                         <PlayerList
                             players={gameState.players.filter(p => p.id !== playerId)}
                             currentPlayerId={playerId}
