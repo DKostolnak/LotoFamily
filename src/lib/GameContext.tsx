@@ -200,7 +200,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         });
 
         // Listen for sabotage effects targeted at us
-        newSocket.on('game:sabotageEffect', (targetId, type) => {
+        newSocket.on('game:sabotageEffect', (attackerId, targetId, type) => {
             // Check if this player is the target
             if (targetId === newSocket.id) {
                 if (type === 'snowball') {

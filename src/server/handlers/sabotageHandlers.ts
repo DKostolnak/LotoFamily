@@ -99,7 +99,7 @@ export function handleUseSabotage(
 
     store.setGame(roomCode, game);
     io.to(roomCode).emit('game:state', game);
-    io.to(targetId).emit('game:sabotageEffect', targetId, type);
+    io.to(roomCode).emit('game:sabotageEffect', socket.id, targetId, type);
 
     console.log(`[Sabotage] ${socket.id} used ${type} on ${targetId}`);
 }
