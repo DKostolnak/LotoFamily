@@ -13,7 +13,16 @@
  * - Numbers in each column are sorted ascending top to bottom
  */
 
-import type { LotoCard, LotoCardGrid, LotoCell } from '../lib/types.ts';
+import type { LotoCard, LotoCardGrid, LotoCell } from '../lib/types';
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const ROWS = 3;
+const COLUMNS = 9;
+const NUMBERS_PER_ROW = 5;
+const TOTAL_NUMBERS = ROWS * NUMBERS_PER_ROW; // 15
 
 /**
  * Generate a unique ID for cards
