@@ -5,6 +5,7 @@
 import type { Server, Socket } from 'socket.io';
 import type { ServerToClientEvents, ClientToServerEvents, SabotageType, LotoCard, LotoCardGrid } from '../../lib/types';
 import { SABOTAGE_COSTS, FREEZE_DURATION_MS } from '../../lib/constants';
+import { sabotageLog } from '../../lib/logger';
 import * as store from '../store';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
@@ -95,5 +96,5 @@ export function handleUseSabotage(
     io.to(roomCode).emit('game:state', game);
     io.to(roomCode).emit('game:sabotageEffect', socket.id, targetId, type);
 
-    console.log(`[Sabotage] ${socket.id} used ${type} on ${targetId}`);
+    sabotageLog.info(`${socket.id} used ${type} on ${targetId}`);
 }

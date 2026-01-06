@@ -6,6 +6,8 @@ import { GameSettings } from '@/lib/types';
 import { translations, Language } from '@/lib/translations';
 import { useGame } from '@/lib/GameContext';
 import AvatarPicker from './AvatarPicker';
+import GameSettingsForm from './GameSettingsForm';
+import LanguageSelector from './LanguageSelector';
 
 interface MainMenuProps {
     onCreateGame: (playerName: string, settings?: Partial<GameSettings>) => void;
@@ -141,36 +143,10 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                 </div>
 
                 {/* Language Selector */}
-                <div className="flex gap-sm mt-4">
-                    <button
-                        className={`btn btn-icon ${language === 'en' ? 'btn-primary' : 'btn-secondary'}`}
-                        title="English"
-                        onClick={() => handleLanguageChange('en')}
-                    >
-                        🇬🇧
-                    </button>
-                    <button
-                        className={`btn btn-icon ${language === 'sk' ? 'btn-primary' : 'btn-secondary'}`}
-                        title="Slovenčina"
-                        onClick={() => handleLanguageChange('sk')}
-                    >
-                        🇸🇰
-                    </button>
-                    <button
-                        className={`btn btn-icon ${language === 'uk' ? 'btn-primary' : 'btn-secondary'}`}
-                        title="Українська"
-                        onClick={() => handleLanguageChange('uk')}
-                    >
-                        🇺🇦
-                    </button>
-                    <button
-                        className={`btn btn-icon ${language === 'ru' ? 'btn-primary' : 'btn-secondary'}`}
-                        title="Русский"
-                        onClick={() => handleLanguageChange('ru')}
-                    >
-                        🇷🇺
-                    </button>
-                </div>
+                <LanguageSelector
+                    currentLanguage={language}
+                    onLanguageChange={handleLanguageChange}
+                />
             </div>
         );
     }
@@ -272,53 +248,15 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                 </div>
 
                 {mode === 'create' && (
-                    <div style={{ background: 'var(--color-cell-empty)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)' }}>
-                        <div className="flex items-center justify-between" style={{ marginBottom: autoCallEnabled ? 'var(--space-sm)' : 'var(--space-md)' }}>
-                            <span style={{ fontWeight: 600 }}>{t.autoCall}</span>
-                            <input
-                                type="checkbox"
-                                checked={autoCallEnabled}
-                                onChange={(e) => setAutoCallEnabled(e.target.checked)}
-                                style={{ width: '20px', height: '20px', accentColor: 'var(--color-gold)' }}
-                            />
-                        </div>
-
-                        {autoCallEnabled && (
-                            <div style={{ marginBottom: 'var(--space-md)' }}>
-                                <label style={{ display: 'block', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-xs)', opacity: 0.8 }}>
-                                    {t.speed}
-                                </label>
-                                <div className="flex gap-sm">
-                                    {(['slow', 'normal', 'fast'] as const).map((s) => (
-                                        <button
-                                            key={s}
-                                            className={`btn ${autoCallSpeed === s ? 'btn-primary' : 'btn-secondary'}`}
-                                            style={{ flex: 1, padding: 'var(--space-xs)', fontSize: 'var(--font-size-xs)' }}
-                                            onClick={() => setAutoCallSpeed(s)}
-                                        >
-                                            {t[s]}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Crazy Mode Toggle */}
-                        <div className="flex items-center justify-between">
-                            <span style={{ fontWeight: 600 }}>🎲 {t.crazyMode}</span>
-                            <input
-                                type="checkbox"
-                                checked={crazyMode}
-                                onChange={(e) => setCrazyMode(e.target.checked)}
-                                style={{ width: '20px', height: '20px', accentColor: 'var(--color-red)' }}
-                            />
-                        </div>
-                        {crazyMode && (
-                            <p style={{ fontSize: 'var(--font-size-xs)', opacity: 0.7, marginTop: 'var(--space-xs)' }}>
-                                {t.crazyModeDesc}
-                            </p>
-                        )}
-                    </div>
+                    <GameSettingsForm
+                        autoCallEnabled={autoCallEnabled}
+                        setAutoCallEnabled={setAutoCallEnabled}
+                        autoCallSpeed={autoCallSpeed}
+                        setAutoCallSpeed={setAutoCallSpeed}
+                        crazyMode={crazyMode}
+                        setCrazyMode={setCrazyMode}
+                        t={t}
+                    />
                 )}
 
                 {mode === 'join' && (

@@ -4,6 +4,7 @@
  */
 
 import type { GameState } from '../lib/types';
+import { roomLog } from '../lib/logger';
 
 // Game state storage (in-memory)
 const games = new Map<string, GameState>();
@@ -72,7 +73,7 @@ export function cleanupStaleGames(maxAgeMs: number = 24 * 60 * 60 * 1000): numbe
 
     for (const [roomCode, game] of games.entries()) {
         if (now - game.createdAt > maxAgeMs) {
-            console.log(`[Store] Cleaning up stale room: ${roomCode}`);
+            roomLog.info(`Cleaning up stale room: ${roomCode}`);
             deleteInterval(roomCode);
             games.delete(roomCode);
             cleaned++;

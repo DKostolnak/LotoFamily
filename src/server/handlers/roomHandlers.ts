@@ -7,6 +7,7 @@ import type { Server, Socket } from 'socket.io';
 import type { GameState, GameSettings, ServerToClientEvents, ClientToServerEvents } from '../../lib/types';
 import { createGame, addPlayer, removePlayer } from '../../engine/gameEngine';
 import * as store from '../store';
+import { roomLog } from '../../lib/logger';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
@@ -87,7 +88,7 @@ export function handleRoomCreate(
 
     socket.emit('room:created', roomCode);
     socket.emit('game:state', newGame);
-    console.log(`[Room] Created: ${roomCode} by ${playerName} (${playerId})`);
+    roomLog.info(`Created: ${roomCode} by ${playerName} (${playerId})`);
 }
 
 /**
@@ -131,7 +132,7 @@ export function handleRoomJoin(
     socket.join(upperRoomCode);
 
     io.to(upperRoomCode).emit('game:state', updatedGame);
-    console.log(`[Room] Player joined: ${playerName} (${socket.id}) to ${upperRoomCode}`);
+    roomLog.info(`Player joined: ${playerName} (${socket.id}) to ${upperRoomCode}`);
 }
 
 /**
@@ -162,7 +163,7 @@ function handleReconnection(
     socket.join(roomCode);
 
     io.to(roomCode).emit('game:state', game);
-    console.log(`[Room] Player reconnected to ${roomCode}`);
+    roomLog.info(`Player reconnected to ${roomCode}`);
 }
 
 /**
@@ -187,7 +188,7 @@ export function handleRoomLeave(
     if (updatedGame.players.length === 0) {
         store.deleteInterval(roomCode);
         store.deleteGame(roomCode);
-        console.log(`[Room] ${roomCode} deleted (empty)`);
+        roomLog.info(`${roomCode} deleted (empty)`);
     } else {
         // Host migration
         if (game.hostId === socket.id && updatedGame.players.length > 0) {
@@ -215,14 +216,14 @@ export function handleKickPlayer(
 
     // Verify host
     if (game.hostId !== socket.id) {
-        console.log(`[Warning] Non-host ${socket.id} tried to kick ${targetPlayerId}`);
+        roomLog.warn(`Non-host ${socket.id} tried to kick ${targetPlayerId}`);
         return;
     }
 
     const targetPlayer = game.players.find(p => p.id === targetPlayerId);
     if (!targetPlayer) return;
 
-    console.log(`[Room] Host kicking player ${targetPlayerId} from ${roomCode}`);
+    roomLog.info(`Host kicking player ${targetPlayerId} from ${roomCode}`);
 
     io.to(targetPlayerId).emit('room:kicked');
 
@@ -253,11 +254,11 @@ export function handleRoomClose(
 
     // Verify host
     if (game.hostId !== socket.id) {
-        console.log(`[Warning] Non-host ${socket.id} tried to close room ${roomCode}`);
+        roomLog.warn(`Non-host ${socket.id} tried to close room ${roomCode}`);
         return;
     }
 
-    console.log(`[Room] Host closing room ${roomCode}`);
+    roomLog.info(`Host closing room ${roomCode}`);
 
     io.to(roomCode).emit('room:closed');
 
@@ -289,7 +290,7 @@ export function handleUpdateProfile(
 
             store.setGame(code, game);
             io.to(code).emit('game:state', game);
-            console.log(`[Room] Player ${socket.id} updated profile: ${name}`);
+            roomLog.info(`Player ${socket.id} updated profile: ${name}`);
             break;
         }
     }

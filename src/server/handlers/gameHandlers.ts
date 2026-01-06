@@ -17,6 +17,7 @@ import {
 } from '../../engine/gameEngine';
 import { markCell } from '../../engine/lotoCardGenerator';
 import * as store from '../store';
+import { gameLog } from '../../lib/logger';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
@@ -118,7 +119,7 @@ export function handleGameStart(
     io.to(roomCode).emit('game:state', game);
 
     startAutoCall(roomCode, game, io);
-    console.log(`[Game] Started: ${roomCode}`);
+    gameLog.info(`Started: ${roomCode}`);
 }
 
 export function handleCallNumber(
@@ -241,7 +242,7 @@ export function handleClaimWin(
         stopAutoCall(roomCode);
 
         io.to(roomCode).emit('game:state', game);
-        console.log(`[Game] Winner claimed: ${socket.id} in ${roomCode}`);
+        gameLog.info(`Winner claimed: ${socket.id} in ${roomCode}`);
     }
 }
 
@@ -314,5 +315,5 @@ export function handleRestart(
     game = resetGame(game);
     store.setGame(roomCode, game);
     io.to(roomCode).emit('game:state', game);
-    console.log(`[Game] Restarted: ${roomCode}`);
+    gameLog.info(`Restarted: ${roomCode}`);
 }

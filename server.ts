@@ -31,6 +31,7 @@ import {
 } from './src/server/handlers/gameHandlers';
 import { handleUseSabotage } from './src/server/handlers/sabotageHandlers';
 import { removePlayer } from './src/engine/gameEngine';
+import { serverLog, socketLog, roomLog } from './src/lib/logger';
 
 // ============================================================================
 // CONFIGURATION
@@ -59,7 +60,7 @@ function getLocalIp(): string {
 const localIp = getLocalIp();
 const serverUrl = `http://${localIp}:${port}`;
 
-console.log(`\x1b[36m[Server] Network URL: ${serverUrl}\x1b[0m`);
+serverLog.info(`Network URL: ${serverUrl}`);
 
 // ============================================================================
 // NEXT.JS & SOCKET.IO SETUP
@@ -170,11 +171,11 @@ app.prepare().then(() => {
 
     httpServer
         .once('error', (err) => {
-            console.error(err);
+            serverLog.error('Server error', err);
             process.exit(1);
         })
         .listen(port, () => {
-            console.log(`> Ready on http://${hostname}:${port}`);
+            serverLog.info(`Ready on http://${hostname}:${port}`);
         });
 });
 
@@ -183,7 +184,7 @@ app.prepare().then(() => {
 // ============================================================================
 
 function handleDisconnect(io: Server, socketId: string): void {
-    console.log('[Socket] Client disconnected:', socketId);
+    socketLog.info(`Client disconnected: ${socketId}`);
 
     for (const [code, game] of store.getAllGames().entries()) {
         const player = game.players.find(p => p.id === socketId);
@@ -194,7 +195,7 @@ function handleDisconnect(io: Server, socketId: string): void {
         if (updatedGame.players.length === 0) {
             store.deleteInterval(code);
             store.deleteGame(code);
-            console.log(`[Room] ${code} deleted (empty after disconnect)`);
+            roomLog.info(`${code} deleted (empty after disconnect)`);
         } else {
             // Host migration
             if (game.hostId === socketId && updatedGame.players.length > 0) {

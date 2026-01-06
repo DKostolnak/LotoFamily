@@ -5,6 +5,7 @@ import { GameProvider } from "@/lib/GameContext";
 import { ToastProvider } from "@/components/ToastProvider";
 import ScreenShakeProvider from "@/components/ScreenShakeProvider";
 import { GameStatusListener } from "@/components/GameStatusListener";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -39,14 +40,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} wood-bg`} suppressHydrationWarning>
-        <GameProvider>
-          <ToastProvider>
-            <ScreenShakeProvider>
-              <GameStatusListener />
-              {children}
-            </ScreenShakeProvider>
-          </ToastProvider>
-        </GameProvider>
+        <ErrorBoundary>
+          <GameProvider>
+            <ToastProvider>
+              <ScreenShakeProvider>
+                <GameStatusListener />
+                {children}
+              </ScreenShakeProvider>
+            </ToastProvider>
+          </GameProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
