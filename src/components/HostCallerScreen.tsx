@@ -49,16 +49,70 @@ export default function HostCallerScreen({
                 <PlayerList players={gameState.players} compact />
             </div>
 
-            {/* Current Number */}
-            <div className="wooden-panel text-center">
-                <p style={{ fontSize: 'var(--font-size-sm)', opacity: 0.7, marginBottom: 'var(--space-sm)' }}>
+            {/* Current Number - Premium Display */}
+            <div className="wooden-panel text-center" style={{ position: 'relative', overflow: 'visible' }}>
+                <p style={{
+                    fontSize: 'var(--font-size-sm)',
+                    opacity: 0.8,
+                    marginBottom: 'var(--space-md)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    fontWeight: 600,
+                }}>
                     {t.currentNumber}
                 </p>
-                <div className="flex justify-center">
-                    <NumberMedallion number={gameState.currentNumber} size="lg" />
+
+                {/* Medallion with decorative frame */}
+                <div className="flex justify-center" style={{ position: 'relative' }}>
+                    {/* Outer glow */}
+                    <div
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'radial-gradient(circle, rgba(255,193,7,0.3) 0%, transparent 60%)',
+                            transform: 'scale(2)',
+                            pointerEvents: 'none',
+                        }}
+                    />
+                    {/* Decorative ring */}
+                    <div
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            margin: 'auto',
+                            width: '160px',
+                            height: '160px',
+                            borderRadius: '50%',
+                            background: 'conic-gradient(from 0deg, #8B4513, #D2691E, #DEB887, #D2691E, #8B4513)',
+                            opacity: 0.6,
+                        }}
+                    />
+                    {/* Gold border frame */}
+                    <div
+                        style={{
+                            padding: '5px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%)',
+                            boxShadow: '0 8px 25px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.4)',
+                            position: 'relative',
+                            zIndex: 1,
+                        }}
+                    >
+                        <div
+                            style={{
+                                padding: '3px',
+                                borderRadius: '50%',
+                                background: '#DEB887',
+                                boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.25)',
+                            }}
+                        >
+                            <NumberMedallion number={gameState.currentNumber} size="lg" />
+                        </div>
+                    </div>
                 </div>
 
-                <div className="flex justify-center" style={{ marginTop: 'var(--space-md)' }}>
+                {/* Number History Stack */}
+                <div className="flex justify-center" style={{ marginTop: 'var(--space-lg)' }}>
                     <NumberHistory numbers={calledNumberValues} maxVisible={6} />
                 </div>
             </div>

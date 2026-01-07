@@ -10,7 +10,7 @@ import { useWakeLock } from '@/hooks/useWakeLock';
 import { playClickSound, playErrorSound } from './GameAudioPlayer';
 import SabotageOverlay from './SabotageOverlay';
 import { useScreenShake } from './ScreenShakeProvider';
-import Leaderboard from './Leaderboard';
+import LeaderboardModal from './LeaderboardModal';
 import SabotageShop from './SabotageShop';
 import GameProgress from './GameProgress';
 import PlayerStatsModal from './PlayerStatsModal';
@@ -226,7 +226,7 @@ function PlayerGameScreen({
     }, [gameState.phase, requestLock, releaseLock]);
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden bg-[var(--color-bg)]">
+        <div className="flex flex-col overflow-hidden bg-[var(--color-bg)]" style={{ height: '100dvh', minHeight: '100vh' }}>
             {/* Game Header */}
             <GameHeader
                 gameState={gameState}
@@ -248,52 +248,48 @@ function PlayerGameScreen({
 
             {/* Leaderboard Modal */}
             {showLeaderboard && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-                    <div className="relative w-full max-w-sm">
-                        <Leaderboard players={gameState.players} currentUserId={playerId} />
-                        <button
-                            onClick={() => { playClickSound(); setShowLeaderboard(false); }}
-                            className="absolute -top-3 -right-3 btn btn-circle btn-sm btn-error shadow-lg"
-                        >
-                            ✕
-                        </button>
-                    </div>
-                </div>
+                <LeaderboardModal
+                    players={gameState.players}
+                    currentUserId={playerId}
+                    onClose={() => setShowLeaderboard(false)}
+                />
             )}
 
             {/* Paused Overlay */}
             {isPaused && (
                 <div
-                    className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm text-white text-2xl font-bold"
+                    className="fixed inset-0 z-[9990] flex items-center justify-center bg-black/60 backdrop-blur-sm"
                 >
-                    ⏸️ {t.paused}
+                    <div className="text-center">
+                        <div className="text-6xl mb-4">⏸️</div>
+                        <div className="text-white text-2xl font-bold">{t.paused}</div>
+                        <p className="text-white/60 text-sm mt-2">Game is paused by host</p>
+                    </div>
                 </div>
             )}
 
             {/* Main Content Area: Cards */}
-            <div className="flex-1 relative w-full flex flex-col items-center justify-center overflow-y-auto overflow-x-hidden" style={{ padding: '8px 4px' }}>
-                <div className="flex flex-col gap-2 w-full max-w-md" style={{ height: 'auto' }}>
-                    {/* Sabotage Shop */}
-                    {currentPlayer && (
-                        <div className="mt-1">
-                            <SabotageShop
-                                energy={currentPlayer.energy || 0}
-                                activeItem={targetingItem}
-                                onUseItem={handleUseItem}
-                            />
-                        </div>
-                    )}
+            <div className="flex-1 relative w-full flex flex-col items-center overflow-y-auto overflow-x-hidden" style={{ padding: '8px 4px', minHeight: 0 }}>
+                <div className="flex flex-col gap-2 w-full max-w-md h-full" style={{ maxHeight: '100%' }}>
+                    {/* Sabotage Shop - Hidden (user request: no action buttons) */}
 
                     {/* Progress Indicator */}
-                    <div className="mb-1">
+                    <div className="shrink-0">
                         <GameProgress
                             cards={cards}
                             calledNumbers={calledNumberValues}
                         />
                     </div>
 
-                    {/* Cards Container - Proper spacing */}
-                    <div className="loto-cards-container" style={{ paddingBottom: '8px' }}>
+                    {/* Cards Container - Responsive with flex-grow */}
+                    <div
+                        className="loto-cards-container flex-1 min-h-0 overflow-y-auto"
+                        style={{
+                            paddingBottom: '8px',
+                            scrollbarWidth: 'none',
+                            msOverflowStyle: 'none',
+                        }}
+                    >
                         {cards.map((card) => {
                             // Create a fingerprint of the grid to detect shuffles
                             const gridFingerprint = card.grid.flat().map(c => c.value ?? 'x').join('');
@@ -323,26 +319,36 @@ function PlayerGameScreen({
             </div>
             {/* Targeting Overlay */}
             {targetingItem && (
-                <div className="fixed inset-0 z-[60] bg-black/80 flex flex-col items-center justify-center animate-in fade-in p-4">
+                <div className="fixed inset-0 z-[9998] bg-black/85 flex flex-col items-center justify-center p-4"
+                    style={{ animation: 'fadeIn 0.2s ease-out' }}
+                >
                     <h2 className="text-white text-xl font-bold mb-4">Select Target 🎯</h2>
                     <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
                         {otherPlayers.map(p => (
                             <button
                                 key={p.id}
                                 onClick={() => handleSelectTarget(p.id)}
-                                className="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-all border border-white/10 hover:border-white/50"
+                                className="flex items-center gap-3 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 hover:border-white/50 hover:scale-105"
                             >
-                                <div className="text-2xl">{p.avatarUrl || '👤'}</div>
-                                <div className="text-white font-medium truncate">{p.name}</div>
+                                <div className="w-12 h-12 rounded-full bg-[#D2B48C] flex items-center justify-center text-2xl border-2 border-white/30">
+                                    {p.avatarUrl || '👤'}
+                                </div>
+                                <div className="text-white font-medium truncate text-left flex-1">{p.name}</div>
                             </button>
                         ))}
                     </div>
                     <button
-                        className="mt-8 btn btn-secondary"
+                        className="mt-8 btn btn-secondary px-8"
                         onClick={() => setTargetingItem(null)}
                     >
-                        Cancel
+                        ✕ Cancel
                     </button>
+                    <style jsx>{`
+                        @keyframes fadeIn {
+                            from { opacity: 0; }
+                            to { opacity: 1; }
+                        }
+                    `}</style>
                 </div>
             )}
 

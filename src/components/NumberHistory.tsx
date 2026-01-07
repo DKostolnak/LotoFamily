@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface NumberHistoryProps {
     numbers: number[];
@@ -9,69 +9,117 @@ interface NumberHistoryProps {
 
 /**
  * NumberHistory Component
- * Shows the last called numbers in small medallions with slide-in animation
+ * Shows the last called numbers in small medallions with pop-shrink animation
+ * New numbers appear big then shrink into the stack
  */
 export default function NumberHistory({
     numbers,
     maxVisible = 5,
 }: NumberHistoryProps) {
     const visibleNumbers = numbers.slice(-maxVisible).reverse();
-    const [animatingNumber, setAnimatingNumber] = useState<number | null>(null);
+    const [animationPhase, setAnimationPhase] = useState<'idle' | 'pop-in' | 'settle'>('idle');
+    const prevLengthRef = useRef(numbers.length);
 
     useEffect(() => {
-        if (numbers.length > 0) {
-            const latestNum = numbers[numbers.length - 1];
-            setAnimatingNumber(latestNum);
+        if (numbers.length > prevLengthRef.current) {
+            // New number added - start pop animation
+            setAnimationPhase('pop-in');
 
-            // Reset animation after it plays
-            const timer = setTimeout(() => {
-                setAnimatingNumber(null);
-            }, 500);
+            // Settle into position
+            const settleTimer = setTimeout(() => {
+                setAnimationPhase('settle');
+            }, 150);
 
-            return () => clearTimeout(timer);
+            // Return to idle
+            const idleTimer = setTimeout(() => {
+                setAnimationPhase('idle');
+            }, 600);
+
+            prevLengthRef.current = numbers.length;
+
+            return () => {
+                clearTimeout(settleTimer);
+                clearTimeout(idleTimer);
+            };
         }
+        prevLengthRef.current = numbers.length;
     }, [numbers.length]);
 
+    const getNewNumberStyle = () => {
+        switch (animationPhase) {
+            case 'pop-in':
+                return {
+                    transform: 'scale(1.4)',
+                    boxShadow: '0 0 20px rgba(255, 193, 7, 0.8)',
+                    transition: 'all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                };
+            case 'settle':
+                return {
+                    transform: 'scale(1)',
+                    boxShadow: 'none',
+                    transition: 'all 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                };
+            default:
+                return {
+                    transform: 'scale(1)',
+                    transition: 'all 0.3s ease-out',
+                };
+        }
+    };
+
     return (
-        <div className="flex gap-sm items-center" style={{ overflow: 'hidden' }}>
+        <div className="number-history-container flex gap-1 items-center" style={{ overflow: 'visible', position: 'relative' }}>
             {visibleNumbers.map((num, index) => {
-                const isNew = index === 0 && num === animatingNumber;
+                const isNew = index === 0;
+                const opacity = 1 - index * 0.15;
 
                 return (
                     <div
-                        key={`${num}-${index}`}
-                        className="medallion medallion-sm"
+                        key={`${num}-${numbers.length}-${index}`}
+                        className="rounded-full flex items-center justify-center"
                         style={{
-                            opacity: 1 - index * 0.15,
-                            transform: isNew
-                                ? 'translateX(0) scale(1)'
-                                : `scale(${1 - index * 0.05})`,
-                            animation: isNew ? 'slideIn 0.3s ease-out' : undefined,
-                            transition: 'all 0.3s ease-out',
+                            width: '32px',
+                            height: '32px',
+                            background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%)',
+                            padding: '2px',
+                            boxShadow: isNew ? '0 0 12px rgba(255, 193, 7, 0.6)' : '0 1px 3px rgba(0,0,0,0.3)',
+                            opacity,
+                            zIndex: maxVisible - index,
+                            ...(isNew ? getNewNumberStyle() : {
+                                transition: 'all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                            }),
                         }}
                     >
-                        {num}
+                        <div
+                            className="rounded-full w-full h-full flex items-center justify-center"
+                            style={{
+                                background: '#DEB887',
+                                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.15)',
+                            }}
+                        >
+                            <span className="text-sm font-bold" style={{ color: '#5d4037' }}>
+                                {num}
+                            </span>
+                        </div>
                     </div>
                 );
             })}
             {numbers.length > maxVisible && (
-                <span style={{ color: 'var(--color-text-light)', opacity: 0.7, fontSize: '0.8rem' }}>
+                <span
+                    className="history-more"
+                    style={{
+                        color: 'var(--color-text-light)',
+                        opacity: 0.7,
+                        fontSize: '0.65rem',
+                        fontWeight: 600,
+                        background: 'rgba(0,0,0,0.4)',
+                        padding: '2px 5px',
+                        borderRadius: '8px',
+                    }}
+                >
                     +{numbers.length - maxVisible}
                 </span>
             )}
-
-            <style jsx>{`
-                @keyframes slideIn {
-                    from {
-                        transform: translateX(-20px) scale(0.8);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0) scale(1);
-                        opacity: 1;
-                    }
-                }
-            `}</style>
         </div>
     );
 }

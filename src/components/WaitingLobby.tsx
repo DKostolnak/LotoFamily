@@ -115,7 +115,7 @@ export default function WaitingLobby({
                             includeMargin={false}
                         />
                         <p style={{ color: 'black', fontSize: '0.6rem', marginTop: '4px', fontWeight: 700 }}>
-                            SCAN TO JOIN
+                            {t.scanToJoin}
                         </p>
                     </div>
                 )}
@@ -145,7 +145,7 @@ export default function WaitingLobby({
                             }}
                             style={{ fontSize: '0.75rem' }}
                         >
-                            📤 {t.shared}
+                            📤 {t.share}
                         </button>
                     )}
                 </div>
@@ -238,7 +238,7 @@ export default function WaitingLobby({
                             }}
                             style={{ padding: '10px 16px', width: '100%', marginBottom: '8px', fontSize: '0.9rem' }}
                         >
-                            🚫 Close Room
+                            🚫 {t.closeRoom}
                         </button>
                     </>
                 ) : (

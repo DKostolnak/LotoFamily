@@ -88,7 +88,17 @@ const LotoCell = memo(function LotoCell({
                 transition: 'transform 0.1s ease-out',
             }}
         >
-            {value !== null && <span className="loto-cell-number">{value}</span>}
+            {value !== null && (
+                <span
+                    className="loto-cell-number"
+                    style={{
+                        // Delay the color/style 'switch' to create the 'first chip, then numbers switched' effect
+                        transition: 'color 0.1s ease 0.25s, opacity 0.1s ease 0.25s, text-shadow 0.1s ease 0.25s'
+                    }}
+                >
+                    {value}
+                </span>
+            )}
         </div>
     );
 });
@@ -109,6 +119,7 @@ function LotoCard({
 }: LotoCardProps) {
     const [tappedCell, setTappedCell] = useState<string | null>(null);
     const [mistakeCell, setMistakeCell] = useState<string | null>(null);
+    const [tempMarked, setTempMarked] = useState<string | null>(null);
     const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
     const floatingIdCounter = React.useRef(0);
 
@@ -152,19 +163,6 @@ function LotoCard({
 
         // Get relative click coordinates for floating text
         const rect = (evt.target as HTMLElement).getBoundingClientRect();
-        // Since we are inside the card, we want position relative to the card container
-        // But for simplicity, we can just use the click offset within the cell if we position absolute to the cell?
-        // Actually, let's position relative to the cell's center in the loop render, or pass coordinates.
-        // Simplified: render floating text in a container on top layer.
-        // We'll use the mouse event to get exact click pos relative to card roughly,
-        // or just center it on the cell based on row/col logic? 
-        // Let's use event clientX/Y and map to card-relative. 
-        // Actually, just passing "x, y" as row/col index to render logic is easier if we render inside the grid.
-        // But the grid has overflow issues maybe?
-        // Let's rely on the Cell component to tell us where it is? No.
-
-        // Let's just use the clicked element's rect center.
-        // We will render the floating text as a Fixed/Absolute overlay on the card.
         const cardRect = (evt.currentTarget.closest('.loto-card') as HTMLElement)?.getBoundingClientRect();
         const x = rect.left - (cardRect?.left || 0) + rect.width / 2;
         const y = rect.top - (cardRect?.top || 0) + rect.height / 2;
@@ -188,6 +186,7 @@ function LotoCard({
 
         // Valid mark
         setTappedCell(cellKey);
+        setTempMarked(cellKey); // Immediate visual feedback
 
         // Points Calculation Visual
         if (isSafe) {
@@ -200,6 +199,7 @@ function LotoCard({
 
         onCellClick(row, col);
         setTimeout(() => setTappedCell(null), 200);
+        setTimeout(() => setTempMarked(null), 400);
     }, [card.grid, onCellClick, calledNumbers, callsCount]);
 
     return (
@@ -251,21 +251,23 @@ function LotoCard({
                         const isSafe = isCalled && (callsCount - 1 - calledIndex < 2);
                         const isMissed = isCalled && !cell.isMarked && !isSafe;
                         const isCorrect = isCalled && cell.isMarked;
-                        // Key includes cell value and marked state to force re-render after changes
                         const cellKey = `${rowIndex}-${colIndex}-${cell.value ?? 'x'}-${cell.isMarked ? 'm' : 'u'}`;
                         const tappedKey = `${rowIndex}-${colIndex}`;
+
+                        // Effective marked includes temp optimistic state
+                        const effectiveIsMarked = cell.isMarked || (tempMarked === tappedKey);
 
                         return (
                             <LotoCell
                                 key={cellKey}
                                 value={cell.value}
-                                isMarked={cell.isMarked}
+                                isMarked={effectiveIsMarked}
                                 row={rowIndex}
                                 col={colIndex}
                                 isCalled={isCalled}
                                 isSafe={isSafe}
                                 isMissed={isMissed}
-                                isCorrect={isCorrect}
+                                isCorrect={isCorrect || effectiveIsMarked}
                                 isTapped={tappedCell === tappedKey}
                                 isMistake={mistakeCell === tappedKey}
                                 onClick={handleCellClick}

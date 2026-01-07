@@ -90,51 +90,51 @@ export default function PlayerList({
                         </div>
 
                         <div
-                            className={`avatar ${compact ? 'avatar-sm' : ''} relative transition-all duration-300`}
+                            className={`${compact ? 'w-10 h-10' : 'w-12 h-12'} relative transition-all duration-300`}
                             style={{
                                 border:
                                     player.id === currentPlayerId
                                         ? '3px solid var(--color-gold)'
-                                        : heatLevel === 1 ? '3px solid #ef4444' // Red
-                                            : heatLevel === 2 ? '3px solid #f97316' // Orange
-                                                : 'none',
+                                        : heatLevel === 1 ? '3px solid #ef4444'
+                                            : heatLevel === 2 ? '3px solid #f97316'
+                                                : '2px solid rgba(139, 69, 19, 0.5)',
                                 boxShadow:
                                     heatLevel === 1 ? '0 0 15px rgba(239, 68, 68, 0.7)'
                                         : heatLevel === 2 ? '0 0 10px rgba(249, 115, 22, 0.5)'
-                                            : 'none',
+                                            : '0 2px 4px rgba(0,0,0,0.3)',
                                 animation: heatLevel === 1 ? 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 fontSize: compact ? '1rem' : '1.5rem',
-                                background: 'rgba(255,255,255,0.1)',
-                                borderRadius: '50%',
-                                overflow: 'visible' // Allow fire to show? No, fire is outside. Avatar overflow hidden constraint?
+                                background: '#D2B48C',
+                                borderRadius: '6px',
+                                overflow: 'hidden',
                             }}
                         >
-                            <div className="rounded-full overflow-hidden w-full h-full object-cover">
+                            <div className="overflow-hidden w-full h-full">
                                 {player.avatarUrl && (player.avatarUrl.includes('http') || player.avatarUrl.includes('data:')) ? (
                                     <img src={player.avatarUrl} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
-                                    <span>{player.avatarUrl || player.name.charAt(0).toUpperCase()}</span>
+                                    <span className="flex items-center justify-center w-full h-full">{player.avatarUrl || player.name.charAt(0).toUpperCase()}</span>
                                 )}
                             </div>
                         </div>
-                        {!compact && (
-                            <span
-                                style={{
-                                    fontSize: 'var(--font-size-xs)',
-                                    color: heatLevel === 1 ? '#ef4444' : 'var(--color-text-light)',
-                                    fontWeight: heatLevel === 1 ? 'bold' : 'normal',
-                                    maxWidth: '60px',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {player.name}
-                            </span>
-                        )}
+                        {/* Always show player name - using smaller text when compact */}
+                        <span
+                            style={{
+                                fontSize: compact ? '0.65rem' : 'var(--font-size-xs)',
+                                color: heatLevel === 1 ? '#ef4444' : 'var(--color-text-light)',
+                                fontWeight: heatLevel === 1 ? 'bold' : 'normal',
+                                maxWidth: compact ? '50px' : '60px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                textAlign: 'center',
+                            }}
+                        >
+                            {player.name}
+                        </span>
                     </button>
                 );
             })}
