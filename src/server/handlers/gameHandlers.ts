@@ -197,6 +197,8 @@ export function handleMarkCell(
     const calledNumbers = game.calledNumbers.map(cn => cn.value);
     const isCorrectMark = cellValue !== null && calledNumbers.includes(cellValue);
 
+    const updatedCard = markCell(card, row, col);
+
     const updatedPlayers = game.players.map(p => {
         if (p.id === socket.id) {
             let newCards = p.cards.map(c => c.id === cardId ? updatedCard : c);
