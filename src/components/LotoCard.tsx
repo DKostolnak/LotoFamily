@@ -5,6 +5,7 @@ import { LotoCard as LotoCardType } from '@/lib/types';
 import { playCellMarkSound, playBonusSound, playErrorSound } from './GameAudioPlayer';
 import { useHaptics } from '@/hooks/useHaptics';
 import '@/styles/lotoCard.css';
+import { TranslationDictionary } from '@/lib/translations';
 
 interface FloatingText {
     id: number;
@@ -21,6 +22,7 @@ interface LotoCardProps {
     showHeader?: boolean;
     playerName?: string;
     calledNumbers?: number[];
+    t: TranslationDictionary;
 }
 
 interface CellProps {
@@ -113,6 +115,7 @@ function LotoCard({
     showHeader = false,
     playerName,
     calledNumbers = [],
+    t,
 }: LotoCardProps) {
     const [tappedCell, setTappedCell] = useState<string | null>(null);
     const [mistakeCell, setMistakeCell] = useState<string | null>(null);
@@ -201,7 +204,7 @@ function LotoCard({
                     style={{ width: `${progress}%` }}
                 />
                 <span className="loto-card-progress-text">
-                    {remaining === 0 ? '🎉 FULL!' : `${remaining} left`}
+                    {remaining === 0 ? `🎉 ${t.cardFull}` : `${remaining} ${t.numbersLeft}`}
                 </span>
             </div>
 

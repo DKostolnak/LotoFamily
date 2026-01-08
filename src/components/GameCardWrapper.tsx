@@ -97,6 +97,7 @@ const GameCardWrapper = memo(function GameCardWrapper({
                         onCellClick={onCellClick}
                         calledNumbers={calledNumberValues}
                         compact={true}
+                        t={t}
                     />
                 </div>
             </div>
