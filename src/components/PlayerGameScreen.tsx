@@ -20,7 +20,6 @@ interface PlayerGameScreenProps {
     onMarkCell: (cardId: string, row: number, col: number) => void;
     onClaimWin: (cardId: string) => void;
     onClaimFlat: (flatType: number) => void;
-    onClaimFlat: (flatType: number) => void;
 
     // Host Props
     isHost?: boolean;
@@ -38,7 +37,6 @@ function PlayerGameScreen({
     cards,
     onMarkCell,
     onClaimWin,
-    onClaimFlat,
     onClaimFlat,
 
     isHost = false,
@@ -175,15 +173,12 @@ function PlayerGameScreen({
                     );
                 })}
             </div>
+            {/* Footer / Mode Info */}
+            <div className="text-center py-1 text-[10px] opacity-40 shrink-0">
+                {t.mode}: {gameState.settings.gameMode}
+                {gameState.settings.crazyMode && ` 🎲 ${t.crazy}`}
+            </div>
         </div>
-            </div >
-
-        {/* Footer / Mode Info */ }
-        < div className = "text-center py-1 text-[10px] opacity-40 shrink-0" >
-            { t.mode }: { gameState.settings.gameMode }
-    { gameState.settings.crazyMode && ` 🎲 ${t.crazy}` }
-            </div >
-        </div >
     );
 }
 

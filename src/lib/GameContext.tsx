@@ -50,7 +50,6 @@ interface GameContextType {
     kickPlayer: (playerId: string) => void;
     setPlayerAvatar: (avatar: string) => void;
     closeRoom: () => void;
-    closeRoom: () => void;
 }
 
 const GameContext = createContext<GameContextType | null>(null);
@@ -401,9 +400,6 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             kickPlayer,
             setPlayerAvatar,
             closeRoom,
-            kickPlayer,
-            setPlayerAvatar,
-            closeRoom,
         }),
         [
             socket,
@@ -431,7 +427,6 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             kickPlayer,
             setPlayerAvatar,
             closeRoom,
-            useSabotage,
         ],
     );
 

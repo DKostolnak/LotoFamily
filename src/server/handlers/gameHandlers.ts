@@ -197,21 +197,23 @@ export function handleMarkCell(
     const calledNumbers = game.calledNumbers.map(cn => cn.value);
     const isCorrectMark = cellValue !== null && calledNumbers.includes(cellValue);
 
-    const updatedCard = markCell(card, row, col);
+    const updatedPlayers = game.players.map(p => {
+        if (p.id === socket.id) {
+            let newCards = p.cards.map(c => c.id === cardId ? updatedCard : c);
 
-    // Crazy Mode shuffle
-    if (game!.settings.crazyMode && isCorrectMark) {
-        newCards = newCards.map(c => shuffleCardPositions(c));
-    }
+            // Crazy Mode shuffle
+            if (game!.settings.crazyMode && isCorrectMark) {
+                newCards = newCards.map(c => shuffleCardPositions(c));
+            }
 
-    return { ...p, cards: newCards };
-}
-return p;
+            return { ...p, cards: newCards };
+        }
+        return p;
     });
 
-game = { ...game, players: updatedPlayers };
-store.setGame(roomCode, game);
-io.to(roomCode).emit('game:state', game);
+    game = { ...game, players: updatedPlayers };
+    store.setGame(roomCode, game);
+    io.to(roomCode).emit('game:state', game);
 }
 
 export function handleClaimWin(
