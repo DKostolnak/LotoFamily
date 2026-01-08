@@ -8,6 +8,9 @@
  * 
  * Uses Web Audio API for precise, low-latency sound generation.
  * Respects user mute preferences stored in localStorage.
+ * 
+ * IMPORTANT: Call initAudioContext() on the first user interaction
+ * to unlock audio playback on iOS and Chrome.
  */
 
 import { vibrateIfAllowed } from '@/lib/battery';
@@ -67,6 +70,9 @@ export const CHORDS: Record<ChordName, ChordConfig> = {
 /** Shared AudioContext instance - reused for all sounds */
 let m_sharedAudioContext: AudioContext | null = null;
 
+/** Whether the audio context has been initialized by user gesture */
+let m_isAudioInitialized = false;
+
 /** Global mute state */
 let m_isMuted = false;
 
@@ -79,7 +85,9 @@ if (typeof window !== 'undefined') {
  * Resolves the appropriate AudioContext constructor for the current browser.
  * Handles webkit prefix for older Safari versions.
  */
-function resolveAudioContextConstructor(): typeof AudioContext {
+function resolveAudioContextConstructor(): typeof AudioContext | null {
+    if (typeof window === 'undefined') return null;
+
     const globalWindow = window as typeof window & {
         webkitAudioContext?: typeof AudioContext;
     };
@@ -92,24 +100,93 @@ function resolveAudioContextConstructor(): typeof AudioContext {
         return globalWindow.webkitAudioContext;
     }
 
-    throw new Error('AudioContext is not supported in this browser');
+    return null;
 }
 
 /**
- * Gets or creates the shared AudioContext instance.
- * Automatically resumes if suspended (required after user interaction).
+ * IMPORTANT: Call this function on the FIRST user interaction (click/tap).
+ * This is required to unlock audio playback on iOS and Chrome.
+ * 
+ * Best placed on a button click handler, game start, or similar user action.
  */
-function getSharedAudioContext(): AudioContext {
+export function initAudioContext(): boolean {
+    if (typeof window === 'undefined') return false;
+    if (m_isAudioInitialized && m_sharedAudioContext) return true;
+
+    try {
+        const AudioContextConstructor = resolveAudioContextConstructor();
+        if (!AudioContextConstructor) {
+            console.warn('AudioContext not supported in this browser');
+            return false;
+        }
+
+        // Create context if not exists
+        if (!m_sharedAudioContext) {
+            m_sharedAudioContext = new AudioContextConstructor();
+        }
+
+        // Resume if suspended (required by autoplay policies)
+        if (m_sharedAudioContext.state === 'suspended') {
+            m_sharedAudioContext.resume().then(() => {
+                m_isAudioInitialized = true;
+            }).catch(() => {
+                // Silently fail
+            });
+        } else {
+            m_isAudioInitialized = true;
+        }
+
+        // iOS Safari workaround: Play a silent buffer to unlock audio
+        // This is required because iOS requires audio to be triggered by user gesture
+        const silentBuffer = m_sharedAudioContext.createBuffer(1, 1, 22050);
+        const source = m_sharedAudioContext.createBufferSource();
+        source.buffer = silentBuffer;
+        source.connect(m_sharedAudioContext.destination);
+        source.start(0);
+
+        return true;
+    } catch (error) {
+        console.warn('Failed to initialize audio context:', error);
+        return false;
+    }
+}
+
+/**
+ * Gets the shared AudioContext instance.
+ * Will attempt to initialize if not yet done, but may not work without user gesture.
+ */
+function getSharedAudioContext(): AudioContext | null {
+    if (typeof window === 'undefined') return null;
+
+    // If not initialized, try to create (may not work without user gesture)
     if (!m_sharedAudioContext) {
         const AudioContextConstructor = resolveAudioContextConstructor();
-        m_sharedAudioContext = new AudioContextConstructor();
+        if (!AudioContextConstructor) return null;
+
+        try {
+            m_sharedAudioContext = new AudioContextConstructor();
+        } catch {
+            return null;
+        }
     }
 
+    // Attempt to resume if suspended
     if (m_sharedAudioContext.state === 'suspended') {
-        void m_sharedAudioContext.resume();
+        m_sharedAudioContext.resume().catch(() => {
+            // Silently fail - will try again on next user interaction
+        });
     }
 
     return m_sharedAudioContext;
+}
+
+/**
+ * Checks if audio is ready to play.
+ */
+export function isAudioReady(): boolean {
+    return m_isAudioInitialized &&
+        m_sharedAudioContext !== null &&
+        m_sharedAudioContext.state === 'running';
 }
 
 // ============================================================================
@@ -132,8 +209,10 @@ export function playBeep(
 ): void {
     if (m_isMuted) return;
 
+    const ctx = getSharedAudioContext();
+    if (!ctx || ctx.state !== 'running') return;
+
     try {
-        const ctx = getSharedAudioContext();
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
 
@@ -167,8 +246,10 @@ function playFrequencySweep(
 ): void {
     if (m_isMuted) return;
 
+    const ctx = getSharedAudioContext();
+    if (!ctx || ctx.state !== 'running') return;
+
     try {
-        const ctx = getSharedAudioContext();
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
 
@@ -213,6 +294,11 @@ export function toggleMute(): boolean {
         window.localStorage.setItem('loto_muted', String(m_isMuted));
     }
 
+    // If unmuting, try to initialize audio context
+    if (!m_isMuted) {
+        initAudioContext();
+    }
+
     return m_isMuted;
 }
 
@@ -225,6 +311,11 @@ export function setMuted(muted: boolean): void {
 
     if (typeof window !== 'undefined') {
         window.localStorage.setItem('loto_muted', String(m_isMuted));
+    }
+
+    // If unmuting, try to initialize audio context
+    if (!muted) {
+        initAudioContext();
     }
 }
 
@@ -260,6 +351,7 @@ const LANGUAGE_CODES: Record<SupportedLanguage, string> = {
  */
 export function speakNumber(num: number, lang: SupportedLanguage): void {
     if (m_isMuted) return;
+    if (typeof window === 'undefined') return;
     if (!('speechSynthesis' in window)) return;
 
     window.speechSynthesis.cancel();
@@ -288,8 +380,12 @@ export function playCellMarkSound(): void {
 
 /**
  * Plays a short click sound for UI interactions.
+ * Also initializes audio context if needed (click = user gesture).
  */
 export function playClickSound(): void {
+    // Click is a user gesture - good opportunity to init audio
+    initAudioContext();
+
     const { frequency, duration, type } = SOUNDS.click;
     playBeep(frequency, duration, type, 0.1);
 }
@@ -340,8 +436,10 @@ export function playLossSound(): void {
 export function playBonusSound(): void {
     if (m_isMuted) return;
 
+    const ctx = getSharedAudioContext();
+    if (!ctx || ctx.state !== 'running') return;
+
     try {
-        const ctx = getSharedAudioContext();
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
 
