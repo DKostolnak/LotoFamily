@@ -3,17 +3,9 @@
 /**
  * MainMenu Component
  * 
- * Entry screen for the Loto game with:
- * - Create Game option (for hosts)
- * - Join Game option (for players)
- * - Language selection
- * - Avatar picker
- * 
- * Handles:
- * - Player name input and validation
- * - Room code input for joining
- * - Crazy Mode toggle
- * - URL-based room code recovery
+ * Entry screen for the Loto game.
+ * Uses INLINE STYLES for critical layout to guarantee it works visually 
+ * even if CSS classes fail to load.
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
@@ -28,18 +20,22 @@ import {
 } from '@/lib/services/storage';
 import AvatarPicker from './AvatarPicker';
 import LanguageSelector from './LanguageSelector';
+import { playClickSound } from '@/lib/audio';
+
+// ============================================================================
+// TYPES
+// ============================================================================
 
 interface MainMenuProps {
     onCreateGame: (playerName: string, settings?: Partial<GameSettings>) => void;
     onJoinGame: (roomCode: string, playerName: string) => void;
 }
 
-/**
- * MainMenu Component
- * Entry screen with Create/Join game options
- */
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
 export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
-    // Initialize with server-safe defaults to match SSR
     const [mode, setMode] = useState<'menu' | 'create' | 'join'>('menu');
     const [playerName, setPlayerName] = useState('');
     const [roomCode, setRoomCode] = useState('');
@@ -47,11 +43,13 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
     const [error, setError] = useState<string | null>(null);
     const [crazyMode, setCrazyMode] = useState(false);
 
-    // Hydrate state from client storage/URL after mount
     useEffect(() => {
-        // 1. Recover Language
+        // Recover Language
         const savedLang = storageService.getString(STORAGE_KEYS.LANGUAGE) as Language | null;
-        const browserLang = (window.navigator.language || window.navigator.languages?.[0] || 'en').toLowerCase();
+        let browserLang = 'en';
+        if (typeof window !== 'undefined') {
+            browserLang = (window.navigator.language || window.navigator.languages?.[0] || 'en').toLowerCase();
+        }
         let detectedLanguage: Language = 'en';
 
         if (savedLang && savedLang in translations) {
@@ -65,24 +63,26 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         }
         setLanguage(detectedLanguage);
 
-        // 2. Recover Player Name
+        // Recover Player Name
         const savedName = getPlayerName();
         if (savedName) setPlayerName(savedName);
 
-        // 3. Recover Room Code from URL (for shared links)
-        const params = new URLSearchParams(window.location.search);
-        const urlRoomCode = params.get('room');
-        if (urlRoomCode) {
-            setRoomCode(urlRoomCode.toUpperCase());
-            setMode('join');
+        // Recover Room Code
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const urlRoomCode = params.get('room');
+            if (urlRoomCode) {
+                setRoomCode(urlRoomCode.toUpperCase());
+                setMode('join');
+            }
         }
     }, []);
 
     const { playerAvatar, setPlayerAvatar } = useGame();
-
     const t = translations[language];
 
     const handleLanguageChange = useCallback((lang: Language) => {
+        playClickSound();
         setLanguage(lang);
         storageService.set(STORAGE_KEYS.LANGUAGE, lang);
     }, []);
@@ -100,14 +100,8 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
     const handleCreate = () => {
         if (!validateCommonFields()) return;
 
-        const intervalMap = {
-            slow: 8000,
-            normal: 5000,
-            fast: 3000,
-        };
-
         onCreateGame(playerName.trim(), {
-            autoCallEnabled: false, // Default to false here, host enables in lobby
+            autoCallEnabled: false,
             language,
             crazyMode,
             customRoomCode: roomCode.length >= 3 ? roomCode.toUpperCase() : undefined,
@@ -124,230 +118,299 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         onJoinGame(roomCode.trim().toUpperCase(), playerName.trim());
     };
 
+    const onModeChange = (newMode: 'menu' | 'create' | 'join') => {
+        playClickSound();
+        setMode(newMode);
+        setError(null);
+    };
+
+    // --- STYLES ---
+    const mainStyle: React.CSSProperties = {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundImage: 'url(/assets/wood-seamless.png)',
+        backgroundSize: '256px 256px',
+        backgroundRepeat: 'repeat',
+        backgroundColor: '#2d1f10', // Fallback color
+        zIndex: 1000,
+    };
+
+    const overlayStyle: React.CSSProperties = {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        pointerEvents: 'none',
+    };
+
+    const cardStyle: React.CSSProperties = {
+        position: 'relative',
+        zIndex: 10,
+        width: '90%',
+        maxWidth: '480px',
+        padding: '32px',
+        backgroundColor: 'rgba(26, 17, 9, 0.95)', // Dark wood tint
+        border: '4px solid #8b6b4a',
+        borderRadius: '24px',
+        boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 0 2px rgba(0,0,0,0.5)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '24px',
+    };
+
+    const buttonStyle: React.CSSProperties = {
+        width: '100%',
+        padding: '20px',
+        borderRadius: '16px',
+        border: 'none',
+        fontSize: '1.25rem',
+        fontWeight: 800,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
+        transition: 'transform 0.1s',
+        boxShadow: '0 8px 15px rgba(0,0,0,0.3)',
+    };
+
+    const goldBtnStyle: React.CSSProperties = {
+        ...buttonStyle,
+        background: 'linear-gradient(180deg, #ffd700 0%, #daa520 100%)',
+        color: '#3d2814',
+        borderBottom: '4px solid #b8860b',
+    };
+
+    const woodBtnStyle: React.CSSProperties = {
+        ...buttonStyle,
+        background: 'linear-gradient(180deg, #5a4025 0%, #3d2814 100%)',
+        color: '#f5e6c8',
+        borderBottom: '4px solid #2d1f10',
+    };
+
+    const inputStyle: React.CSSProperties = {
+        width: '100%',
+        padding: '16px',
+        backgroundColor: '#1a1109',
+        border: '2px solid #5a4025',
+        borderRadius: '12px',
+        fontSize: '1.25rem',
+        color: '#ffd700',
+        fontWeight: 'bold',
+        outline: 'none',
+        textAlign: 'left',
+    };
+
     return (
-        <main
-            className="flex flex-col h-screen overflow-hidden items-center justify-center px-4 py-6 bg-[var(--color-bg)]"
-            aria-labelledby="main-menu-heading"
-        >
+        <main style={mainStyle}>
+            <div style={overlayStyle} />
+
+            {/* Back Button matching GameHeader style */}
             {mode !== 'menu' && (
                 <button
-                    className="btn btn-secondary"
                     type="button"
-                    onClick={() => {
-                        setMode('menu');
-                        setError(null);
+                    onClick={() => onModeChange('menu')}
+                    style={{
+                        position: 'absolute',
+                        top: '24px',
+                        left: '24px',
+                        width: '40px',
+                        height: '40px',
+                        background: 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)',
+                        borderRadius: '8px',
+                        border: '2px solid #5a4025',
+                        boxShadow: '0 2px 0 #3d2814, inset 0 1px 0 rgba(255,255,255,0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        zIndex: 20,
+                        color: '#3d2814',
                     }}
-                    style={{ alignSelf: 'flex-start' }}
                 >
-                    ← {t.back}
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
                 </button>
             )}
 
-            {mode === 'menu' ? (
-                <section className="card" style={{ width: '100%', maxWidth: '420px', textAlign: 'center' }}>
-                    <h1 id="main-menu-heading" style={{ fontSize: 'var(--font-size-xl)', marginBottom: 'var(--space-sm)' }}>
-                        {t.title}
+            <div style={cardStyle}>
+                {/* Header */}
+                <div style={{ textAlign: 'center', width: '100%' }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '8px', lineHeight: 1 }}>🎱</div>
+                    <h1 style={{
+                        fontSize: '2.5rem',
+                        fontWeight: 900,
+                        color: '#ffd700',
+                        textTransform: 'uppercase',
+                        margin: 0,
+                        textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                        lineHeight: 1.2,
+                    }}>
+                        {mode === 'menu' ? t.title : (mode === 'create' ? t.createGame : t.joinGame)}
                     </h1>
-                    <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-lg)' }}>
-                        {t.subtitle}
-                    </p>
+                    {mode === 'menu' && (
+                        <p style={{ color: '#8b6b4a', margin: '8px 0 0 0', fontSize: '1.1rem' }}>{t.subtitle}</p>
+                    )}
+                </div>
 
-                    <div className="flex flex-col gap-md">
-                        <button className="btn btn-primary btn-lg" type="button" onClick={() => setMode('create')}>
-                            👑 {t.createGame}
+                {mode === 'menu' ? (
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <button
+                            onClick={() => onModeChange('create')}
+                            style={goldBtnStyle}
+                            className="active:translate-y-1"
+                        >
+                            <span style={{ fontSize: '1.5rem' }}>👑</span> {t.createGame}
                         </button>
-                        <button className="btn btn-secondary btn-lg" type="button" onClick={() => setMode('join')}>
-                            🎮 {t.joinGame}
+
+                        <button
+                            onClick={() => onModeChange('join')}
+                            style={woodBtnStyle}
+                            className="active:translate-y-1"
+                        >
+                            <span style={{ fontSize: '1.5rem' }}>🎮</span> {t.joinGame}
                         </button>
-                    </div>
 
-                    <div style={{ marginTop: 'var(--space-xl)' }}>
-                        <LanguageSelector currentLanguage={language} onLanguageChange={handleLanguageChange} />
+                        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(139, 107, 74, 0.3)', display: 'flex', justifyContent: 'center' }}>
+                            <LanguageSelector currentLanguage={language} onLanguageChange={handleLanguageChange} />
+                        </div>
                     </div>
-                </section>
-            ) : (
-                <section className="card" style={{ width: '100%', maxWidth: '480px' }}>
-                    <header style={{ textAlign: 'center', marginBottom: 'var(--space-lg)' }}>
-                        <h2 style={{ fontSize: 'var(--font-size-lg)', marginBottom: 'var(--space-xs)' }}>
-                            {mode === 'create' ? `👑 ${t.createGame}` : `🎮 ${t.joinGame}`}
-                        </h2>
-                        <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                            {mode === 'create' ? t.createHint : t.joinHint}
-                        </p>
-                    </header>
-
+                ) : (
                     <form
-                        onSubmit={(evt) => {
-                            evt.preventDefault();
-                            if (mode === 'create') handleCreate();
-                            else handleJoin();
+                        style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            playClickSound();
+                            mode === 'create' ? handleCreate() : handleJoin();
                         }}
-                        className="flex flex-col gap-md"
-                        noValidate
                     >
+                        {/* Player Name */}
                         <div>
-                            <label
-                                htmlFor="playerName"
-                                style={{ display: 'block', marginBottom: 'var(--space-xs)', fontWeight: 600 }}
-                            >
+                            <label style={{ display: 'block', color: '#8b6b4a', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', textTransform: 'uppercase' }}>
                                 {t.playerName}
                             </label>
-                            <div className="flex items-center gap-sm">
-                                <div
-                                    className="avatar"
-                                    aria-hidden="true"
-                                    style={{ width: '52px', height: '52px', fontSize: '1.6rem' }}
-                                >
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <div style={{
+                                    width: '60px', height: '60px', borderRadius: '12px',
+                                    backgroundColor: '#3d2814', border: '1px solid #5a4025',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem'
+                                }}>
                                     {playerAvatar}
                                 </div>
                                 <input
-                                    id="playerName"
                                     type="text"
-                                    className="input"
-                                    placeholder={t.playerNamePlaceholder}
                                     value={playerName}
-                                    onChange={(event) => setPlayerName(event.target.value)}
+                                    onChange={(e) => setPlayerName(e.target.value)}
+                                    placeholder={t.playerNamePlaceholder}
                                     maxLength={18}
-                                    autoComplete="name"
+                                    style={inputStyle}
                                     required
                                 />
+                            </div>
+                            <div style={{ marginTop: '12px' }}>
+                                <AvatarPicker currentAvatar={playerAvatar} onSelect={setPlayerAvatar} label={t.selectAvatar} />
                             </div>
                         </div>
 
-                        <AvatarPicker currentAvatar={playerAvatar} onSelect={setPlayerAvatar} label={t.selectAvatar} />
-
+                        {/* Mode Specific Inputs */}
                         {mode === 'create' ? (
-                            <div className="flex flex-col gap-md">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 <div>
-                                    <label
-                                        htmlFor="customCode"
-                                        style={{ display: 'block', marginBottom: 'var(--space-xs)', fontWeight: 600 }}
-                                    >
-                                        {t.roomCode}
-                                        <span style={{ fontWeight: 400, marginLeft: 'var(--space-xs)', color: 'var(--color-text-secondary)' }}>
-                                            ({t.optionalLabel})
-                                        </span>
+                                    <label style={{ display: 'block', color: '#8b6b4a', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', textTransform: 'uppercase' }}>
+                                        {t.roomCode} <span style={{ opacity: 0.7, fontWeight: 'normal', textTransform: 'none' }}>({t.optionalLabel})</span>
                                     </label>
                                     <input
-                                        id="customCode"
                                         type="text"
-                                        className="input"
-                                        placeholder="AUTO"
                                         value={roomCode}
-                                        onChange={(event) => setRoomCode(event.target.value.toUpperCase())}
+                                        onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                                        placeholder="AUTO"
                                         maxLength={8}
-                                        inputMode="text"
-                                        pattern="[A-Z0-9]{3,8}"
-                                        aria-describedby="room-code-hint"
-                                        style={{ textTransform: 'uppercase', letterSpacing: '0.12em' }}
+                                        style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: '0.1em', textAlign: 'center', textTransform: 'uppercase' }}
                                     />
-                                    <p id="room-code-hint" style={{ marginTop: 'var(--space-xs)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                                        {t.customCodeHelp}
-                                    </p>
+                                    <p style={{ fontSize: '0.8rem', color: '#5a4025', marginTop: '8px', textAlign: 'center' }}>{t.customCodeHelp}</p>
                                 </div>
 
-                                {/* Crazy Mode Toggle */}
-                                <div
+                                <button
+                                    type="button"
+                                    onClick={() => { playClickSound(); setCrazyMode(!crazyMode); }}
                                     style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: 'var(--space-md)',
-                                        background: crazyMode ? 'linear-gradient(135deg, rgba(139, 69, 19, 0.3), rgba(160, 82, 45, 0.2))' : 'rgba(0,0,0,0.05)',
-                                        borderRadius: '12px',
-                                        border: crazyMode ? '2px solid var(--color-gold)' : '2px solid transparent',
-                                        transition: 'all 0.2s ease',
+                                        width: '100%', padding: '16px', borderRadius: '12px',
+                                        backgroundColor: crazyMode ? '#2d1f10' : '#1a1109',
+                                        border: crazyMode ? '2px solid #ffd700' : '2px solid #3d2814',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        cursor: 'pointer', transition: 'all 0.2s'
                                     }}
                                 >
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-xs)' }}>
-                                            <span style={{ fontSize: '1.5rem' }}>🎲</span>
-                                            <span style={{ fontWeight: 700, fontSize: 'var(--font-size-base)' }}>
-                                                {t.crazyMode}
-                                            </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <span style={{ fontSize: '1.5rem' }}>🎲</span>
+                                        <div style={{ textAlign: 'left' }}>
+                                            <div style={{ color: crazyMode ? '#ffd700' : '#8b6b4a', fontWeight: 'bold' }}>{t.crazyMode}</div>
+                                            <div style={{ color: '#5a4025', fontSize: '0.8rem' }}>{t.crazyModeDesc}</div>
                                         </div>
-                                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', margin: 0 }}>
-                                            {t.crazyModeDesc}
-                                        </p>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setCrazyMode(!crazyMode)}
-                                        style={{
-                                            width: '56px',
-                                            height: '32px',
-                                            borderRadius: '16px',
-                                            border: 'none',
-                                            background: crazyMode
-                                                ? 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)'
-                                                : '#ccc',
-                                            position: 'relative',
-                                            cursor: 'pointer',
-                                            transition: 'background 0.2s ease',
-                                            boxShadow: crazyMode ? '0 2px 4px rgba(0,0,0,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.2)',
-                                        }}
-                                        aria-pressed={crazyMode}
-                                        aria-label={t.crazyMode}
-                                    >
-                                        <div
-                                            style={{
-                                                width: '26px',
-                                                height: '26px',
-                                                borderRadius: '50%',
-                                                background: '#fff',
-                                                position: 'absolute',
-                                                top: '3px',
-                                                left: crazyMode ? '27px' : '3px',
-                                                transition: 'left 0.2s ease',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                            }}
-                                        />
-                                    </button>
-                                </div>
+                                    <div style={{
+                                        width: '48px', height: '28px', borderRadius: '14px',
+                                        backgroundColor: crazyMode ? '#ffd700' : '#3d2814',
+                                        position: 'relative'
+                                    }}>
+                                        <div style={{
+                                            width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'white',
+                                            position: 'absolute', top: '2px',
+                                            left: crazyMode ? '22px' : '2px',
+                                            transition: 'left 0.2s'
+                                        }} />
+                                    </div>
+                                </button>
                             </div>
                         ) : (
                             <div>
-                                <label
-                                    htmlFor="roomCode"
-                                    style={{ display: 'block', marginBottom: 'var(--space-xs)', fontWeight: 600 }}
-                                >
+                                <label style={{ display: 'block', color: '#8b6b4a', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', textTransform: 'uppercase' }}>
                                     {t.roomCode}
                                 </label>
                                 <input
-                                    id="roomCode"
                                     type="text"
-                                    className="input"
-                                    placeholder={t.roomCodePlaceholder}
                                     value={roomCode}
-                                    onChange={(event) => setRoomCode(event.target.value.toUpperCase())}
+                                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                                    placeholder={t.roomCodePlaceholder}
                                     maxLength={8}
-                                    inputMode="text"
-                                    pattern="[A-Z0-9]{6,8}"
-                                    aria-describedby="room-code-description"
-                                    style={{ textTransform: 'uppercase', letterSpacing: '0.2em', textAlign: 'center' }}
+                                    style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: '0.2em', textAlign: 'center', fontSize: '1.5rem', padding: '20px', textTransform: 'uppercase' }}
                                     required
                                 />
-                                <p
-                                    id="room-code-description"
-                                    style={{ marginTop: 'var(--space-xs)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', textAlign: 'center' }}
-                                >
-                                    {t.roomCodeHint}
-                                </p>
                             </div>
                         )}
 
                         {error && (
-                            <p role="alert" style={{ color: 'var(--color-red)', fontWeight: 600 }}>
-                                {error}
-                            </p>
+                            <div style={{
+                                padding: '12px', backgroundColor: 'rgba(127, 29, 29, 0.2)', border: '1px solid rgba(220, 38, 38, 0.4)',
+                                color: '#fca5a5', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold'
+                            }}>
+                                <span>⚠️</span> {error}
+                            </div>
                         )}
 
-                        <button className="btn btn-primary btn-lg" type="submit">
+                        <button
+                            type="submit"
+                            style={{ ...goldBtnStyle, marginTop: '8px' }}
+                            className="active:translate-y-1"
+                        >
                             {mode === 'create' ? t.createBtn : t.joinBtn}
                         </button>
                     </form>
-                </section>
-            )}
+                )}
+            </div>
         </main>
     );
 }

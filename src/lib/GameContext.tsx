@@ -80,6 +80,7 @@ export interface GameContextType {
     kickPlayer: (playerId: string) => void;
     setPlayerAvatar: (avatar: string) => void;
     closeRoom: () => void;
+    addDebugPlayers: () => void;
 }
 
 // ============================================================================
@@ -415,6 +416,19 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         [persistProfile, clientState.playerName],
     );
 
+    const addDebugPlayers = useCallback(() => {
+        const dummy1 = { id: 'bot1', name: 'Bot Alice', avatarUrl: '🦊', isConnected: true, isHost: false, cards: [], collectedFlats: [], score: 0 };
+        const dummy2 = { id: 'bot2', name: 'Bot Bob', avatarUrl: '🦁', isConnected: true, isHost: false, cards: [], collectedFlats: [], score: 0 };
+
+        if (clientState.gameState) {
+            const newPlayers = [...clientState.gameState.players, dummy1, dummy2];
+            dispatch({
+                type: 'setGameState',
+                gameState: { ...clientState.gameState, players: newPlayers }
+            });
+        }
+    }, [clientState.gameState]);
+
     const clearError = useCallback(() => {
         if (errorTimerRef.current) {
             clearTimeout(errorTimerRef.current);
@@ -453,6 +467,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             kickPlayer,
             setPlayerAvatar,
             closeRoom,
+            addDebugPlayers,
         }),
         [
             socket,
@@ -480,6 +495,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             kickPlayer,
             setPlayerAvatar,
             closeRoom,
+            addDebugPlayers,
         ],
     );
 

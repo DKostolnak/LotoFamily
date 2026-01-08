@@ -14,8 +14,8 @@ interface PlayerListProps {
 
 /**
  * PlayerList Component
- * Displays connected players with avatars and flat indicators.
- * Supports clicking on avatars to view details.
+ * Displays connected players with avatars.
+ * Themed with explicit colors for the Royal Wooden theme.
  */
 export default function PlayerList({
     players,
@@ -25,7 +25,7 @@ export default function PlayerList({
     onPlayerClick,
 }: PlayerListProps) {
     return (
-        <div className={`flex ${compact ? 'gap-sm' : 'gap-md'} items-start`}>
+        <div className={`flex flex-wrap justify-center ${compact ? 'gap-3' : 'gap-4'} items-start`}>
             {players.map((player) => {
                 const flats = player.collectedFlats || [];
                 const hasFlat1 = flats.includes(1);
@@ -33,115 +33,118 @@ export default function PlayerList({
                 const isFirstFlat1 = flatWinners?.flat1 === player.id;
                 const isFirstFlat2 = flatWinners?.flat2 === player.id;
 
-                // Calculate Heat (Numbers needed to win)
+                // Simple heat calculation
                 let minNumbersLeft = 999;
                 if (player.cards) {
                     player.cards.forEach(card => {
                         let count = 0;
                         card.grid.forEach(row => {
                             row.forEach(cell => {
-                                if (cell.value !== null && !cell.isMarked) {
-                                    count++;
-                                }
+                                if (cell.value !== null && !cell.isMarked) count++;
                             });
                         });
                         if (count < minNumbersLeft) minNumbersLeft = count;
                     });
                 }
-                const heatLevel = minNumbersLeft <= 1 ? 1 : minNumbersLeft <= 2 ? 2 : 0; // 1=Critical, 2=Warning
+                const heatLevel = minNumbersLeft <= 1 ? 1 : minNumbersLeft <= 2 ? 2 : 0;
+
+                // Is this the current user?
+                const isMe = player.id === currentPlayerId;
 
                 return (
                     <button
                         key={player.id}
-                        className={`flex flex-col items-center gap-xs border-none bg-transparent p-0 cursor-pointer transition-transform active:scale-95 ${player.isHost ? 'host-badge' : ''}`}
+                        className="flex flex-col items-center gap-1 cursor-pointer transition-transform active:scale-95 relative group"
                         onClick={() => onPlayerClick?.(player)}
-                        style={{ opacity: player.isConnected ? 1 : 0.5 }}
+                        style={{
+                            opacity: player.isConnected ? 1 : 0.5,
+                            background: 'transparent',
+                            border: 'none',
+                            outline: 'none',
+                            appearance: 'none',
+                            WebkitAppearance: 'none',
+                            padding: 0,
+                            margin: 0
+                        }}
                     >
-                        {/* Heat Indicator (Fire/Emoji) */}
+                        {/* Host Crown */}
+                        {player.isHost && (
+                            <div className="absolute -top-3 -right-2 text-lg z-20 drop-shadow-md transform rotate-12">
+                                👑
+                            </div>
+                        )}
+
+                        {/* Heat Indicator */}
                         {heatLevel > 0 && (
-                            <div className={`absolute -top-2 ${heatLevel === 1 ? 'animate-bounce' : ''} z-20 pointer-events-none`}>
+                            <div className={`absolute -top-3 -left-2 z-20 pointer-events-none text-lg ${heatLevel === 1 ? 'animate-bounce' : ''}`}>
                                 {heatLevel === 1 ? '🔥' : '⚠️'}
                             </div>
                         )}
 
-                        {/* Flat Indicators */}
-                        <div className="flex gap-xs" style={{ height: '8px', marginBottom: '4px' }}>
-                            {hasFlat1 && (
-                                <div
-                                    style={{
-                                        width: '12px',
-                                        height: '4px',
-                                        background: isFirstFlat1 ? 'var(--color-green)' : 'var(--color-gold)',
-                                        borderRadius: '2px'
-                                    }}
-                                    title="1-Room Flat"
-                                />
-                            )}
-                            {hasFlat2 && (
-                                <div
-                                    style={{
-                                        width: '12px',
-                                        height: '4px',
-                                        background: isFirstFlat2 ? 'var(--color-green)' : 'var(--color-gold)',
-                                        borderRadius: '2px'
-                                    }}
-                                    title="2-Room Flat"
-                                />
-                            )}
-                        </div>
-
+                        {/* Avatar Box */}
+                        {/* Avatar Box - Matching AvatarPicker Style */}
                         <div
-                            className={`${compact ? 'w-10 h-10' : 'w-12 h-12'} relative transition-all duration-300`}
                             style={{
-                                border:
-                                    player.id === currentPlayerId
-                                        ? '3px solid var(--color-gold)'
-                                        : heatLevel === 1 ? '3px solid #ef4444'
-                                            : heatLevel === 2 ? '3px solid #f97316'
-                                                : '2px solid rgba(139, 69, 19, 0.5)',
-                                boxShadow:
-                                    heatLevel === 1 ? '0 0 15px rgba(239, 68, 68, 0.7)'
-                                        : heatLevel === 2 ? '0 0 10px rgba(249, 115, 22, 0.5)'
-                                            : '0 2px 4px rgba(0,0,0,0.3)',
-                                animation: heatLevel === 1 ? 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
+                                width: compact ? '56px' : '72px',
+                                height: compact ? '56px' : '72px',
+                                borderRadius: '14px',
+                                background: isMe
+                                    ? 'linear-gradient(145deg, #ffd700 0%, #daa520 100%)' // Gold for me
+                                    : '#1a1109', // Dark wood for others
+                                border: isMe ? '2px solid #b8860b' : '2px solid #3d2814',
+                                boxShadow: isMe
+                                    ? '0 0 15px rgba(255, 215, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.4)'
+                                    : 'inset 0 2px 4px rgba(0,0,0,0.5)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontSize: compact ? '1rem' : '1.5rem',
-                                background: '#D2B48C',
-                                borderRadius: '6px',
-                                overflow: 'hidden',
+                                fontSize: compact ? '2rem' : '2.5rem',
+                                color: isMe ? '#3d2814' : '#e8d4b8', // Dark on Gold, Cream on Wood
+                                position: 'relative',
+                                transition: 'all 0.2s',
+                                zIndex: 1,
                             }}
                         >
-                            <div className="overflow-hidden w-full h-full relative">
-                                {player.avatarUrl && (player.avatarUrl.includes('http') || player.avatarUrl.includes('data:')) ? (
-                                    <Image
-                                        src={player.avatarUrl}
-                                        alt={player.name}
-                                        fill
-                                        unoptimized
-                                        sizes={compact ? '40px' : '48px'}
-                                        style={{ objectFit: 'cover' }}
-                                    />
-                                ) : (
-                                    <span className="flex items-center justify-center w-full h-full">{player.avatarUrl || player.name.charAt(0).toUpperCase()}</span>
-                                )}
-                            </div>
+                            {/* Avatar Image/Placeholder */}
+                            {player.avatarUrl && (player.avatarUrl.includes('http') || player.avatarUrl.includes('data:')) ? (
+                                <Image
+                                    src={player.avatarUrl}
+                                    alt={player.name}
+                                    fill
+                                    unoptimized
+                                    sizes="72px"
+                                    style={{ objectFit: 'cover', borderRadius: '10px' }}
+                                />
+                            ) : (
+                                <span style={{ filter: isMe ? 'drop-shadow(0 2px 0 rgba(255,255,255,0.4))' : 'none' }}>
+                                    {player.avatarUrl || player.name.charAt(0).toUpperCase()}
+                                </span>
+                            )}
                         </div>
-                        {/* Always show player name - using smaller text when compact */}
+
+                        {/* Flat Indicators */}
+                        {(hasFlat1 || hasFlat2) && (
+                            <div className="flex gap-1 absolute -bottom-1 z-20 bg-black/50 px-1 rounded-full">
+                                {hasFlat1 && <div className={`w-2 h-2 rounded-full ${isFirstFlat1 ? 'bg-green-500 shadow-[0_0_5px_lime]' : 'bg-yellow-600'}`} />}
+                                {hasFlat2 && <div className={`w-2 h-2 rounded-full ${isFirstFlat2 ? 'bg-green-500 shadow-[0_0_5px_lime]' : 'bg-yellow-600'}`} />}
+                            </div>
+                        )}
+
+                        {/* Player Name */}
                         <span
                             style={{
-                                fontSize: compact ? '0.65rem' : 'var(--font-size-xs)',
-                                color: heatLevel === 1 ? '#ef4444' : 'var(--color-text-light)',
-                                fontWeight: heatLevel === 1 ? 'bold' : 'normal',
-                                maxWidth: compact ? '50px' : '60px',
+                                fontSize: '0.75rem',
+                                color: isMe ? '#ffd700' : '#e8d4b8',
+                                fontWeight: isMe ? '800' : '500',
+                                maxWidth: '80px',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
-                                textAlign: 'center',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                                marginTop: '4px'
                             }}
                         >
-                            {player.name}
+                            {player.name} {isMe && '(You)'}
                         </span>
                     </button>
                 );
