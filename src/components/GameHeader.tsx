@@ -224,7 +224,7 @@ function GameHeader({
                 >
                     {/* Left Controls: Back & Sound */}
                     <div
-                        className="absolute z-[100] flex items-center gap-2"
+                        className="absolute z-[100] flex items-center gap-3"
                         style={{
                             left: 'max(12px, env(safe-area-inset-left))',
                             top: '12px',
