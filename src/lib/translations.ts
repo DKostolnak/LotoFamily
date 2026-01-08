@@ -67,7 +67,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         joinMyGame: 'Join my Loto game!', joinWithCode: 'Join my Loto game with code:',
         gameSpeed: 'Game Speed', pausedByHost: 'Game is paused by host',
         selectTarget: 'Select Target 🎯', cancel: 'Cancel', mode: 'Mode',
-        copiedError: 'Failed to copy',
+        copiedError: 'Failed to copy', leaderboard: 'Leaderboard',
     },
     sk: {
         // Menu
@@ -133,7 +133,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         joinMyGame: 'Pripoj sa k mojej hre Loto!', joinWithCode: 'Pripoj sa kódom:',
         gameSpeed: 'Rýchlosť hry', pausedByHost: 'Hra je pozastavená hostiteľom',
         selectTarget: 'Vyber cieľ 🎯', cancel: 'Zrušiť', mode: 'Režim',
-        copiedError: 'Nepodarilo sa skopírovať',
+        copiedError: 'Nepodarilo sa skopírovať', leaderboard: 'Rebríček',
     },
     ru: {
         // Menu
@@ -199,7 +199,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         joinMyGame: 'Присоединяйся к моей игре в Лото!', joinWithCode: 'Присоединяйся с кодом:',
         gameSpeed: 'Скорость игры', pausedByHost: 'Игра приостановлена ведущим',
         selectTarget: 'Выбрать цель 🎯', cancel: 'Отмена', mode: 'Режим',
-        copiedError: 'Не удалось скопировать',
+        copiedError: 'Не удалось скопировать', leaderboard: 'Таблица лидеров',
     },
     uk: {
         // Menu
@@ -265,6 +265,6 @@ export const translations: Record<Language, TranslationDictionary> = {
         joinMyGame: 'Приєднуйся до моєї гри в Лото!', joinWithCode: 'Приєднуйся з кодом:',
         gameSpeed: 'Швидкість гри', pausedByHost: 'Гра призупинена ведучим',
         selectTarget: 'Обрати ціль 🎯', cancel: 'Скасувати', mode: 'Режим',
-        copiedError: 'Не вдалося скопіювати',
+        copiedError: 'Не вдалося скопіювати', leaderboard: 'Таблиця лідерів',
     }
 };

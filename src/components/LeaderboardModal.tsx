@@ -5,17 +5,19 @@ import { createPortal } from 'react-dom';
 import { Player } from '@/lib/types';
 import { playClickSound } from './GameAudioPlayer';
 import Image from 'next/image';
+import { TranslationDictionary } from '@/lib/translations';
 
 interface LeaderboardModalProps {
     players: Player[];
     currentUserId?: string;
     onClose: () => void;
+    t: TranslationDictionary;
 }
 
-export default function LeaderboardModal({ players, currentUserId, onClose }: LeaderboardModalProps) {
+export default function LeaderboardModal({ players, currentUserId, onClose, t }: LeaderboardModalProps) {
     useEffect(() => {
         if (typeof document === 'undefined') {
-            return () => {};
+            return () => { };
         }
 
         const originalOverflow = document.body.style.overflow;
@@ -79,7 +81,7 @@ export default function LeaderboardModal({ players, currentUserId, onClose }: Le
                     {/* Header */}
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-white font-bold uppercase tracking-wider text-lg flex items-center gap-2">
-                            🏆 Leaderboard
+                            🏆 {t.leaderboard}
                         </h3>
                         <button
                             onClick={() => { playClickSound(); onClose(); }}
@@ -130,7 +132,7 @@ export default function LeaderboardModal({ players, currentUserId, onClose }: Le
                                         </div>
                                         {isMe && (
                                             <div className="absolute -bottom-1 -right-1 bg-[var(--color-gold)] text-[var(--color-wood-dark)] text-[8px] font-bold px-1 rounded-full">
-                                                YOU
+                                                {t.me}
                                             </div>
                                         )}
                                     </div>

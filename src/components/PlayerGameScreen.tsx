@@ -137,6 +137,7 @@ function PlayerGameScreen({
                     players={gameState.players}
                     currentUserId={playerId}
                     onClose={handleCloseLeaderboard}
+                    t={t}
                 />
             )}
 
