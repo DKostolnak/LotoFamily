@@ -65,7 +65,7 @@ export default function Home() {
     restartGame,
     error,
     claimFlat,
-    useSabotage,
+
   } = useGame();
 
   // Prefetch components for faster transitions
@@ -200,7 +200,7 @@ export default function Home() {
         onMarkCell={handleMarkCell}
         onClaimWin={handleClaimWin}
         onClaimFlat={claimFlat}
-        onUseSabotage={useSabotage}
+
 
         // Host Props
         isHost={isHost}

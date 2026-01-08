@@ -82,9 +82,7 @@ function createPlayer(
         isHost,
         isConnected: true,
         collectedFlats: [],
-        energy: 0,
         score: 0,
-        activeDebuffs: {},
     };
 }
 

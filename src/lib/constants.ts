@@ -3,40 +3,7 @@
  * Single source of truth for all game configuration values
  */
 
-import type { SabotageType } from './types';
 
-// ============================================================================
-// SABOTAGE SYSTEM
-// ============================================================================
-
-/** Energy costs for each sabotage ability */
-export const SABOTAGE_COSTS: Record<SabotageType, number> = {
-    snowball: 30,    // Freeze target for 5 seconds
-    ink_splat: 20,   // Obscure target's view
-    swap_hand: 50,   // Shuffle target's card positions
-} as const;
-
-/** Duration of freeze effect in milliseconds */
-export const FREEZE_DURATION_MS = 5000;
-
-// ============================================================================
-// ENERGY SYSTEM
-// ============================================================================
-
-/** Maximum energy a player can accumulate */
-export const MAX_ENERGY = 100;
-
-/** Energy gained for marking a number quickly (within 2 seconds) */
-export const ENERGY_FAST_MARK = 15;
-
-/** Energy gained for marking a number slowly */
-export const ENERGY_SLOW_MARK = 5;
-
-/** Energy lost for marking an incorrect/uncalled number */
-export const ENERGY_MISTAKE_PENALTY = -10;
-
-/** Time window (ms) for fast mark bonus */
-export const FAST_MARK_WINDOW_MS = 2000;
 
 // ============================================================================
 // SCORING SYSTEM

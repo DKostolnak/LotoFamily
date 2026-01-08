@@ -103,9 +103,7 @@ describe('Room Handlers', () => {
                 isConnected: true,
                 cards: [],
                 collectedFlats: [],
-                energy: 0,
                 score: 0,
-                activeDebuffs: {},
             };
 
             game.players.push(player2);

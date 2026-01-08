@@ -431,6 +431,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -651,27 +652,7 @@ body {
   animation: shake-heavy 0.5s ease-in-out;
 }
 
-/* Fade Up Float - Energy text feedback */
-@keyframes fade-up-float {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
-  }
 
-  10% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.2);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -200%) scale(1);
-  }
-}
-
-.animate-fade-up-float {
-  animation: fade-up-float 0.8s ease-out forwards;
-}
 
 /* Mobile Responsive */
 @media (max-width: 480px) {
@@ -762,8 +743,7 @@ body {
   .animate-bounceIn,
   .animate-shake-light,
   .animate-shake-medium,
-  .animate-shake-heavy,
-  .animate-fade-up-float {
+  .animate-shake-heavy {
     animation: none !important;
   }
 }

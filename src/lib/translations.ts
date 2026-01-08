@@ -45,11 +45,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         kickPlayer: 'Kick Player', host: 'Host', online: 'Online', offline: 'Offline',
         score: 'Score', flats: 'Flats', cards: 'Cards', me: 'ME',
 
-        // Sabotage
-        freeze: 'Freeze', freezeDesc: 'Freeze player 5s',
-        ink: 'Ink', inkDesc: 'Cover card with ink',
-        shuffle: 'Shuffle', shuffleDesc: 'Shuffle their grid',
-        energy: 'ENERGY',
+
 
         // Toast Messages
         leftTheGame: 'left the game',
@@ -111,11 +107,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         kickPlayer: 'Vyhodiť hráča', host: 'Hostiteľ', online: 'Online', offline: 'Offline',
         score: 'Skóre', flats: 'Riadky', cards: 'Karty', me: 'JA',
 
-        // Sabotage
-        freeze: 'Zmraziť', freezeDesc: 'Zmrazí hráča na 5s',
-        ink: 'Atrament', inkDesc: 'Zakryť kartu atramentom',
-        shuffle: 'Zamiešať', shuffleDesc: 'Zamiešať ich mriežku',
-        energy: 'ENERGIA',
+
 
         // Toast Messages
         leftTheGame: 'opustil hru',
@@ -177,11 +169,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         kickPlayer: 'Выгнать игрока', host: 'Ведущий', online: 'Онлайн', offline: 'Офлайн',
         score: 'Счёт', flats: 'Ряды', cards: 'Карты', me: 'Я',
 
-        // Sabotage
-        freeze: 'Заморозить', freezeDesc: 'Заморозить на 5 сек',
-        ink: 'Чернила', inkDesc: 'Залить карту чернилами',
-        shuffle: 'Перемешать', shuffleDesc: 'Перемешать их сетку',
-        energy: 'ЭНЕРГИЯ',
+
 
         // Toast Messages
         leftTheGame: 'покинул игру',
@@ -243,11 +231,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         kickPlayer: 'Вигнати гравця', host: 'Ведучий', online: 'Онлайн', offline: 'Офлайн',
         score: 'Рахунок', flats: 'Ряди', cards: 'Карти', me: 'Я',
 
-        // Sabotage
-        freeze: 'Заморозити', freezeDesc: 'Заморозити на 5 сек',
-        ink: 'Чорнило', inkDesc: 'Залити карту чорнилом',
-        shuffle: 'Перемішати', shuffleDesc: 'Перемішати їх сітку',
-        energy: 'ЕНЕРГІЯ',
+
 
         // Toast Messages
         leftTheGame: 'покинув гру',

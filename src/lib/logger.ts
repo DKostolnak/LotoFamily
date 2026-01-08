@@ -83,5 +83,5 @@ export function createLogger(context: string) {
 export const serverLog = createLogger('Server');
 export const gameLog = createLogger('Game');
 export const roomLog = createLogger('Room');
-export const sabotageLog = createLogger('Sabotage');
+
 export const socketLog = createLogger('Socket');
