@@ -54,31 +54,10 @@ export function GameStatusListener() {
         );
     }
 
-    // Optional: Global Loading Overlay
-    if (isLoading) {
-        return (
-            <div
-                role="status"
-                aria-live="polite"
-                style={{
-                    position: 'fixed',
-                    top: '16px',
-                    right: '16px',
-                    zIndex: 1100,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 12px',
-                    borderRadius: '999px',
-                    backgroundColor: 'var(--color-wood-medium)',
-                    color: 'var(--color-text-light)'
-                }}
-            >
-                <span className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" aria-hidden="true" />
-                <span>Loading…</span>
-            </div>
-        );
-    }
+    // Note: GlobalGameToasts handles its own translations logic below or needs them passed down.
+    // Ideally we should use useGame()'s language setting, but GameStatusListener is somewhat global.
+    // For now, we will leave hardcoded English logs/toasts here as system messages, 
+    // or we can fetch the language from the game state if available.
 
     return (
         <>
@@ -87,10 +66,22 @@ export function GameStatusListener() {
     );
 }
 
-// Separate component to handle socket events to avoid re-rendering issues in the listener
+// ... (Updating GlobalGameToasts to use translations)
+
 export function GlobalGameToasts() {
     const { socket, gameState, playerId } = useGame();
     const { showToast } = useToast();
+
+    // Hack: Get translation dictionary directly here or assume 'en' if not ready
+    // Ideally we'd validly hook into the language context
+    const t = React.useMemo(() => {
+        // Safe fallback
+        const lang = gameState?.settings?.language || 'en';
+        return require('@/lib/translations').translations[lang];
+    }, [gameState?.settings?.language]);
+
+    // ...
+
 
     // Helper to get player name
     const getPlayerName = React.useCallback((id: string) => {
@@ -106,48 +97,49 @@ export function GlobalGameToasts() {
             const targetName = getPlayerName(targetId);
             const isMe = targetId === playerId;
 
+            // Simplified messages for now as complex templating with grammar is hard
+            // We use generic icons and names
             let message = '';
             let icon = '';
 
             if (type === 'snowball') {
-                message = `${attackerName} threw a SNOWBALL at ${isMe ? 'YOU' : targetName}!`;
+                message = `${attackerName} ➡️ ❄️ ➡️ ${isMe ? t.me : targetName}`;
                 icon = '❄️';
             } else if (type === 'ink_splat') {
-                message = `${attackerName} Splashed INK on ${isMe ? 'YOU' : targetName}!`;
+                message = `${attackerName} ➡️ 🐙 ➡️ ${isMe ? t.me : targetName}`;
                 icon = '🐙';
             } else if (type === 'swap_hand') {
-                message = `${attackerName} SHUFFLED ${isMe ? 'YOUR' : targetName + "'s"} cards!`;
+                message = `${attackerName} ➡️ 🌀 ➡️ ${isMe ? t.me : targetName}`;
                 icon = '🌀';
             }
 
-            // Don't show generic toast if I am the victim, I get a big error message already
-            // Actually, showing both is fine for consistency, but maybe styled differently.
-            // Let's show it as "info" or customized.
             showToast(message, 'info', icon);
         };
 
         const handleFlatClaim = (pid: string, type: number) => {
             const name = getPlayerName(pid);
-            showToast(`${name} claimed the ${type}-Room Flat!`, 'celebration', '🏠');
+            const lineText = type === 1 ? t.claimRow1 : t.claimRow2;
+            showToast(`${name}: ${lineText}!`, 'celebration', '🏠');
         };
 
         const handleWinner = (pid: string, name: string) => {
-            // Winner screen handles the big celebration, but a toast is good for history/confirmation
             if (pid !== playerId) {
-                showToast(`${name} WON THE GAME!`, 'celebration', '🏆');
+                showToast(`${name} ${t.playerWins}`, 'celebration', '🏆');
             }
         };
 
         const handlePlayerJoined = (player: import('@/lib/types').Player) => {
             if (player.id !== playerId) {
-                showToast(`${player.name} joined the game`, 'info', '👋');
+                showToast(`${player.name} ${t.online}`, 'info', '👋');
             }
         };
 
         const handlePlayerLeft = (departingPlayerId: string) => {
             const name = getPlayerName(departingPlayerId);
-            const label = name === 'Unknown Player' ? 'A player' : name;
-            showToast(`${label} left the game`, 'warning', '🚪');
+            // "A player left the game" or "Name left the game"
+            // We can reuse 'leftTheGame' key: 'left the game' / 'opustil hru'
+            const label = name === 'Unknown Player' ? t.players : name;
+            showToast(`${label} ${t.leftTheGame}`, 'warning', '🚪');
         };
 
         socket.on('game:sabotageEffect', handleSabotage);
@@ -163,7 +155,7 @@ export function GlobalGameToasts() {
             socket.off('game:playerJoined', handlePlayerJoined);
             socket.off('game:playerLeft', handlePlayerLeft);
         };
-    }, [socket, getPlayerName, playerId, showToast]);
+    }, [socket, getPlayerName, playerId, showToast, t]);
 
     return null;
 }

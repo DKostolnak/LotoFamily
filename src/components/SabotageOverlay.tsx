@@ -2,14 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 
+import { TranslationDictionary } from '@/lib/translations';
+
 interface SabotageOverlayProps {
     frozenUntil?: number;
     inkSplats?: { x: number; y: number; id: string }[];
+    t?: TranslationDictionary;
 }
 
 import { useScreenShake } from './ScreenShakeProvider';
 
-export default function SabotageOverlay({ frozenUntil, inkSplats }: SabotageOverlayProps) {
+export default function SabotageOverlay({ frozenUntil, inkSplats, t }: SabotageOverlayProps) {
     const [isFrozen, setIsFrozen] = useState(false);
     const [clearedSplats, setClearedSplats] = useState<Set<string>>(new Set());
     const { shake } = useScreenShake();
@@ -83,7 +86,7 @@ export default function SabotageOverlay({ frozenUntil, inkSplats }: SabotageOver
             return () => cancelAnimationFrame(frame);
         }
 
-        return () => {};
+        return () => { };
     }, [isFrozen]);
 
     // Disable interactions if nothing active
@@ -123,7 +126,7 @@ export default function SabotageOverlay({ frozenUntil, inkSplats }: SabotageOver
                         🥶
                     </div>
                     <div className="absolute top-1/2 mt-12 text-white font-black text-2xl uppercase tracking-widest drop-shadow-md">
-                        Frozen!
+                        {t?.frozen || 'Frozen!'}
                     </div>
                 </div>
             )}

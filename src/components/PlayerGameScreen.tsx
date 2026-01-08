@@ -255,6 +255,7 @@ function PlayerGameScreen({
                     <SabotageOverlay
                         frozenUntil={me.activeDebuffs.frozenUntil}
                         inkSplats={me.activeDebuffs.inkSplats}
+                        t={t}
                     />
                 );
             })()}
