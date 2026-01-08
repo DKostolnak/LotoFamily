@@ -216,20 +216,16 @@ function GameHeader({
             >
                 {/* Row 1: Controls & Current Number */}
                 <div
-                    className="relative w-full"
+                    className="relative w-full flex items-start"
                     style={{
                         height: HEADER_HEIGHT,
                         borderBottom: '2px solid rgba(0,0,0,0.4)',
+                        paddingLeft: 'max(12px, env(safe-area-inset-left))',
+                        paddingTop: 'max(12px, env(safe-area-inset-top))',
                     }}
                 >
                     {/* Left Controls: Back & Sound */}
-                    <div
-                        className="absolute z-[100] flex items-center gap-3"
-                        style={{
-                            left: 'max(12px, env(safe-area-inset-left))',
-                            top: '12px',
-                        }}
-                    >
+                    <div className="z-[100] flex items-center gap-3">
                         <HeaderButton onClick={handleLeaveButtonClick} ariaLabel="Leave game">
                             <BackArrowIcon />
                         </HeaderButton>
