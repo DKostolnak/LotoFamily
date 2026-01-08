@@ -1,51 +1,104 @@
 'use client';
 
-import React, { useEffect } from 'react';
+/**
+ * LeaderboardModal Component
+ * 
+ * Displays a ranked list of players by score.
+ * Styled with the wooden game theme for visual consistency.
+ * 
+ * Features:
+ * - Sorted player list by score
+ * - Medal icons for top 3 positions
+ * - Current player highlighting
+ * - Flats count display
+ */
+
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Player } from '@/lib/types';
-import { playClickSound } from './GameAudioPlayer';
+import { playClickSound } from '@/lib/audio';
 import Image from 'next/image';
 import { TranslationDictionary } from '@/lib/translations';
 
+// ============================================================================
+// TYPES
+// ============================================================================
+
 interface LeaderboardModalProps {
+    /** Array of players to display */
     players: Player[];
+    /** Current user's player ID for highlighting */
     currentUserId?: string;
+    /** Callback to close the modal */
     onClose: () => void;
+    /** Translation dictionary */
     t: TranslationDictionary;
 }
 
-export default function LeaderboardModal({ players, currentUserId, onClose, t }: LeaderboardModalProps) {
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const RANK_MEDALS = ['🥇', '🥈', '🥉'] as const;
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
+export default function LeaderboardModal({
+    players,
+    currentUserId,
+    onClose,
+    t
+}: LeaderboardModalProps) {
+    // Sort players by score descending
+    const sortedPlayers = useMemo(
+        () => [...players].sort((a, b) => (b.score || 0) - (a.score || 0)),
+        [players]
+    );
+
+    // Lock body scroll when modal is open
     useEffect(() => {
-        if (typeof document === 'undefined') {
-            return () => { };
-        }
+        if (typeof document === 'undefined') return;
 
         const originalOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
+
         return () => {
             document.body.style.overflow = originalOverflow;
         };
     }, []);
 
-    // Sort players by score descending
-    const sortedPlayers = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
-
-    const handleBackdropClick = (e: React.MouseEvent) => {
+    // Handle backdrop click to close
+    const handleBackdropClick = useCallback((e: React.MouseEvent) => {
         if (e.target === e.currentTarget) {
             playClickSound();
             onClose();
         }
-    };
+    }, [onClose]);
 
-    const handleBackdropKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (event.key === 'Escape' || (event.key === 'Enter' && event.currentTarget === event.target)) {
+    // Handle keyboard events
+    const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+        if (event.key === 'Escape') {
             playClickSound();
             onClose();
         }
-    };
+    }, [onClose]);
+
+    // Handle close button click
+    const handleClose = useCallback(() => {
+        playClickSound();
+        onClose();
+    }, [onClose]);
+
+    // Don't render on server
+    if (typeof document === 'undefined') {
+        return null;
+    }
 
     const modalContent = (
         <div
+            className="animate-fadeIn"
             style={{
                 position: 'fixed',
                 top: 0,
@@ -56,131 +109,269 @@ export default function LeaderboardModal({ players, currentUserId, onClose, t }:
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                backgroundColor: 'rgba(0, 0, 0, 0.75)',
                 backdropFilter: 'blur(4px)',
                 padding: '16px',
-                animation: 'fadeIn 0.2s ease-out',
             }}
             onClick={handleBackdropClick}
+            onKeyDown={handleKeyDown}
             role="presentation"
             tabIndex={-1}
-            onKeyDown={handleBackdropKeyDown}
         >
+            {/* Modal Card - Wooden Theme */}
             <div
+                className="animate-scaleIn"
                 style={{
                     position: 'relative',
                     width: '100%',
-                    maxWidth: '384px',
-                    animation: 'modalSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                    maxWidth: '380px',
+                    backgroundImage: 'url(/assets/wood-seamless.png)',
+                    backgroundSize: '256px 256px',
+                    backgroundRepeat: 'repeat',
+                    borderRadius: '20px',
+                    border: '4px solid #2d1f10',
+                    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.1)',
+                    overflow: 'hidden',
                 }}
                 role="dialog"
                 aria-modal="true"
+                aria-labelledby="leaderboard-title"
             >
-                {/* Leaderboard Card */}
-                <div className="bg-gradient-to-b from-[#5d4037] to-[#3e2723] rounded-2xl p-5 shadow-2xl border-2 border-[var(--color-gold)]">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-white font-bold uppercase tracking-wider text-lg flex items-center gap-2">
-                            🏆 {t.leaderboard}
-                        </h3>
-                        <button
-                            onClick={() => { playClickSound(); onClose(); }}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white text-lg"
-                            aria-label="Close"
-                        >
-                            ✕
-                        </button>
-                    </div>
+                {/* Header */}
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '16px 20px',
+                        borderBottom: '3px solid rgba(0, 0, 0, 0.3)',
+                        background: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.2) 100%)',
+                    }}
+                >
+                    <h3
+                        id="leaderboard-title"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            margin: 0,
+                            fontSize: '1.25rem',
+                            fontWeight: 700,
+                            color: '#f5e6c8',
+                            textTransform: 'uppercase',
+                            letterSpacing: '1px',
+                            textShadow: '1px 1px 0 #3d2814, 0 2px 4px rgba(0,0,0,0.6)',
+                        }}
+                    >
+                        🏆 {t.leaderboard}
+                    </h3>
 
-                    {/* Player List */}
-                    <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
-                        {sortedPlayers.map((player, index) => {
-                            const isMe = player.id === currentUserId;
-                            const rank = index + 1;
+                    {/* Close Button */}
+                    <button
+                        type="button"
+                        onClick={handleClose}
+                        className="active:scale-90 transition-transform"
+                        style={{
+                            width: '32px',
+                            height: '32px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'rgba(0, 0, 0, 0.3)',
+                            borderRadius: '50%',
+                            border: '2px solid rgba(255, 255, 255, 0.2)',
+                            color: '#f5e6c8',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                        }}
+                        aria-label="Close"
+                    >
+                        ✕
+                    </button>
+                </div>
 
-                            let rankIcon = <span className="text-white/50 w-6 text-center font-mono">{rank}</span>;
-                            if (rank === 1) rankIcon = <span className="text-2xl">🥇</span>;
-                            if (rank === 2) rankIcon = <span className="text-2xl">🥈</span>;
-                            if (rank === 3) rankIcon = <span className="text-2xl">🥉</span>;
+                {/* Player List */}
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        padding: '16px',
+                        maxHeight: '60vh',
+                        overflowY: 'auto',
+                    }}
+                >
+                    {sortedPlayers.map((player, index) => {
+                        const isCurrentUser = player.id === currentUserId;
+                        const rank = index + 1;
+                        const hasMedal = rank <= 3;
 
-                            return (
+                        return (
+                            <div
+                                key={player.id}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '12px 14px',
+                                    background: isCurrentUser
+                                        ? 'linear-gradient(145deg, rgba(201, 166, 107, 0.3) 0%, rgba(160, 125, 74, 0.2) 100%)'
+                                        : 'linear-gradient(145deg, #5a4025 0%, #3d2814 100%)',
+                                    borderRadius: '12px',
+                                    border: isCurrentUser
+                                        ? '2px solid #c9a66b'
+                                        : '2px solid #2d1f10',
+                                    boxShadow: isCurrentUser
+                                        ? '0 0 12px rgba(201, 166, 107, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                                        : 'inset 0 2px 4px rgba(0, 0, 0, 0.3)',
+                                }}
+                            >
+                                {/* Rank */}
                                 <div
-                                    key={player.id}
-                                    className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isMe
-                                        ? 'bg-gradient-to-r from-[var(--color-gold)]/30 to-[var(--color-gold)]/10 border border-[var(--color-gold)]/50'
-                                        : 'bg-white/5 hover:bg-white/10'
-                                        }`}
+                                    style={{
+                                        width: '32px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}
                                 >
-                                    <div className="flex items-center justify-center w-8 shrink-0">
-                                        {rankIcon}
-                                    </div>
-
-                                    <div className="relative shrink-0">
-                                        <div className="w-10 h-10 rounded-full border-2 border-white/20 bg-[#D2B48C] flex items-center justify-center text-lg overflow-hidden relative">
-                                            {player.avatarUrl && (player.avatarUrl.startsWith('http') || player.avatarUrl.startsWith('data:')) ? (
-                                                <Image
-                                                    src={player.avatarUrl}
-                                                    alt={player.name}
-                                                    fill
-                                                    unoptimized
-                                                    sizes="40px"
-                                                    className="object-cover"
-                                                />
-                                            ) : (
-                                                <span>{player.avatarUrl || player.name.charAt(0)}</span>
-                                            )}
-                                        </div>
-                                        {isMe && (
-                                            <div className="absolute -bottom-1 -right-1 bg-[var(--color-gold)] text-[var(--color-wood-dark)] text-[8px] font-bold px-1 rounded-full">
-                                                {t.me}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex-1 min-w-0">
-                                        <div className={`truncate font-medium ${isMe ? 'text-[var(--color-gold)]' : 'text-white'}`}>
-                                            {player.name}
-                                        </div>
-                                        {player.collectedFlats && player.collectedFlats.length > 0 && (
-                                            <div className="text-xs text-white/50">
-                                                {player.collectedFlats.length} flat{player.collectedFlats.length > 1 ? 's' : ''}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="font-mono font-bold text-xl text-white">
-                                        {player.score || 0}
-                                    </div>
+                                    {hasMedal ? (
+                                        <span style={{ fontSize: '24px' }}>{RANK_MEDALS[rank - 1]}</span>
+                                    ) : (
+                                        <span
+                                            style={{
+                                                fontSize: '16px',
+                                                fontWeight: 700,
+                                                color: '#a08060',
+                                                fontFamily: 'monospace',
+                                            }}
+                                        >
+                                            {rank}
+                                        </span>
+                                    )}
                                 </div>
-                            );
-                        })}
-                    </div>
+
+                                {/* Avatar */}
+                                <div style={{ position: 'relative', flexShrink: 0 }}>
+                                    <div
+                                        style={{
+                                            width: '44px',
+                                            height: '44px',
+                                            borderRadius: '50%',
+                                            border: '3px solid #c9a66b',
+                                            background: 'linear-gradient(145deg, #5a4025 0%, #3d2814 100%)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '20px',
+                                            overflow: 'hidden',
+                                            position: 'relative',
+                                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
+                                        }}
+                                    >
+                                        {player.avatarUrl && (player.avatarUrl.startsWith('http') || player.avatarUrl.startsWith('data:')) ? (
+                                            <Image
+                                                src={player.avatarUrl}
+                                                alt={player.name}
+                                                fill
+                                                unoptimized
+                                                sizes="44px"
+                                                style={{ objectFit: 'cover' }}
+                                            />
+                                        ) : (
+                                            <span>{player.avatarUrl || player.name.charAt(0)}</span>
+                                        )}
+                                    </div>
+
+                                    {/* "You" Badge */}
+                                    {isCurrentUser && (
+                                        <div
+                                            style={{
+                                                position: 'absolute',
+                                                bottom: '-2px',
+                                                right: '-2px',
+                                                background: 'linear-gradient(145deg, #ffd700 0%, #daa520 100%)',
+                                                color: '#3d2814',
+                                                fontSize: '8px',
+                                                fontWeight: 700,
+                                                padding: '2px 5px',
+                                                borderRadius: '6px',
+                                                border: '1px solid #b8860b',
+                                                textTransform: 'uppercase',
+                                            }}
+                                        >
+                                            {t.me}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Name & Flats */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div
+                                        style={{
+                                            fontSize: '1rem',
+                                            fontWeight: 600,
+                                            color: isCurrentUser ? '#ffd700' : '#f5e6c8',
+                                            textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {player.name}
+                                    </div>
+                                    {player.collectedFlats && player.collectedFlats.length > 0 && (
+                                        <div
+                                            style={{
+                                                fontSize: '11px',
+                                                color: '#a08060',
+                                                marginTop: '2px',
+                                            }}
+                                        >
+                                            🏠 {player.collectedFlats.length} flat{player.collectedFlats.length > 1 ? 's' : ''}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Score */}
+                                <div
+                                    style={{
+                                        fontSize: '1.25rem',
+                                        fontWeight: 700,
+                                        fontFamily: 'monospace',
+                                        color: '#f5e6c8',
+                                        textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                    }}
+                                >
+                                    <span style={{ fontSize: '14px' }}>⭐</span>
+                                    {player.score || 0}
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {/* Empty State */}
+                    {sortedPlayers.length === 0 && (
+                        <div
+                            style={{
+                                textAlign: 'center',
+                                padding: '32px',
+                                color: '#a08060',
+                                fontSize: '14px',
+                            }}
+                        >
+                            No players yet
+                        </div>
+                    )}
                 </div>
             </div>
-
-            {/* Animation styles */}
-            <style jsx>{`
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes modalSlideIn {
-                    from { 
-                        opacity: 0;
-                        transform: scale(0.9) translateY(20px);
-                    }
-                    to { 
-                        opacity: 1;
-                        transform: scale(1) translateY(0);
-                    }
-                }
-            `}</style>
         </div>
     );
-
-    if (typeof document === 'undefined') {
-        return null;
-    }
 
     return createPortal(modalContent, document.body);
 }
