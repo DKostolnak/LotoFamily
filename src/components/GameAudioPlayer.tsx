@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { GameState } from '@/lib/types';
-import { SOUNDS, playBeep, vibrate, speakNumber } from '@/lib/audio';
+import { SOUNDS, CHORDS, playBeep, vibrate, speakNumber } from '@/lib/audio';
 
 interface GameAudioPlayerProps {
     gameState: GameState | null;
@@ -14,7 +14,7 @@ export default function GameAudioPlayer({ gameState }: GameAudioPlayerProps) {
     const lastPhaseRef = useRef<string | null>(null);
 
     const playVictorySound = useCallback(() => {
-        const { frequencies, duration, type } = SOUNDS.bingo;
+        const { frequencies, duration, type } = CHORDS.bingo;
         frequencies.forEach((freq, index) => {
             setTimeout(() => playBeep(freq, duration, type, 0.3), index * 150);
         });
