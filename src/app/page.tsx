@@ -1,18 +1,16 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import MainMenu from '@/components/MainMenu';
 import { useGame } from '@/lib/GameContext';
+import { translations } from '@/lib/translations';
 
 // Dynamically import heavy components to reduce initial bundle
 const WaitingLobby = dynamic(() => import('@/components/WaitingLobby'), {
   loading: () => <LoadingSpinner />,
 });
 const PlayerGameScreen = dynamic(() => import('@/components/PlayerGameScreen'), {
-  loading: () => <LoadingSpinner />,
-});
-const HostCallerScreen = dynamic(() => import('@/components/HostCallerScreen'), {
   loading: () => <LoadingSpinner />,
 });
 const WinnerCelebration = dynamic(() => import('@/components/WinnerCelebration'), {
@@ -28,6 +26,21 @@ function LoadingSpinner() {
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-gold)]" />
     </div>
   );
+}
+
+/**
+ * Prefetch components based on likely next phase
+ */
+function usePrefetchComponents(phase: string | undefined) {
+  useEffect(() => {
+    if (phase === 'lobby') {
+      // Prefetch game screen when in lobby
+      import('@/components/PlayerGameScreen');
+    } else if (phase === 'playing' || phase === 'paused') {
+      // Prefetch winner celebration during gameplay
+      import('@/components/WinnerCelebration');
+    }
+  }, [phase]);
 }
 
 /**
@@ -52,8 +65,17 @@ export default function Home() {
     restartGame,
     error,
     claimFlat,
-    useSabotage
+    useSabotage,
   } = useGame();
+
+  // Prefetch components for faster transitions
+  usePrefetchComponents(gameState?.phase);
+
+  // Get translations based on game settings or browser default
+  const t = useMemo(() => {
+    const lang = gameState?.settings?.language || 'en';
+    return translations[lang] || translations.en;
+  }, [gameState?.settings?.language]);
 
   // Handle winners
   const winner = gameState?.winnerId
@@ -144,6 +166,7 @@ export default function Home() {
           onNewGame={handleNewGame}
           onBackToLobby={handleBackToLobby}
           currentUserId={playerId || ''}
+          t={t}
         />
       </>
     );

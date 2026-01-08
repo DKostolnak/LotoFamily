@@ -4,6 +4,11 @@
  */
 
 :root {
+  /* Base Surface Colors */
+  --color-bg: #fdf7ed;
+  --color-bg-paper: #ffffff;
+  --color-bg-strong: #3c2a1e;
+
   /* Color Palette - Warm Wood Theme */
   --color-wood-dark: #5d4037;
   --color-wood-medium: #795548;
@@ -36,6 +41,7 @@
   --color-text-secondary: #757575;
   --color-text-light: #ffffff;
   --color-text-gold: #ffc107;
+  --color-focus-ring: rgba(255, 193, 7, 0.65);
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
@@ -59,14 +65,14 @@
 
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-size-xs: 12px;
-  --font-size-sm: 14px;
-  --font-size-md: 16px;
-  --font-size-lg: 20px;
-  --font-size-xl: 24px;
-  --font-size-xxl: 32px;
-  --font-size-huge: 48px;
-  --font-size-display: 72px;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.88rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.5rem;
+  --font-size-xl: 2.25rem;
+  --font-size-xxl: 3rem;
+  --font-size-huge: 4rem;
+  --font-size-display: 4.5rem;
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -90,24 +96,43 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: 18px;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior: none;
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 17px;
+  }
 }
 
 body {
   font-family: var(--font-family);
   font-size: var(--font-size-md);
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--color-text-primary);
-  background: linear-gradient(135deg, var(--color-wood-dark) 0%, var(--color-wood-medium) 100%);
-  height: 100vh;
-  height: 100dvh;
-  /* Dynamic viewport height for mobile */
-  /* Dynamic viewport height for mobile */
+  background: var(--color-bg);
+  min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   touch-action: pan-x pan-y;
   -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1f130b;
+    --color-bg-paper: #2b1a10;
+    --color-text-primary: #f5e7dc;
+    --color-text-secondary: #e0c9ba;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 4px;
 }
 
 /* Utility: Viewport height with mobile fallback */
@@ -154,10 +179,17 @@ body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  min-height: 3.5rem;
+  letter-spacing: 0.01em;
 }
 
 .btn:active {
   transform: scale(0.98);
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 4px;
 }
 
 /* Touch Device Optimization */
@@ -396,6 +428,17 @@ body {
 
 .flex-wrap {
   flex-wrap: wrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .items-center {

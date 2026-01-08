@@ -16,25 +16,13 @@ import {
     type Player,
     type CalledNumber,
 } from '../lib/types';
+import { ROOM_CODE_CHARS, ROOM_CODE_LENGTH, POINTS } from '../lib/constants';
 import { generateCards } from './lotoCardGenerator';
 import { checkPlayerWin } from './gameModes';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-
-/** Characters for room code generation (excluding ambiguous chars I, O, 0, 1) */
-const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ROOM_CODE_LENGTH = 6;
-
-/** Points awarded for various achievements */
-const POINTS = {
-    WIN: 1000,
-    FLAT_1: 100,
-    FLAT_2: 200,
-    FLAT_1_FIRST_BONUS: 150,
-    FLAT_2_FIRST_BONUS: 300,
-} as const;
 
 // ============================================================================
 // UTILITY FUNCTIONS

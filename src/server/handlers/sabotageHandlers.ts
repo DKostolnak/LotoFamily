@@ -45,7 +45,7 @@ export function handleUseSabotage(
     const roomCode = getRoomCode(socket);
     if (!roomCode) return;
 
-    let game = store.getGame(roomCode);
+    const game = store.getGame(roomCode);
     if (!game) return;
 
     const attacker = game.players.find(p => p.id === socket.id);

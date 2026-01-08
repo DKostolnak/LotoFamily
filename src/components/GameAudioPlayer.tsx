@@ -9,7 +9,6 @@ interface GameAudioPlayerProps {
     onCellMark?: () => void;
 }
 
-// Sound configuration for different events
 const SOUNDS = {
     numberCall: { frequency: 440, duration: 200, type: 'sine' as OscillatorType },
     cellMark: { frequency: 880, duration: 100, type: 'sine' as OscillatorType },
@@ -19,30 +18,37 @@ const SOUNDS = {
     click: { frequency: 1200, duration: 50, type: 'sine' as OscillatorType },
 };
 
-// ============================================================================
-// AUDIO CONTEXT SINGLETON
-// Prevents memory leaks from creating multiple contexts (mobile Safari limit)
-// ============================================================================
-
 let sharedAudioContext: AudioContext | null = null;
 
-/**
- * Get or create the shared AudioContext instance
- * Uses lazy initialization to ensure it's created after user interaction
- */
+type AudioContextCtor = typeof AudioContext;
+
+function resolveAudioContext(): AudioContextCtor {
+    const globalWindow = window as typeof window & {
+        webkitAudioContext?: AudioContextCtor;
+    };
+
+    if (typeof globalWindow.AudioContext === 'function') {
+        return globalWindow.AudioContext;
+    }
+
+    if (globalWindow.webkitAudioContext) {
+        return globalWindow.webkitAudioContext;
+    }
+
+    throw new Error('AudioContext is not supported');
+}
+
 function getSharedAudioContext(): AudioContext {
     if (!sharedAudioContext) {
-        sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioContextConstructor = resolveAudioContext();
+        sharedAudioContext = new AudioContextConstructor();
     }
     if (sharedAudioContext.state === 'suspended') {
-        sharedAudioContext.resume();
+        void sharedAudioContext.resume();
     }
     return sharedAudioContext;
 }
 
-/**
- * Core beep function using the shared context
- */
 function playBeep(frequency: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.2): void {
     try {
         const ctx = getSharedAudioContext();
@@ -60,21 +66,15 @@ function playBeep(frequency: number, duration: number, type: OscillatorType = 's
 
         oscillator.start(ctx.currentTime);
         oscillator.stop(ctx.currentTime + duration / 1000);
-    } catch (e) {
+    } catch {
         // Silent fail - audio not critical
     }
 }
 
-/**
- * Haptic feedback utility - uses battery-aware vibration
- */
 function vibrate(pattern: number | number[]): void {
     vibrateIfAllowed(pattern);
 }
 
-/**
- * Speak a number using speech synthesis
- */
 function speakNumber(num: number, lang: 'en' | 'sk' | 'uk' | 'ru'): void {
     if (!('speechSynthesis' in window)) return;
 
@@ -82,7 +82,6 @@ function speakNumber(num: number, lang: 'en' | 'sk' | 'uk' | 'ru'): void {
 
     const utterance = new SpeechSynthesisUtterance(`${num}`);
 
-    // Map language codes to BCP 47 tags
     const langMap: Record<string, string> = {
         en: 'en-US',
         sk: 'sk-SK',
@@ -97,18 +96,14 @@ function speakNumber(num: number, lang: 'en' | 'sk' | 'uk' | 'ru'): void {
     window.speechSynthesis.speak(utterance);
 }
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
-
 export default function GameAudioPlayer({ gameState }: GameAudioPlayerProps) {
     const lastNumberRef = useRef<number | null>(null);
     const lastPhaseRef = useRef<string | null>(null);
 
     const playVictorySound = useCallback(() => {
         const { frequencies, duration, type } = SOUNDS.bingo;
-        frequencies.forEach((freq, i) => {
-            setTimeout(() => playBeep(freq, duration, type, 0.3), i * 150);
+        frequencies.forEach((freq, index) => {
+            setTimeout(() => playBeep(freq, duration, type, 0.3), index * 150);
         });
         vibrate([100, 50, 100, 50, 200]);
     }, []);
@@ -116,7 +111,6 @@ export default function GameAudioPlayer({ gameState }: GameAudioPlayerProps) {
     useEffect(() => {
         if (!gameState) return;
 
-        // Number called - play sound and speak
         if (gameState.currentNumber !== lastNumberRef.current && gameState.currentNumber !== null) {
             if (gameState.phase === 'playing') {
                 playBeep(SOUNDS.numberCall.frequency, SOUNDS.numberCall.duration, SOUNDS.numberCall.type, 0.3);
@@ -126,61 +120,47 @@ export default function GameAudioPlayer({ gameState }: GameAudioPlayerProps) {
             lastNumberRef.current = gameState.currentNumber;
         }
 
-        // Winner detected - play victory
         if (gameState.phase === 'finished' && lastPhaseRef.current !== 'finished') {
             playVictorySound();
         }
 
-        // Track phase
         lastPhaseRef.current = gameState.phase;
 
-        // Reset on game restart
         if (gameState.currentNumber === null) {
             lastNumberRef.current = null;
         }
 
-    }, [gameState?.currentNumber, gameState?.phase, gameState?.settings.language, playVictorySound]);
+    }, [gameState, playVictorySound]);
 
-    return null; // Invisible component
+    return null;
 }
 
-// ============================================================================
-// EXPORTED SOUND UTILITIES
-// All use the shared audio context to prevent memory leaks
-// ============================================================================
-
-/** Sound for marking a cell */
 export function playCellMarkSound(): void {
     playBeep(SOUNDS.cellMark.frequency, SOUNDS.cellMark.duration, SOUNDS.cellMark.type, 0.2);
     vibrate(30);
 }
 
-/** Generic UI click sound */
 export function playClickSound(): void {
     playBeep(SOUNDS.click.frequency, SOUNDS.click.duration, SOUNDS.click.type, 0.1);
 }
 
-/** Error/mistake sound */
 export function playErrorSound(): void {
     playBeep(SOUNDS.error.frequency, SOUNDS.error.duration, SOUNDS.error.type, 0.2);
     vibrate(200);
 }
 
-/** Victory fanfare */
 export function playVictoryFanfare(): void {
     const { frequencies, duration, type } = SOUNDS.bingo;
-    frequencies.forEach((freq, i) => {
-        setTimeout(() => playBeep(freq, duration, type, 0.2), i * 150);
+    frequencies.forEach((freq, index) => {
+        setTimeout(() => playBeep(freq, duration, type, 0.2), index * 150);
     });
     vibrate([100, 50, 100, 50, 200]);
 }
 
-/** Alias for victory fanfare */
 export function playWinSound(): void {
     playVictoryFanfare();
 }
 
-/** Sad descending sound for loss */
 export function playLossSound(): void {
     try {
         const ctx = getSharedAudioContext();
@@ -199,15 +179,14 @@ export function playLossSound(): void {
 
         oscillator.start(ctx.currentTime);
         oscillator.stop(ctx.currentTime + 0.8);
-    } catch (e) {
+    } catch {
         // Silent
     }
 }
 
-/** Ice shatter effect for freeze */
 export function playFreezeSound(): void {
     const ctx = getSharedAudioContext();
-    [2000, 2500, 3000, 4000].forEach((freq, i) => {
+    [2000, 2500, 3000, 4000].forEach((freq, index) => {
         try {
             const oscillator = ctx.createOscillator();
             const gainNode = ctx.createGain();
@@ -216,21 +195,20 @@ export function playFreezeSound(): void {
             gainNode.connect(ctx.destination);
 
             oscillator.type = 'sawtooth';
-            oscillator.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.05);
+            oscillator.frequency.setValueAtTime(freq, ctx.currentTime + index * 0.05);
 
-            gainNode.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.05);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.05 + 0.1);
+            gainNode.gain.setValueAtTime(0.1, ctx.currentTime + index * 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + index * 0.05 + 0.1);
 
-            oscillator.start(ctx.currentTime + i * 0.05);
-            oscillator.stop(ctx.currentTime + i * 0.05 + 0.1);
-        } catch (e) {
+            oscillator.start(ctx.currentTime + index * 0.05);
+            oscillator.stop(ctx.currentTime + index * 0.05 + 0.1);
+        } catch {
             // Silent
         }
     });
     vibrate([30, 30, 30]);
 }
 
-/** Splat sound for ink */
 export function playSplatSound(): void {
     try {
         const ctx = getSharedAudioContext();
@@ -251,12 +229,11 @@ export function playSplatSound(): void {
         oscillator.stop(ctx.currentTime + 0.3);
 
         vibrate(50);
-    } catch (e) {
+    } catch {
         // Silent
     }
 }
 
-/** Bonus chime for speed marks */
 export function playBonusSound(): void {
     try {
         const ctx = getSharedAudioContext();
@@ -275,7 +252,8 @@ export function playBonusSound(): void {
 
         oscillator.start(ctx.currentTime);
         oscillator.stop(ctx.currentTime + 0.3);
-    } catch (e) {
+    } catch {
         // Silent
     }
 }
+

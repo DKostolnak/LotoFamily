@@ -2,17 +2,19 @@
 
 import React, { useMemo } from 'react';
 import { LotoCard } from '@/lib/types';
+import type { TranslationDictionary } from '@/lib/translations';
 
 interface GameProgressProps {
     cards: LotoCard[];
     calledNumbers: number[];
+    t: TranslationDictionary;
 }
 
 /**
  * GameProgress Component
  * Shows overall progress across all player cards
  */
-export default function GameProgress({ cards, calledNumbers }: GameProgressProps) {
+export default function GameProgress({ cards, calledNumbers, t }: GameProgressProps) {
     const { totalNumbers, markedCorrectly, remaining, progressPercent } = useMemo(() => {
         let total = 0;
         let marked = 0;
@@ -50,7 +52,7 @@ export default function GameProgress({ cards, calledNumbers }: GameProgressProps
                     animation: 'pulse 1s infinite'
                 }}
             >
-                🔥 Almost there! {remaining} left!
+                🔥 {t.almostThere} {remaining} {t.numbersLeft}!
             </div>
         );
     }
@@ -65,7 +67,7 @@ export default function GameProgress({ cards, calledNumbers }: GameProgressProps
                 opacity: 0.7
             }}
         >
-            Progress: {markedCorrectly}/{totalNumbers} ({progressPercent}%)
+            {t.progress}: {markedCorrectly}/{totalNumbers} ({progressPercent}%)
         </div>
     );
 }

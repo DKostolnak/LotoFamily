@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Player, FlatWinners } from '@/lib/types';
+import Image from 'next/image';
 
 interface PlayerListProps {
     players: Player[];
@@ -112,9 +113,16 @@ export default function PlayerList({
                                 overflow: 'hidden',
                             }}
                         >
-                            <div className="overflow-hidden w-full h-full">
+                            <div className="overflow-hidden w-full h-full relative">
                                 {player.avatarUrl && (player.avatarUrl.includes('http') || player.avatarUrl.includes('data:')) ? (
-                                    <img src={player.avatarUrl} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <Image
+                                        src={player.avatarUrl}
+                                        alt={player.name}
+                                        fill
+                                        unoptimized
+                                        sizes={compact ? '40px' : '48px'}
+                                        style={{ objectFit: 'cover' }}
+                                    />
                                 ) : (
                                     <span className="flex items-center justify-center w-full h-full">{player.avatarUrl || player.name.charAt(0).toUpperCase()}</span>
                                 )}

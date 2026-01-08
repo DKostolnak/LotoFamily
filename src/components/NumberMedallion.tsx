@@ -24,30 +24,42 @@ export default function NumberMedallion({
 
     useEffect(() => {
         if (number !== prevNumberRef.current && number !== null) {
-            // Phase 1: Pop in big
-            setAnimationPhase('pop-in');
-            setDisplayNumber(number);
+            const popFrame = requestAnimationFrame(() => {
+                setDisplayNumber(number);
+                setAnimationPhase('pop-in');
+            });
 
-            // Phase 2: Shrink to normal after pop
-            const shrinkTimer = setTimeout(() => {
+            const shrinkTimer = window.setTimeout(() => {
                 setAnimationPhase('shrink');
             }, 150);
 
-            // Phase 3: Return to idle
-            const idleTimer = setTimeout(() => {
+            const idleTimer = window.setTimeout(() => {
                 setAnimationPhase('idle');
             }, 600);
 
             prevNumberRef.current = number;
 
             return () => {
+                cancelAnimationFrame(popFrame);
                 clearTimeout(shrinkTimer);
                 clearTimeout(idleTimer);
             };
-        } else if (number === null) {
-            setDisplayNumber(null);
-            prevNumberRef.current = null;
         }
+
+        if (number === null && prevNumberRef.current !== null) {
+            const resetFrame = requestAnimationFrame(() => {
+                setDisplayNumber(null);
+                setAnimationPhase('idle');
+            });
+            prevNumberRef.current = null;
+
+            return () => {
+                cancelAnimationFrame(resetFrame);
+            };
+        }
+
+        prevNumberRef.current = number;
+        return () => {};
     }, [number]);
 
     const sizeClass = size === 'sm' ? 'medallion-sm' : size === 'lg' ? 'medallion-lg' : '';

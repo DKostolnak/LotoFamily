@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { translations } from '@/lib/translations';
 import CallerBoard from './CallerBoard';
 
@@ -32,135 +33,159 @@ export default function HostControls({
     onResume,
     onEndGame,
 }: HostControlsProps) {
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isBoardOpen, setIsBoardOpen] = useState(false);
+    const [showEndConfirm, setShowEndConfirm] = useState(false);
+    const boardRef = useRef<HTMLDialogElement>(null);
+    const confirmRef = useRef<HTMLButtonElement>(null);
     const t = translations[language];
 
     const canCallNumber = remainingCount > 0 && !isPaused;
 
+    useEffect(() => {
+        const dialog = boardRef.current;
+        if (!dialog) return;
+        if (isBoardOpen && !dialog.open) {
+            dialog.showModal();
+        } else if (!isBoardOpen && dialog.open) {
+            dialog.close();
+        }
+    }, [isBoardOpen]);
+
+    useEffect(() => {
+        if (showEndConfirm) {
+            confirmRef.current?.focus();
+        }
+    }, [showEndConfirm]);
+
+    const handleTogglePause = () => {
+        if (isPaused) onResume?.();
+        else onPause?.();
+    };
+
+    const endGameDialog = showEndConfirm
+        ? createPortal(
+              <div
+                  role="alertdialog"
+                  aria-modal="true"
+                  aria-labelledby="end-game-title"
+                  className="fixed inset-0 flex items-center justify-center bg-black/60 p-4"
+                  style={{ zIndex: 2000 }}
+              >
+                  <div className="card" style={{ maxWidth: '420px', width: '100%' }}>
+                      <h3 id="end-game-title" style={{ fontSize: 'var(--font-size-lg)', marginBottom: 'var(--space-sm)' }}>
+                          🛑 {t.endGame}
+                      </h3>
+                      <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-lg)' }}>
+                          {t.endGameConfirm ?? 'Are you sure you want to finish this round for everyone?'}
+                      </p>
+                      <div className="flex gap-md" style={{ justifyContent: 'flex-end' }}>
+                          <button
+                              className="btn btn-secondary"
+                              type="button"
+                              onClick={() => setShowEndConfirm(false)}
+                          >
+                              {t.back}
+                          </button>
+                          <button
+                              className="btn btn-danger"
+                              type="button"
+                              onClick={() => {
+                                  setShowEndConfirm(false);
+                                  onEndGame?.();
+                              }}
+                              ref={confirmRef}
+                          >
+                              {t.endGame}
+                          </button>
+                      </div>
+                  </div>
+              </div>,
+              document.body,
+          )
+        : null;
+
     return (
         <>
-            {/* Collapsed Mode: Minimal FABs */}
-            {!isExpanded && (
-                <div className="fixed bottom-4 right-4 flex flex-col gap-3 z-50">
-                    {/* Call Next FAB */}
-                    <button
-                        className="btn btn-primary shadow-lg"
-                        style={{
-                            width: 64,
-                            height: 64,
-                            borderRadius: '50%',
-                            fontSize: '1.5rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: '4px solid var(--color-bg-paper)'
-                        }}
-                        onClick={onCallNumber}
-                        disabled={!canCallNumber}
-                        aria-label="Call next number"
-                    >
-                        🎲
-                    </button>
+            <nav
+                className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--color-bg-strong)] text-[var(--color-text-light)] shadow-lg"
+                role="toolbar"
+                aria-label="Host controls"
+            >
+                <div className="mx-auto flex w-full max-w-2xl items-center gap-md px-4 py-3">
+                    <div className="flex flex-col" style={{ minWidth: '110px' }}>
+                        <span style={{ fontSize: 'var(--font-size-xs)', opacity: 0.75 }}>{t.currentNumber}</span>
+                        <strong style={{ fontSize: 'var(--font-size-lg)' }}>
+                            {currentNumber ?? '—'}
+                        </strong>
+                        <span style={{ fontSize: 'var(--font-size-xs)', opacity: 0.75 }}>
+                            {remainingCount} {t.remaining}
+                        </span>
+                    </div>
 
-                    {/* Expand Menu FAB */}
-                    <button
-                        className="btn btn-secondary shadow-lg"
-                        style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                        onClick={() => setIsExpanded(true)}
-                        aria-label="Show host controls"
-                    >
-                        ⚙️
-                    </button>
-                </div>
-            )}
-
-            {/* Expanded Mode: Full Bar */}
-            {isExpanded && (
-                <div className="fixed bottom-0 left-0 right-0 bg-black/90 p-3 pt-2 pb-safe z-50 border-t border-white/10 backdrop-blur-md animate-slide-up">
-                    {/* Close Button */}
-                    <button
-                        className="absolute -top-10 right-4 bg-black/80 px-3 py-1 rounded-t-lg text-sm border-t border-x border-white/10"
-                        onClick={() => setIsExpanded(false)}
-                    >
-                        🔽 Hide
-                    </button>
-
-                    <div className="max-w-md mx-auto flex items-center justify-between gap-2">
-                        {/* Pause/Resume */}
+                    <div className="flex flex-1 items-center gap-md justify-end flex-wrap">
                         <button
                             className="btn btn-secondary"
-                            style={{ padding: '0.8rem', fontSize: '1.2rem' }}
-                            onClick={isPaused ? onResume : onPause}
-                            aria-label={isPaused ? 'Resume game' : 'Pause game'}
+                            type="button"
+                            onClick={handleTogglePause}
+                            aria-pressed={isPaused}
                         >
-                            {isPaused ? '▶️' : '⏸️'}
+                            {isPaused ? '▶️ ' + t.resume : '⏸️ ' + t.pause}
                         </button>
 
-                        {/* Call Next (Big Button) */}
                         <button
                             className="btn btn-primary"
-                            style={{ flex: 1, padding: '0.8rem', fontSize: '1.1rem', fontWeight: 800 }}
+                            type="button"
                             onClick={onCallNumber}
                             disabled={!canCallNumber}
                         >
                             🎲 {t.callNext}
                         </button>
 
-                        {/* Show Board Button */}
                         <button
                             className="btn btn-secondary"
-                            style={{ padding: '0.8rem', fontSize: '1.2rem' }}
-                            onClick={() => (document.getElementById('callerBoardModal') as HTMLDialogElement)?.showModal()}
-                            aria-label="Show caller board"
+                            type="button"
+                            onClick={() => setIsBoardOpen(true)}
                         >
-                            📋
+                            📋 {t.showBoard ?? 'Board'}
                         </button>
 
-                        {/* End Game (Mini) */}
                         <button
                             className="btn btn-danger"
-                            style={{ padding: '0.8rem', fontSize: '1.2rem' }}
-                            onClick={() => {
-                                if (confirm('End game?')) onEndGame?.();
-                            }}
-                            aria-label="End game"
+                            type="button"
+                            onClick={() => setShowEndConfirm(true)}
                         >
-                            🛑
+                            🛑 {t.endGame}
                         </button>
                     </div>
                 </div>
-            )}
+            </nav>
 
-            {/* Caller Board Modal */}
             <dialog
-                id="callerBoardModal"
+                ref={boardRef}
                 className="modal modal-bottom sm:modal-middle bg-transparent backdrop:bg-black/80"
+                onClose={() => setIsBoardOpen(false)}
             >
                 <div className="modal-box bg-[var(--color-bg-paper)] text-[var(--color-text-primary)] border-2 border-[var(--color-gold)]">
-                    <h3 className="font-bold text-lg mb-4 text-center">
-                        📋 {t.currentNumber}
-                    </h3>
-                    <CallerBoard
-                        calledNumbers={calledNumbers}
-                        currentNumber={currentNumber}
-                    />
+                    <header className="mb-4 text-center">
+                        <h3 className="font-bold" style={{ fontSize: 'var(--font-size-lg)' }}>
+                            📋 {t.currentNumber}
+                        </h3>
+                        <p style={{ color: 'var(--color-text-secondary)' }}>
+                            {currentNumber ? `${t.currentNumber}: ${currentNumber}` : t.callNext}
+                        </p>
+                    </header>
+                    <CallerBoard calledNumbers={calledNumbers} currentNumber={currentNumber} />
                     <div className="modal-action justify-center mt-6">
-                        <form method="dialog">
-                            <button className="btn btn-primary">Close</button>
-                        </form>
+                        <button className="btn btn-primary" type="button" onClick={() => setIsBoardOpen(false)}>
+                            {t.back}
+                        </button>
                     </div>
                 </div>
             </dialog>
 
-            {/* Bottom Padding to prevent overlap */}
-            <div style={{ height: '80px' }} />
+            {endGameDialog}
+
+            <div style={{ height: '96px' }} aria-hidden="true" />
         </>
     );
 }

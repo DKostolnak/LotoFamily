@@ -56,7 +56,7 @@ export default function ConfettiCanvas({
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            particlesRef.current.forEach((p, i) => {
+            particlesRef.current.forEach((p) => {
                 // Physics
                 p.x += p.vx;
                 p.y += p.vy;

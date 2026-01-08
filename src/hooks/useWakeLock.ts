@@ -24,7 +24,7 @@ export function useWakeLock() {
                     setIsLocked(false);
                     setSentinel(null);
                 });
-            } catch (err) {
+            } catch {
                 // User denied or low battery - silently ignore
             }
         }
@@ -36,7 +36,7 @@ export function useWakeLock() {
                 await sentinel.release();
                 setSentinel(null);
                 setIsLocked(false);
-            } catch (err) {
+            } catch {
                 // Silent fail
             }
         }

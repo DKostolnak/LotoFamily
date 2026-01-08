@@ -40,7 +40,7 @@ function isValidRoomCode(code: string): boolean {
  * Handle room:create event
  */
 export function handleRoomCreate(
-    { io, socket, serverUrl }: RoomHandlerContext,
+    { socket, serverUrl }: RoomHandlerContext,
     playerName: string,
     avatarUrl: string,
     settings: Partial<GameSettings>,

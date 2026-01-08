@@ -4,18 +4,20 @@ import React from 'react';
 import { SabotageType } from '@/lib/types';
 import { SABOTAGE_COSTS } from '@/lib/constants';
 import { playClickSound } from './GameAudioPlayer';
+import type { TranslationDictionary } from '@/lib/translations';
 
 interface SabotageShopProps {
     energy: number;
     activeItem: SabotageType | null;
     onUseItem: (type: SabotageType) => void;
+    t: TranslationDictionary;
 }
 
 interface SabotageItemConfig {
     type: SabotageType;
     emoji: string;
-    label: string;
-    description: string;
+    labelKey: 'freeze' | 'ink' | 'shuffle';
+    descKey: 'freezeDesc' | 'inkDesc' | 'shuffleDesc';
     colorFrom: string;
     colorTo: string;
 }
@@ -25,24 +27,24 @@ const SABOTAGE_ITEMS: SabotageItemConfig[] = [
     {
         type: 'snowball',
         emoji: '❄️',
-        label: 'Freeze',
-        description: 'Freeze player 5s',
+        labelKey: 'freeze',
+        descKey: 'freezeDesc',
         colorFrom: 'from-blue-400',
         colorTo: 'to-blue-600'
     },
     {
         type: 'ink_splat',
         emoji: '🐙',
-        label: 'Ink',
-        description: 'Cover card with ink',
+        labelKey: 'ink',
+        descKey: 'inkDesc',
         colorFrom: 'from-purple-400',
         colorTo: 'to-purple-600'
     },
     {
         type: 'swap_hand',
         emoji: '🌀',
-        label: 'Shuffle',
-        description: 'Shuffle their grid',
+        labelKey: 'shuffle',
+        descKey: 'shuffleDesc',
         colorFrom: 'from-orange-400',
         colorTo: 'to-red-600'
     },
@@ -52,7 +54,7 @@ const SABOTAGE_ITEMS: SabotageItemConfig[] = [
  * SabotageShop Component
  * Redesigned for maximum visual impact and clarity
  */
-export default function SabotageShop({ energy, activeItem, onUseItem }: SabotageShopProps) {
+export default function SabotageShop({ energy, activeItem, onUseItem, t }: SabotageShopProps) {
     const handleClick = (type: SabotageType) => {
         playClickSound();
         onUseItem(type);
@@ -67,7 +69,7 @@ export default function SabotageShop({ energy, activeItem, onUseItem }: Sabotage
                     style={{ width: `${Math.min(100, energy)}%` }}
                 />
                 <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white shadow-black drop-shadow-md">
-                    ⚡ {energy} ENERGY
+                    ⚡ {energy} {t.energy}
                 </div>
             </div>
 
@@ -106,7 +108,7 @@ export default function SabotageShop({ energy, activeItem, onUseItem }: Sabotage
 
                             {/* Label */}
                             <div className="mt-1 text-[10px] font-bold text-white leading-tight text-center">
-                                {item.label}
+                                {t[item.labelKey]}
                             </div>
 
                             {/* Cooldown/Progress Overlay (if not affordable) */}

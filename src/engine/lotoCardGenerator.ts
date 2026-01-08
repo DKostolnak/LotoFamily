@@ -13,7 +13,7 @@
  * - Numbers in each column are sorted ascending top to bottom
  */
 
-import type { LotoCard, LotoCardGrid, LotoCell } from '../lib/types';
+import type { LotoCard, LotoCardGrid } from '../lib/types';
 
 // ============================================================================
 // CONSTANTS
@@ -22,7 +22,6 @@ import type { LotoCard, LotoCardGrid, LotoCell } from '../lib/types';
 const ROWS = 3;
 const COLUMNS = 9;
 const NUMBERS_PER_ROW = 5;
-const TOTAL_NUMBERS = ROWS * NUMBERS_PER_ROW; // 15
 
 /**
  * Generate a unique ID for cards
@@ -56,11 +55,9 @@ function shuffle<T>(array: T[]): T[] {
  * Generate a valid Loto card
  */
 export function generateLotoCard(playerId: string): LotoCard {
-    const grid: LotoCardGrid = [
-        Array(9).fill(null).map(() => ({ value: null, isMarked: false })),
-        Array(9).fill(null).map(() => ({ value: null, isMarked: false })),
-        Array(9).fill(null).map(() => ({ value: null, isMarked: false })),
-    ];
+    const grid: LotoCardGrid = Array.from({ length: ROWS }, () =>
+        Array.from({ length: COLUMNS }, () => ({ value: null, isMarked: false }))
+    );
 
     // For each column, decide how many numbers (0-3) and which rows
     const columnCounts: number[] = [];
@@ -68,7 +65,7 @@ export function generateLotoCard(playerId: string): LotoCard {
 
     // We need exactly 15 numbers (5 per row × 3 rows)
     // Distribute numbers across columns
-    for (let col = 0; col < 9; col++) {
+    for (let col = 0; col < COLUMNS; col++) {
         // Each column gets 1-3 numbers, aiming for ~15 total
         const count = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
         columnCounts.push(count);
@@ -88,10 +85,10 @@ export function generateLotoCard(playerId: string): LotoCard {
     }
 
     // Track numbers per row (each row needs exactly 5)
-    const rowCounts = [0, 0, 0];
+    const rowCounts = Array(ROWS).fill(0);
 
     // For each column, place numbers
-    for (let col = 0; col < 9; col++) {
+    for (let col = 0; col < COLUMNS; col++) {
         const count = columnCounts[col];
         if (count === 0) continue;
 
@@ -105,7 +102,7 @@ export function generateLotoCard(playerId: string): LotoCard {
         const selectedNumbers = shuffle(possibleNumbers).slice(0, count).sort((a, b) => a - b);
 
         // Find which rows can accept numbers (need to reach 5 per row)
-        const availableRows = [0, 1, 2].filter(row => rowCounts[row] < 5);
+        const availableRows = Array.from({ length: ROWS }, (_, row) => row).filter(row => rowCounts[row] < NUMBERS_PER_ROW);
 
         // Only place as many numbers as we have available rows
         const numbersToPlace = Math.min(count, availableRows.length);
@@ -121,9 +118,9 @@ export function generateLotoCard(playerId: string): LotoCard {
     }
 
     // Verify each row has exactly 5 numbers
-    for (let row = 0; row < 3; row++) {
+    for (let row = 0; row < ROWS; row++) {
         const count = grid[row].filter(cell => cell.value !== null).length;
-        if (count !== 5) {
+        if (count !== NUMBERS_PER_ROW) {
             // If validation fails, regenerate (rare edge case)
             return generateLotoCard(playerId);
         }

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Player } from '@/lib/types';
 import { playClickSound } from './GameAudioPlayer';
+import Image from 'next/image';
 
 interface LeaderboardModalProps {
     players: Player[];
@@ -12,13 +13,15 @@ interface LeaderboardModalProps {
 }
 
 export default function LeaderboardModal({ players, currentUserId, onClose }: LeaderboardModalProps) {
-    const [mounted, setMounted] = useState(false);
-
     useEffect(() => {
-        setMounted(true);
+        if (typeof document === 'undefined') {
+            return () => {};
+        }
+
+        const originalOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
         return () => {
-            document.body.style.overflow = '';
+            document.body.style.overflow = originalOverflow;
         };
     }, []);
 
@@ -27,6 +30,13 @@ export default function LeaderboardModal({ players, currentUserId, onClose }: Le
 
     const handleBackdropClick = (e: React.MouseEvent) => {
         if (e.target === e.currentTarget) {
+            playClickSound();
+            onClose();
+        }
+    };
+
+    const handleBackdropKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === 'Escape' || (event.key === 'Enter' && event.currentTarget === event.target)) {
             playClickSound();
             onClose();
         }
@@ -50,6 +60,9 @@ export default function LeaderboardModal({ players, currentUserId, onClose }: Le
                 animation: 'fadeIn 0.2s ease-out',
             }}
             onClick={handleBackdropClick}
+            role="presentation"
+            tabIndex={-1}
+            onKeyDown={handleBackdropKeyDown}
         >
             <div
                 style={{
@@ -58,7 +71,8 @@ export default function LeaderboardModal({ players, currentUserId, onClose }: Le
                     maxWidth: '384px',
                     animation: 'modalSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                 }}
-                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
             >
                 {/* Leaderboard Card */}
                 <div className="bg-gradient-to-b from-[#5d4037] to-[#3e2723] rounded-2xl p-5 shadow-2xl border-2 border-[var(--color-gold)]">
@@ -100,9 +114,16 @@ export default function LeaderboardModal({ players, currentUserId, onClose }: Le
                                     </div>
 
                                     <div className="relative shrink-0">
-                                        <div className="w-10 h-10 rounded-full border-2 border-white/20 bg-[#D2B48C] flex items-center justify-center text-lg overflow-hidden">
+                                        <div className="w-10 h-10 rounded-full border-2 border-white/20 bg-[#D2B48C] flex items-center justify-center text-lg overflow-hidden relative">
                                             {player.avatarUrl && (player.avatarUrl.startsWith('http') || player.avatarUrl.startsWith('data:')) ? (
-                                                <img src={player.avatarUrl} alt={player.name} className="w-full h-full object-cover" />
+                                                <Image
+                                                    src={player.avatarUrl}
+                                                    alt={player.name}
+                                                    fill
+                                                    unoptimized
+                                                    sizes="40px"
+                                                    className="object-cover"
+                                                />
                                             ) : (
                                                 <span>{player.avatarUrl || player.name.charAt(0)}</span>
                                             )}
@@ -155,7 +176,9 @@ export default function LeaderboardModal({ players, currentUserId, onClose }: Le
         </div>
     );
 
-    if (!mounted) return null;
+    if (typeof document === 'undefined') {
+        return null;
+    }
 
     return createPortal(modalContent, document.body);
 }

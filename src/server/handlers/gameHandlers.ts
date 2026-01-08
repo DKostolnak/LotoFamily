@@ -16,6 +16,13 @@ import {
     claimFlat,
 } from '../../engine/gameEngine';
 import { markCell } from '../../engine/lotoCardGenerator';
+import {
+    ENERGY_FAST_MARK,
+    ENERGY_SLOW_MARK,
+    ENERGY_MISTAKE_PENALTY,
+    FAST_MARK_WINDOW_MS,
+    MAX_ENERGY,
+} from '../../lib/constants';
 import * as store from '../store';
 import { gameLog } from '../../lib/logger';
 
@@ -188,7 +195,7 @@ export function handleMarkCell(
     const calledNumbers = game.calledNumbers.map(cn => cn.value);
     const isCorrectMark = cellValue !== null && calledNumbers.includes(cellValue);
 
-    let updatedCard = markCell(card, row, col);
+    const updatedCard = markCell(card, row, col);
 
     // Energy calculation
     let energyChange = 0;
@@ -196,13 +203,13 @@ export function handleMarkCell(
         const calledInfo = game.calledNumbers.find(cn => cn.value === cellValue);
         if (calledInfo) {
             const timeDiff = Date.now() - calledInfo.timestamp;
-            energyChange = timeDiff < 2000 ? 15 : 5; // Speed bonus
+            energyChange = timeDiff < FAST_MARK_WINDOW_MS ? ENERGY_FAST_MARK : ENERGY_SLOW_MARK;
         }
     } else {
-        energyChange = -10; // Penalty
+        energyChange = ENERGY_MISTAKE_PENALTY;
     }
 
-    const newEnergy = Math.max(0, Math.min(100, (player.energy || 0) + energyChange));
+    const newEnergy = Math.max(0, Math.min(MAX_ENERGY, (player.energy || 0) + energyChange));
 
     // Update player cards
     const updatedPlayers = game.players.map(p => {

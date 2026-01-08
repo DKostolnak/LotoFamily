@@ -3,7 +3,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import { GameState, Player } from '@/lib/types';
 import { translations } from '@/lib/translations';
 import PlayerList from './PlayerList';
-import LotoCard from './LotoCard';
 import { useToast } from './ToastProvider';
 import { useGame } from '@/lib/GameContext';
 import { playClickSound } from './GameAudioPlayer';
@@ -49,7 +48,7 @@ export default function WaitingLobby({
         try {
             await navigator.clipboard.writeText(gameState.roomCode);
             showToast(t.copied, 'success', '📋');
-        } catch (err) {
+        } catch {
             showToast('Failed to copy', 'error');
         }
     };
@@ -62,7 +61,7 @@ export default function WaitingLobby({
                     text: `Join my Loto game with code: ${gameState.roomCode}`,
                     url: joinUrl,
                 });
-            } catch (err) {
+            } catch {
                 // User cancelled or error
             }
         } else {
@@ -76,16 +75,16 @@ export default function WaitingLobby({
             playClickSound();
             updateProfile(tempName.trim(), playerAvatar);
             setIsEditingProfile(false);
-            showToast('Profile updated!', 'success');
+            showToast(t.profileUpdated, 'success');
         } else {
             showToast(t.nameError, 'error');
         }
     };
 
     const handleKick = (playerId: string, playerName: string) => {
-        if (window.confirm(`Are you sure you want to kick ${playerName}?`)) {
+        if (window.confirm(`${t.confirmKick} ${playerName}?`)) {
             kickPlayer(playerId);
-            showToast(`${playerName} kicked`, 'success');
+            showToast(`${playerName} ${t.kicked}`, 'success');
         }
     };
 
@@ -184,6 +183,7 @@ export default function WaitingLobby({
                         handleKick(pid, selectedPlayer.name);
                         setSelectedPlayer(null);
                     } : undefined}
+                    t={t}
                 />
             )}
 
@@ -207,7 +207,7 @@ export default function WaitingLobby({
                             />
                             <div className="flex gap-xs">
                                 <button className="btn btn-primary btn-sm flex-1" onClick={handleUpdateProfile}>
-                                    ✅ Save
+                                    ✅ {t.save}
                                 </button>
                                 <button className="btn btn-secondary btn-sm" onClick={() => setIsEditingProfile(false)}>
                                     ✖️
@@ -231,7 +231,7 @@ export default function WaitingLobby({
                         <button
                             className="btn btn-danger"
                             onClick={() => {
-                                if (window.confirm("Are you sure you want to close the room? All players will be disconnected.")) {
+                                if (window.confirm(t.confirmCloseRoom)) {
                                     playClickSound();
                                     closeRoom();
                                 }

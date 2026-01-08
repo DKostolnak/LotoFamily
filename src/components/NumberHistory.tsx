@@ -22,22 +22,22 @@ export default function NumberHistory({
 
     useEffect(() => {
         if (numbers.length > prevLengthRef.current) {
-            // New number added - start pop animation
-            setAnimationPhase('pop-in');
+            const popFrame = requestAnimationFrame(() => {
+                setAnimationPhase('pop-in');
+            });
 
-            // Settle into position
-            const settleTimer = setTimeout(() => {
+            const settleTimer = window.setTimeout(() => {
                 setAnimationPhase('settle');
             }, 150);
 
-            // Return to idle
-            const idleTimer = setTimeout(() => {
+            const idleTimer = window.setTimeout(() => {
                 setAnimationPhase('idle');
             }, 600);
 
             prevLengthRef.current = numbers.length;
 
             return () => {
+                cancelAnimationFrame(popFrame);
                 clearTimeout(settleTimer);
                 clearTimeout(idleTimer);
             };

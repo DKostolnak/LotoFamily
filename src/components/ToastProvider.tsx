@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
 
 type ToastType = 'success' | 'info' | 'warning' | 'error' | 'celebration';
 
@@ -31,16 +31,35 @@ interface ToastProviderProps {
 
 export function ToastProvider({ children }: ToastProviderProps) {
     const [toasts, setToasts] = useState<Toast[]>([]);
-    let nextId = 0;
+    const timeouts = useRef<Map<number, number>>(new Map());
+    const nextId = useRef(0);
+
+    const dismissToast = useCallback((id: number) => {
+        const timeout = timeouts.current.get(id);
+        if (timeout) {
+            clearTimeout(timeout);
+            timeouts.current.delete(id);
+        }
+        setToasts(prev => prev.filter(t => t.id !== id));
+    }, []);
 
     const showToast = useCallback((message: string, type: ToastType = 'info', icon?: string) => {
-        const id = nextId++;
+        const id = nextId.current++;
         setToasts(prev => [...prev, { id, message, type, icon }]);
 
-        // Auto-dismiss after 3 seconds
-        setTimeout(() => {
-            setToasts(prev => prev.filter(t => t.id !== id));
-        }, 3000);
+        const timeout = window.setTimeout(() => {
+            dismissToast(id);
+        }, 4000);
+
+        timeouts.current.set(id, timeout);
+    }, [dismissToast]);
+
+    useEffect(() => {
+        const timeoutMap = timeouts.current;
+        return () => {
+            timeoutMap.forEach(timeout => clearTimeout(timeout));
+            timeoutMap.clear();
+        };
     }, []);
 
     const getToastStyles = (type: ToastType): React.CSSProperties => {
@@ -87,23 +106,39 @@ export function ToastProvider({ children }: ToastProviderProps) {
         <ToastContext.Provider value={{ showToast }}>
             {children}
 
-            {/* Toast Container */}
             <div
                 style={{
                     position: 'fixed',
                     top: '16px',
                     right: '16px',
-                    zIndex: 9999,
+                    zIndex: 1200,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
-                    pointerEvents: 'none',
+                    gap: '12px',
+                    width: 'min(320px, 90vw)',
                 }}
+                aria-live="polite"
+                aria-atomic="false"
             >
                 {toasts.map(toast => (
-                    <div key={toast.id} style={getToastStyles(toast.type)}>
-                        <span>{toast.icon || defaultIcons[toast.type]}</span>
-                        <span>{toast.message}</span>
+                    <div key={toast.id} style={getToastStyles(toast.type)} role="status">
+                        <span aria-hidden="true">{toast.icon || defaultIcons[toast.type]}</span>
+                        <span style={{ flex: 1 }}>{toast.message}</span>
+                        <button
+                            type="button"
+                            onClick={() => dismissToast(toast.id)}
+                            className="btn btn-xs"
+                            style={{
+                                background: 'transparent',
+                                color: 'inherit',
+                                boxShadow: 'none',
+                                border: '1px solid currentColor',
+                                padding: '4px 8px',
+                                minHeight: 'auto',
+                            }}
+                        >
+                            ✕
+                        </button>
                     </div>
                 ))}
             </div>

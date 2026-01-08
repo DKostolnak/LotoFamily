@@ -22,7 +22,8 @@ A modern, polished, and chaotic implementation of the classic European Loto game
 
 ### 🎨 Polish & Accessibility
 *   **"Grandma-friendly" UI**: Huge, extra-bold numbers for maximum readability.
-*   **Juicy Visuals**: Screen shake, stamping animations, partial effects.
+*   **Accessible Controls**: Keyboard-friendly menus, labelled host toolbar, and screen reader announcements.
+*   **Gentle Visuals**: Prefers-reduced-motion support; optional confetti & shake.
 *   **Battery Saver**: Optimized rendering for long family sessions.
 *   **Responsive**: Works on Phones, Tablets, and Laptops.
 
@@ -33,6 +34,19 @@ A modern, polished, and chaotic implementation of the classic European Loto game
 3.  **Play**: Open `http://localhost:3000`
     *   One device acts as **Host**.
     *   Others join via **Room Code**.
+
+## ✅ Quality Checks
+
+```bash
+npm run lint   # Enforce hooks & accessibility rules
+npm run test   # Vitest coverage for the game engine
+```
+
+## 📚 Reference Docs
+
+- UX guardrails: [docs/UX_ACCESSIBILITY_GUIDELINES.md](docs/UX_ACCESSIBILITY_GUIDELINES.md)
+- Flow audit notes: [docs/APP_AUDIT.md](docs/APP_AUDIT.md)
+- Implementation roadmap: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 
 ## 🛠️ Tech Stack
 *   **Frontend**: Next.js 15, React, TailwindCSS, Framer Motion (ish)

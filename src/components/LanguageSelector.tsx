@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Language, translations } from '@/lib/translations';
+import { Language } from '@/lib/translations';
 
 interface LanguageSelectorProps {
     currentLanguage: Language;

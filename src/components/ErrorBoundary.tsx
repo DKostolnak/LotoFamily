@@ -44,31 +44,44 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 return this.props.fallback;
             }
 
-            // Default error UI
+            // Default error UI - themed to match game aesthetics
             return (
                 <div className="flex flex-col items-center justify-center h-screen bg-[var(--color-bg)] p-4">
-                    <div className="card text-center max-w-md">
-                        <div className="text-6xl mb-4">😵</div>
-                        <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-red)' }}>
+                    <div className="wooden-panel text-center max-w-md">
+                        <div className="text-6xl mb-4" role="img" aria-label="Error">😵</div>
+                        <h2 className="text-xl font-bold mb-2 text-[var(--color-gold)]">
                             Oops! Something went wrong
                         </h2>
-                        <p className="text-sm opacity-70 mb-4">
-                            {this.state.error?.message || 'An unexpected error occurred'}
+                        <p className="text-sm opacity-80 mb-6">
+                            {this.state.error?.message || 'An unexpected error occurred in the game'}
                         </p>
-                        <div className="flex gap-2 justify-center">
+                        <div className="flex flex-col gap-3">
                             <button
-                                className="btn btn-primary"
+                                className="btn btn-primary w-full"
                                 onClick={this.handleReset}
                             >
-                                Try Again
+                                🔄 Try Again
                             </button>
                             <button
-                                className="btn btn-secondary"
+                                className="btn btn-secondary w-full"
                                 onClick={() => window.location.reload()}
                             >
-                                Reload Page
+                                🔃 Reload Game
+                            </button>
+                            <button
+                                className="btn btn-wood w-full"
+                                onClick={() => {
+                                    // Clear game state and go to menu
+                                    localStorage.removeItem('loto_lastRoom');
+                                    this.handleReset();
+                                }}
+                            >
+                                🏠 Back to Menu
                             </button>
                         </div>
+                        <p className="text-xs opacity-50 mt-4">
+                            If this keeps happening, try clearing your browser cache
+                        </p>
                     </div>
                 </div>
             );

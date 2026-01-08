@@ -5,6 +5,7 @@
 
 import type { GameState } from '../lib/types';
 import { roomLog } from '../lib/logger';
+import { CLEANUP_INTERVAL_MS, ROOM_MAX_AGE_MS } from '../lib/constants';
 
 // Game state storage (in-memory)
 const games = new Map<string, GameState>();
@@ -67,7 +68,7 @@ export function hasInterval(roomCode: string): boolean {
  * Clean up stale games older than specified age
  * @returns Number of games cleaned up
  */
-export function cleanupStaleGames(maxAgeMs: number = 24 * 60 * 60 * 1000): number {
+export function cleanupStaleGames(maxAgeMs: number = ROOM_MAX_AGE_MS): number {
     const now = Date.now();
     let cleaned = 0;
 
@@ -86,6 +87,6 @@ export function cleanupStaleGames(maxAgeMs: number = 24 * 60 * 60 * 1000): numbe
 /**
  * Start automatic cleanup interval
  */
-export function startCleanupInterval(intervalMs: number = 60 * 60 * 1000): NodeJS.Timeout {
+export function startCleanupInterval(intervalMs: number = CLEANUP_INTERVAL_MS): NodeJS.Timeout {
     return setInterval(() => cleanupStaleGames(), intervalMs);
 }

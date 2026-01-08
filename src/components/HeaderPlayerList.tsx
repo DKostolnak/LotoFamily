@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import Image from 'next/image';
 import { Player } from '@/lib/types';
 import { playClickSound } from './GameAudioPlayer';
 
@@ -64,10 +65,13 @@ export default function HeaderPlayerList({
                 const fontSize = isMe ? '60px' : '30px';
 
                 return (
-                    <div
+                    <button
                         key={player.id}
-                        className="shrink-0 flex flex-col items-center gap-1 cursor-pointer hover:scale-105 transition-transform"
+                        type="button"
+                        className="shrink-0 flex flex-col items-center gap-1 hover:scale-105 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-gold)]"
+                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
                         onClick={() => { playClickSound(); onPlayerClick?.(player); }}
+                        aria-label={`View ${player.name}`}
                     >
                         {/* Avatar Container with Dent Effect */}
                         <div
@@ -87,10 +91,13 @@ export default function HeaderPlayerList({
                         >
                             {/* Avatar Image/Placeholder */}
                             {player.avatarUrl && (player.avatarUrl.startsWith('http') || player.avatarUrl.startsWith('data:')) ? (
-                                <img
+                                <Image
                                     src={player.avatarUrl}
                                     alt={player.name}
-                                    className="w-full h-full object-cover rounded-md shadow-inner"
+                                    fill
+                                    unoptimized
+                                    sizes={isMe ? '90px' : '54px'}
+                                    className="object-cover rounded-md shadow-inner"
                                 />
                             ) : (
                                 <div
@@ -119,7 +126,7 @@ export default function HeaderPlayerList({
                         >
                             {player.name}
                         </span>
-                    </div>
+                    </button>
                 );
             })}
         </div>

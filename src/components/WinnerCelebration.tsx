@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Player } from '@/lib/types';
 import ConfettiCanvas from './ConfettiCanvas';
 import { playWinSound, playLossSound, playClickSound } from './GameAudioPlayer';
+import Image from 'next/image';
+import type { TranslationDictionary } from '@/lib/translations';
 
 interface WinnerCelebrationProps {
     winner: Player;
@@ -11,6 +13,7 @@ interface WinnerCelebrationProps {
     onNewGame: () => void;
     onBackToLobby: () => void;
     currentUserId: string;
+    t: TranslationDictionary;
 }
 
 /**
@@ -23,6 +26,7 @@ export default function WinnerCelebration({
     onNewGame,
     onBackToLobby,
     currentUserId,
+    t,
 }: WinnerCelebrationProps) {
     // Determine if I am the winner
     const isMe = winner.id === currentUserId;
@@ -49,7 +53,14 @@ export default function WinnerCelebration({
                     <div className="absolute inset-0 bg-yellow-500 rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity animate-pulse"></div>
                     <div className="w-32 h-32 rounded-full border-4 border-yellow-400 shadow-[0_0_50px_rgba(250,204,21,0.5)] overflow-hidden bg-white z-10 relative mx-auto">
                         {winner.avatarUrl && (winner.avatarUrl.includes('http') || winner.avatarUrl.includes('data:')) ? (
-                            <img src={winner.avatarUrl} alt={winner.name} className="w-full h-full object-cover" />
+                            <Image
+                                src={winner.avatarUrl}
+                                alt={winner.name}
+                                fill
+                                unoptimized
+                                sizes="128px"
+                                className="object-cover"
+                            />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-gray-800">
                                 {winner.avatarUrl || winner.name.charAt(0)}
@@ -64,16 +75,16 @@ export default function WinnerCelebration({
 
                 {/* Main Text */}
                 <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 drop-shadow-sm mb-2 uppercase tracking-wide">
-                    {isMe ? 'Victory!' : 'Game Over'}
+                    {isMe ? t.victory : t.gameOver}
                 </h1>
 
                 <h2 className="text-2xl font-bold text-white mb-8 drop-shadow-md">
-                    {isMe ? 'You won the Loto!' : `${winner.name} takes the prize!`}
+                    {isMe ? t.youWon : `${winner.name} ${t.playerWins}`}
                 </h2>
 
-                {/* Results Card (Optional - could go here) */}
+                {/* Results Card */}
                 <div className="bg-white/10 rounded-xl p-4 mb-8 w-full backdrop-blur-sm border border-white/10">
-                    <div className="text-sm uppercase tracking-wider text-white/60 mb-1">Winning Score</div>
+                    <div className="text-sm uppercase tracking-wider text-white/60 mb-1">{t.winningScore}</div>
                     <div className="text-3xl font-mono font-bold text-yellow-400">
                         {winner.score || 0} PTS
                     </div>
@@ -89,11 +100,11 @@ export default function WinnerCelebration({
                                 onNewGame();
                             }}
                         >
-                            🔄 Play Again
+                            🔄 {t.playAgain}
                         </button>
                     ) : (
                         <div className="text-white/60 text-sm mb-2 animate-pulse">
-                            Waiting for host to restart...
+                            {t.waitingHostRestart}
                         </div>
                     )}
 
@@ -104,7 +115,7 @@ export default function WinnerCelebration({
                             onBackToLobby();
                         }}
                     >
-                        ⬅️ Leave Room
+                        ⬅️ {t.leaveRoom}
                     </button>
                 </div>
             </div>

@@ -8,7 +8,7 @@
 import { createServer } from 'node:http';
 import os from 'node:os';
 import next from 'next';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import type { ServerToClientEvents, ClientToServerEvents, SabotageType } from './src/lib/types';
 import * as store from './src/server/store';
 import {
@@ -77,7 +77,7 @@ app.prepare().then(() => {
     const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer);
 
     // Helper to find room code from socket
-    function getRoomCode(socket: any): string | undefined {
+    function getRoomCode(socket: Socket<ClientToServerEvents, ServerToClientEvents>): string | undefined {
         for (const room of socket.rooms) {
             // Room codes are 3-10 alphanumeric (custom) or 6 chars (generated)
             if (/^[A-Z0-9]{3,10}$/.test(room) && room !== socket.id) {

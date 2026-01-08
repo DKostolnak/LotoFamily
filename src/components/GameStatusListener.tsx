@@ -5,48 +5,51 @@ import { useGame } from '@/lib/GameContext';
 import { useToast } from '@/components/ToastProvider';
 
 export function GameStatusListener() {
-    const { error, isConnected, clearError, isLoading } = useGame();
+    const { error, isConnected, isLoading } = useGame();
     const { showToast } = useToast();
-    // Start true to avoid flash on initial load before socket connects
     const [hasInitialConnection, setHasInitialConnection] = useState(false);
 
-    // Track initial connection to avoid showing "Disconnected" immediately on load
     useEffect(() => {
-        if (isConnected) {
-            setHasInitialConnection(true);
+        if (!isConnected) {
+            return;
         }
+
+        const frame = requestAnimationFrame(() => {
+            setHasInitialConnection(true);
+        });
+
+        return () => cancelAnimationFrame(frame);
     }, [isConnected]);
 
     // Handle Errors
     useEffect(() => {
         if (error) {
             showToast(error, 'error');
-            // We don't clearError here immediately because the context might auto-clear it,
-            // or we want it to persist in state until handled.
-            // But since we just pushed a toast, we can clear the simple string state if we want 
-            // to avoid re-triggering on re-renders, although dependencies handle that.
-            // Let's rely on the Context's auto-clear or manual clear.
         }
     }, [error, showToast]);
 
     // Show persistent disconnected banner if we lost connection
     if (hasInitialConnection && !isConnected) {
         return (
-            <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                backgroundColor: 'var(--color-red)',
-                color: 'white',
-                padding: '8px',
-                textAlign: 'center',
-                zIndex: 9999,
-                fontSize: '14px',
-                fontWeight: 600,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-            }}>
-                ⚠️ Connection Lost - Reconnecting...
+            <div
+                role="status"
+                aria-live="assertive"
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    backgroundColor: 'var(--color-red)',
+                    color: 'white',
+                    padding: '12px',
+                    textAlign: 'center',
+                    zIndex: 1100,
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 700,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}
+            >
+                ⚠️ Connection lost – attempting to reconnect…
             </div>
         );
     }
@@ -54,13 +57,25 @@ export function GameStatusListener() {
     // Optional: Global Loading Overlay
     if (isLoading) {
         return (
-            <div style={{
-                position: 'fixed',
-                top: '16px',
-                right: '16px',
-                zIndex: 9999,
-            }}>
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+            <div
+                role="status"
+                aria-live="polite"
+                style={{
+                    position: 'fixed',
+                    top: '16px',
+                    right: '16px',
+                    zIndex: 1100,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 12px',
+                    borderRadius: '999px',
+                    backgroundColor: 'var(--color-wood-medium)',
+                    color: 'var(--color-text-light)'
+                }}
+            >
+                <span className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" aria-hidden="true" />
+                <span>Loading…</span>
             </div>
         );
     }
@@ -90,7 +105,6 @@ export function GlobalGameToasts() {
             const attackerName = getPlayerName(attackerId);
             const targetName = getPlayerName(targetId);
             const isMe = targetId === playerId;
-            const didIDoIt = attackerId === playerId;
 
             let message = '';
             let icon = '';
@@ -130,11 +144,10 @@ export function GlobalGameToasts() {
             }
         };
 
-        const handlePlayerLeft = (pid: string) => {
-            // We'd need to look up name before they leave, or just say "A player left"
-            // gameState might already be updated so find might fail.
-            // Ideally we pass name from server. For now generic.
-            showToast(`Player left the game`, 'warning', '🚪');
+        const handlePlayerLeft = (departingPlayerId: string) => {
+            const name = getPlayerName(departingPlayerId);
+            const label = name === 'Unknown Player' ? 'A player' : name;
+            showToast(`${label} left the game`, 'warning', '🚪');
         };
 
         socket.on('game:sabotageEffect', handleSabotage);

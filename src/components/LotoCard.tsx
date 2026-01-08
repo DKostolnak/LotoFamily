@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo, useCallback, memo } from 'react';
 import { LotoCard as LotoCardType } from '@/lib/types';
-import { playCellMarkSound, playBonusSound, playErrorSound, playClickSound } from './GameAudioPlayer';
+import { playCellMarkSound, playBonusSound, playErrorSound } from './GameAudioPlayer';
+import { useHaptics } from '@/hooks/useHaptics';
 import '@/styles/lotoCard.css';
 
 interface FloatingText {
@@ -16,12 +17,10 @@ interface FloatingText {
 interface LotoCardProps {
     card: LotoCardType;
     onCellClick?: (row: number, col: number) => void;
-    highlightedNumber?: number | null;
     compact?: boolean;
     showHeader?: boolean;
     playerName?: string;
     calledNumbers?: number[];
-    highlightAllCalled?: boolean;
 }
 
 interface CellProps {
@@ -29,13 +28,11 @@ interface CellProps {
     isMarked: boolean;
     row: number;
     col: number;
-    isCalled: boolean;
-    isSafe: boolean;
     isMissed: boolean;
     isCorrect: boolean;
     isTapped: boolean;
     isMistake: boolean;
-    onClick: (row: number, col: number, evt: React.MouseEvent) => void;
+    onActivate: (row: number, col: number, evt: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => void;
 }
 
 /**
@@ -46,13 +43,11 @@ const LotoCell = memo(function LotoCell({
     isMarked,
     row,
     col,
-    isCalled,
-    isSafe,
     isMissed,
     isCorrect,
     isTapped,
     isMistake,
-    onClick,
+    onActivate,
 }: CellProps) {
     const isEmpty = value === null;
 
@@ -70,23 +65,27 @@ const LotoCell = memo(function LotoCell({
             .join(' ');
     }, [isEmpty, isCorrect, isMissed, isMistake, isTapped]);
 
-    const handleClick = useCallback((e: React.MouseEvent) => {
-        onClick(row, col, e);
-    }, [onClick, row, col]);
+    const handleClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+        onActivate(row, col, event);
+    }, [onActivate, row, col]);
+
+    const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onActivate(row, col, event);
+        }
+    }, [onActivate, row, col]);
 
     return (
         <div
             className={cellClasses}
             onClick={handleClick}
+            onKeyDown={handleKeyDown}
             role={isEmpty ? undefined : 'button'}
             tabIndex={isEmpty ? undefined : 0}
             aria-label={
                 isEmpty ? undefined : `Number ${value}${isMarked ? ', marked' : ''}`
             }
-            style={{
-                transform: isTapped ? 'scale(0.9)' : undefined,
-                transition: 'transform 0.1s ease-out',
-            }}
         >
             {value !== null && (
                 <span
@@ -110,25 +109,24 @@ const LotoCell = memo(function LotoCell({
 function LotoCard({
     card,
     onCellClick,
-    highlightedNumber,
     compact = false,
     showHeader = false,
     playerName,
     calledNumbers = [],
-    highlightAllCalled = false,
 }: LotoCardProps) {
     const [tappedCell, setTappedCell] = useState<string | null>(null);
     const [mistakeCell, setMistakeCell] = useState<string | null>(null);
     const [tempMarked, setTempMarked] = useState<string | null>(null);
     const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
     const floatingIdCounter = React.useRef(0);
+    const { vibrate } = useHaptics();
 
     // Memoize the called numbers set for O(1) lookups
     const calledSet = useMemo(() => new Set(calledNumbers), [calledNumbers]);
     const callsCount = calledNumbers.length;
 
     // Memoize progress calculation
-    const { totalNumbers, markedCount, progress, remaining } = useMemo(() => {
+    const { progress, remaining } = useMemo(() => {
         const cells = card.grid.flat();
         const total = cells.filter(c => c.value !== null).length;
         const marked = cells.filter(c =>
@@ -136,8 +134,6 @@ function LotoCard({
         ).length;
 
         return {
-            totalNumbers: total,
-            markedCount: marked,
             progress: total > 0 ? (marked / total) * 100 : 0,
             remaining: total - marked,
         };
@@ -152,7 +148,7 @@ function LotoCard({
     };
 
     // Stable cell click handler
-    const handleCellClick = useCallback((row: number, col: number, evt: React.MouseEvent) => {
+    const handleCellClick = useCallback((row: number, col: number, evt: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => {
         const cell = card.grid[row][col];
         if (cell.value === null) return;
         if (!onCellClick) return;
@@ -162,10 +158,12 @@ function LotoCard({
         const isCalled = calledIndex !== -1;
 
         // Get relative click coordinates for floating text
-        const rect = (evt.target as HTMLElement).getBoundingClientRect();
-        const cardRect = (evt.currentTarget.closest('.loto-card') as HTMLElement)?.getBoundingClientRect();
-        const x = rect.left - (cardRect?.left || 0) + rect.width / 2;
-        const y = rect.top - (cardRect?.top || 0) + rect.height / 2;
+        const targetElement = evt.target as HTMLElement;
+        const cardElement = (evt.currentTarget.closest('.loto-card') as HTMLElement) ?? targetElement;
+        const targetRect = targetElement.getBoundingClientRect();
+        const cardRect = cardElement.getBoundingClientRect();
+        const x = targetRect.left - cardRect.left + targetRect.width / 2;
+        const y = targetRect.top - cardRect.top + targetRect.height / 2;
 
         // Already correctly marked
         if (cell.isMarked && isCalled) return;
@@ -175,18 +173,21 @@ function LotoCard({
         const isMissed = isCalled && !cell.isMarked && !isSafe;
         if (isMissed) return;
 
-        // Uncalled number - mistake flash
+        // Uncalled number - just show red crossed visual, no shake or penalty
         if (!isCalled) {
             setMistakeCell(cellKey);
-            playErrorSound();
-            addFloatingText('-10⚡', x, y, '#ef4444'); // Red penalty
-            setTimeout(() => setMistakeCell(null), 500);
+            // Only visual feedback - no sound, no vibration, no penalty text
+            setTimeout(() => setMistakeCell(null), 800); // Show red cross longer
             return;
         }
 
         // Valid mark
         setTappedCell(cellKey);
         setTempMarked(cellKey); // Immediate visual feedback
+        vibrate('light'); // Haptic feedback for successful mark
+
+        // Trigger actual mark in parent/state
+        onCellClick(row, col);
 
         // Points Calculation Visual
         if (isSafe) {
@@ -196,8 +197,6 @@ function LotoCard({
             playCellMarkSound(); // Normal
             addFloatingText('+5⚡', x, y, '#22c55e'); // Green
         }
-
-        onCellClick(row, col);
         setTimeout(() => setTappedCell(null), 200);
         setTimeout(() => setTempMarked(null), 400);
     }, [card.grid, onCellClick, calledNumbers, callsCount]);
@@ -248,11 +247,11 @@ function LotoCard({
                     row.map((cell, colIndex) => {
                         const calledIndex = cell.value !== null ? calledNumbers.indexOf(cell.value) : -1;
                         const isCalled = calledIndex !== -1;
-                        const isSafe = isCalled && (callsCount - 1 - calledIndex < 2);
-                        const isMissed = isCalled && !cell.isMarked && !isSafe;
-                        const isCorrect = isCalled && cell.isMarked;
-                        const cellKey = `${rowIndex}-${colIndex}-${cell.value ?? 'x'}-${cell.isMarked ? 'm' : 'u'}`;
+                        const isMissed = isCalled && !cell.isMarked && (callsCount - 1 - calledIndex >= 2);
+                        // Show token overlay immediately for called numbers marked optimistically
                         const tappedKey = `${rowIndex}-${colIndex}`;
+                        const isCorrect = isCalled && (cell.isMarked || (tempMarked === tappedKey));
+                        const cellKey = `${rowIndex}-${colIndex}-${cell.value ?? 'x'}-${cell.isMarked ? 'm' : 'u'}`;
 
                         // Effective marked includes temp optimistic state
                         const effectiveIsMarked = cell.isMarked || (tempMarked === tappedKey);
@@ -264,13 +263,11 @@ function LotoCard({
                                 isMarked={effectiveIsMarked}
                                 row={rowIndex}
                                 col={colIndex}
-                                isCalled={isCalled}
-                                isSafe={isSafe}
                                 isMissed={isMissed}
-                                isCorrect={isCorrect || effectiveIsMarked}
+                                isCorrect={isCorrect}
                                 isTapped={tappedCell === tappedKey}
                                 isMistake={mistakeCell === tappedKey}
-                                onClick={handleCellClick}
+                                onActivate={handleCellClick}
                             />
                         );
                     })

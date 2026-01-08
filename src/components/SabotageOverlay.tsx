@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from 'react';
 
 interface SabotageOverlayProps {
@@ -17,24 +19,26 @@ export default function SabotageOverlay({ frozenUntil, inkSplats }: SabotageOver
     // Efficiently handle freeze state without constant polling
     useEffect(() => {
         if (!frozenUntil) {
-            setIsFrozen(false);
-            return;
+            const frame = requestAnimationFrame(() => setIsFrozen(false));
+            return () => cancelAnimationFrame(frame);
         }
 
-        const checkFreeze = () => {
-            const now = Date.now();
-            if (frozenUntil > now) {
-                setIsFrozen(true);
-                // Schedule unfreeze exactly when needed
-                const timeLeft = frozenUntil - now;
-                const timer = setTimeout(() => setIsFrozen(false), timeLeft);
-                return () => clearTimeout(timer);
-            } else {
+        const now = Date.now();
+        if (frozenUntil > now) {
+            const activateFrame = requestAnimationFrame(() => setIsFrozen(true));
+            const timeLeft = frozenUntil - now;
+            const timer = window.setTimeout(() => {
                 setIsFrozen(false);
-            }
-        };
+            }, timeLeft);
 
-        return checkFreeze();
+            return () => {
+                cancelAnimationFrame(activateFrame);
+                clearTimeout(timer);
+            };
+        }
+
+        const settleFrame = requestAnimationFrame(() => setIsFrozen(false));
+        return () => cancelAnimationFrame(settleFrame);
     }, [frozenUntil]);
     const activeSplats = inkSplats?.filter(s => !clearedSplats.has(s.id)) || [];
 
@@ -69,12 +73,17 @@ export default function SabotageOverlay({ frozenUntil, inkSplats }: SabotageOver
 
     useEffect(() => {
         if (isFrozen) {
-            setSnowflakes(Array.from({ length: 20 }, (_, i) => ({
-                id: i,
-                left: Math.random() * 100,
-                delay: Math.random() * 2
-            })));
+            const frame = requestAnimationFrame(() => {
+                setSnowflakes(Array.from({ length: 20 }, (_, i) => ({
+                    id: i,
+                    left: Math.random() * 100,
+                    delay: Math.random() * 2
+                })));
+            });
+            return () => cancelAnimationFrame(frame);
         }
+
+        return () => {};
     }, [isFrozen]);
 
     // Disable interactions if nothing active
@@ -134,6 +143,14 @@ export default function SabotageOverlay({ frozenUntil, inkSplats }: SabotageOver
                     }}
                     onPointerEnter={() => handleSplatHover(splat.id)}
                     onClick={() => handleSplatHover(splat.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            handleSplatHover(splat.id);
+                        }
+                    }}
                 >
                     <div className="relative w-full h-full animate-in zoom-in duration-300">
                         {/* Ink Blob (CSS Shape) */}

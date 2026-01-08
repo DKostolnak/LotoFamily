@@ -1,27 +1,41 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import { io, Socket } from 'socket.io-client';
-import {
-    GameState,
+import React, {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useReducer,
+    useRef,
+    useState,
+    type ReactNode,
+} from 'react';
+import { io, type Socket } from 'socket.io-client';
+import type {
     GameSettings,
-    Player,
+    GameState,
+    SabotageType,
     ServerToClientEvents,
-    ClientToServerEvents
+    ClientToServerEvents,
 } from './types';
+import {
+    DEFAULT_AVATARS,
+    gameClientReducer,
+    initialGameClientState,
+} from './state/gameReducer';
 
 interface GameContextType {
     socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
-    gameState: GameState | null;
     playerId: string | null;
     playerName: string | null;
+    playerAvatar: string;
+    gameState: GameState | null;
     isConnected: boolean;
     isLoading: boolean;
     isHost: boolean;
     error: string | null;
     clearError: () => void;
-
-    // Actions
     createRoom: (playerName: string, settings?: Partial<GameSettings>) => void;
     joinRoom: (roomCode: string, playerName: string) => void;
     leaveRoom: () => void;
@@ -35,15 +49,14 @@ interface GameContextType {
     restartGame: () => void;
     updateProfile: (name: string, avatarUrl: string) => void;
     kickPlayer: (playerId: string) => void;
-    playerAvatar: string;
-    setPlayerAvatar: (url: string) => void;
-    closeRoom: () => void; // New action
-    useSabotage: (targetId: string, type: import('./types').SabotageType) => void;
+    setPlayerAvatar: (avatar: string) => void;
+    closeRoom: () => void;
+    useSabotage: (targetId: string, type: SabotageType) => void;
 }
 
 const GameContext = createContext<GameContextType | null>(null);
 
-export function useGame() {
+export function useGame(): GameContextType {
     const context = useContext(GameContext);
     if (!context) {
         throw new Error('useGame must be used within a GameProvider');
@@ -56,320 +69,383 @@ interface GameProviderProps {
     serverUrl?: string;
 }
 
+const TOKEN_STORAGE_KEY = 'loto_playerToken';
+const AVATAR_STORAGE_KEY = 'loto_playerAvatar';
+const NAME_STORAGE_KEY = 'loto_playerName';
+const ROOM_STORAGE_KEY = 'loto_lastRoom';
+const ERROR_DISMISS_DELAY = 5000;
+
+function safeLocalStorage(): Storage | null {
+    if (typeof window === 'undefined') return null;
+    return window.localStorage;
+}
+
+function createStableId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
+
+function ensurePlayerToken(storage: Storage | null): string {
+    if (!storage) {
+        return createStableId();
+    }
+    let token = storage.getItem(TOKEN_STORAGE_KEY);
+    if (!token) {
+        token = createStableId();
+        storage.setItem(TOKEN_STORAGE_KEY, token);
+    }
+    return token;
+}
+
+function loadAvatar(storage: Storage | null): string {
+    if (!storage) return DEFAULT_AVATARS[0];
+    const savedAvatar = storage.getItem(AVATAR_STORAGE_KEY);
+    if (savedAvatar) {
+        return savedAvatar;
+    }
+    const randomAvatar = DEFAULT_AVATARS[Math.floor(Math.random() * DEFAULT_AVATARS.length)];
+    storage.setItem(AVATAR_STORAGE_KEY, randomAvatar);
+    return randomAvatar;
+}
+
 export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
+    const storage = safeLocalStorage();
+    const token = useRef<string | null>(null);
+    const [clientState, dispatch] = useReducer(gameClientReducer, initialGameClientState);
     const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
-    const [gameState, setGameState] = useState<GameState | null>(null);
-    const [playerId, setPlayerId] = useState<string | null>(null);
-    const [playerName, setPlayerName] = useState<string | null>(null);
-    const [playerAvatar, setPlayerAvatar] = useState<string>('🐻'); // Default emoji avatar
-    const [isConnected, setIsConnected] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [wasDisconnected, setWasDisconnected] = useState(false);
-    const [playerToken, setPlayerToken] = useState<string | null>(null);
+    const errorTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const [pendingReconnect, setPendingReconnect] = useState(false);
 
-    const isHost = gameState?.hostId === playerId;
-
-    // Load or generate player token
     useEffect(() => {
-        let token = localStorage.getItem('loto_playerToken');
-        if (!token) {
-            // crypto.randomUUID() requires a secure context (HTTPS)
-            // Local IP access (http://10.0.1.14) may fail. Provide a fallback.
-            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-                token = crypto.randomUUID();
-            } else {
-                token = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-                    const r = (Math.random() * 16) | 0;
-                    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-                    return v.toString(16);
-                });
-            }
-            localStorage.setItem('loto_playerToken', token);
-        }
-        setPlayerToken(token);
+        const nextToken = ensurePlayerToken(storage);
+        token.current = nextToken;
 
-        // Load or initialize avatar
-        const savedAvatar = localStorage.getItem('loto_playerAvatar');
-        if (savedAvatar) {
-            setPlayerAvatar(savedAvatar);
-        } else {
-            const defaultAvatars = ['🐻', '🦊', '🐱', '🐼', '🦁', '🐯', '🐨', '🐸'];
-            const randomAvatar = defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
-            setPlayerAvatar(randomAvatar);
-            localStorage.setItem('loto_playerAvatar', randomAvatar);
+        const avatar = loadAvatar(storage);
+        dispatch({ type: 'setPlayerAvatar', playerAvatar: avatar });
+
+        const savedName = storage?.getItem(NAME_STORAGE_KEY) ?? null;
+        if (savedName) {
+            dispatch({ type: 'setPlayerName', playerName: savedName });
         }
 
-        // AUTO-REJOIN: If we have a stored room code and name, try to join
-        const lastRoom = localStorage.getItem('loto_lastRoom');
-        const lastName = localStorage.getItem('loto_playerName');
-        if (lastRoom && lastName && socket) {
-            // Wait for socket to be ready
-            const timer = setTimeout(() => {
-                socket.emit('room:join', lastRoom, lastName, token);
-                setIsLoading(true);
-            }, 500);
-            return () => clearTimeout(timer);
+        const savedRoom = storage?.getItem(ROOM_STORAGE_KEY) ?? null;
+        if (savedRoom) {
+            dispatch({ type: 'setLastRoomCode', roomCode: savedRoom });
         }
-    }, [socket]); // Re-run when socket is initialized
+    }, [storage]);
 
-    // Auto-clear errors after 5 seconds
     useEffect(() => {
-        if (error) {
-            const timer = setTimeout(() => setError(null), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [error]);
-
-    // Initialize socket connection
-    useEffect(() => {
-        const newSocket: Socket<ServerToClientEvents, ClientToServerEvents> = io(serverUrl, {
-            autoConnect: true, // Auto connect for simpler lifecycle
+        const client: Socket<ServerToClientEvents, ClientToServerEvents> = io(serverUrl, {
+            autoConnect: false,
             transports: ['websocket'],
             reconnection: true,
             reconnectionAttempts: 5,
             reconnectionDelay: 1000,
         });
 
-        newSocket.on('connect', () => {
-            setIsConnected(true);
-            setPlayerId(newSocket.id || null);
-            setError(null);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSocket(client);
+        dispatch({ type: 'setConnectionStatus', status: 'connecting' });
+        client.connect();
+
+        client.on('connect', () => {
+            dispatch({ type: 'setConnectionStatus', status: pendingReconnect ? 'reconnecting' : 'connected' });
+            dispatch({ type: 'setPlayerId', playerId: client.id ?? null });
+            dispatch({ type: 'setError', error: null });
             setIsLoading(false);
+            setPendingReconnect(false);
 
-            // Robust Reconnect: Immediately try to rejoin if we have credentials
-            const lastRoom = localStorage.getItem('loto_lastRoom');
-            const lastName = localStorage.getItem('loto_playerName');
-            const token = localStorage.getItem('loto_playerToken');
-
-            if (lastRoom && lastName && token) {
-                console.log(`[Auto-Rejoin] Re-authenticating for room ${lastRoom}`);
-                newSocket.emit('room:join', lastRoom, lastName, token);
+            const lastRoom = storage?.getItem(ROOM_STORAGE_KEY);
+            const lastName = storage?.getItem(NAME_STORAGE_KEY);
+            if (lastRoom && lastName && token.current) {
+                client.emit('room:join', lastRoom, lastName, token.current);
+                setIsLoading(true);
             }
         });
 
-        newSocket.on('disconnect', () => {
-            setIsConnected(false);
-            setWasDisconnected(true);
+        client.on('disconnect', () => {
+            dispatch({ type: 'setConnectionStatus', status: 'disconnected' });
+            dispatch({ type: 'setWasDisconnected', wasDisconnected: true });
+            setPendingReconnect(true);
         });
 
-        newSocket.on('connect_error', () => {
-            setError('Connection failed. Retrying...');
+        client.on('connect_error', () => {
+            dispatch({ type: 'setError', error: 'Connection failed. Retrying...' });
             setIsLoading(false);
         });
 
-        newSocket.on('game:state', (state) => {
-            setGameState(state);
+        client.on('game:state', (nextState) => {
+            dispatch({ type: 'setGameState', gameState: nextState });
             setIsLoading(false);
-            // Save room code on successful state update (meaning we are in a room)
-            if (state.roomCode) {
-                localStorage.setItem('loto_lastRoom', state.roomCode);
+            if (nextState.roomCode) {
+                storage?.setItem(ROOM_STORAGE_KEY, nextState.roomCode);
             }
         });
 
-        newSocket.on('game:error', (message) => {
-            setError(message);
+        client.on('game:error', (message) => {
+            dispatch({ type: 'setError', error: message });
             setIsLoading(false);
-            if (message === "Room not found") {
-                localStorage.removeItem('loto_lastRoom');
+            if (message === 'Room not found') {
+                storage?.removeItem(ROOM_STORAGE_KEY);
             }
         });
 
-        newSocket.on('room:joined', (state) => {
-            setGameState(state);
+        client.on('room:joined', (nextState) => {
+            dispatch({ type: 'setGameState', gameState: nextState });
             setIsLoading(false);
-            if (state.roomCode) {
-                localStorage.setItem('loto_lastRoom', state.roomCode);
+            if (nextState.roomCode) {
+                storage?.setItem(ROOM_STORAGE_KEY, nextState.roomCode);
             }
         });
 
-        newSocket.on('room:created', (code) => {
-            localStorage.setItem('loto_lastRoom', code);
+        client.on('room:created', (code) => {
+            storage?.setItem(ROOM_STORAGE_KEY, code);
         });
 
-        newSocket.on('room:kicked', () => {
-            setGameState(null);
-            localStorage.removeItem('loto_lastRoom');
-            setError('You have been kicked from the room.');
+        client.on('room:kicked', () => {
+            dispatch({ type: 'setGameState', gameState: null });
+            storage?.removeItem(ROOM_STORAGE_KEY);
+            dispatch({ type: 'setError', error: 'You have been removed from the room.' });
         });
 
-        newSocket.on('room:closed', () => {
-            setGameState(null);
-            localStorage.removeItem('loto_lastRoom');
-            setError('The host has closed the room.');
+        client.on('room:closed', () => {
+            dispatch({ type: 'setGameState', gameState: null });
+            storage?.removeItem(ROOM_STORAGE_KEY);
+            dispatch({ type: 'setError', error: 'The host closed the room.' });
         });
 
-        // Listen for sabotage effects targeted at us
-        newSocket.on('game:sabotageEffect', (attackerId, targetId, type) => {
-            // Check if this player is the target
-            if (targetId === newSocket.id) {
-                if (type === 'snowball') {
-                    setError('❄️ You have been FROZEN for 5 seconds!');
-                } else if (type === 'ink_splat') {
-                    setError('🐙 INK ATTACK! Wipe it off!');
-                } else if (type === 'swap_hand') {
-                    setError('🌀 Your cards have been SHUFFLED!');
-                }
-            }
+        client.on('game:sabotageEffect', (_attackerId, targetId, type) => {
+            if (targetId !== client.id) return;
+            const sabotageMessages: Record<SabotageType, string> = {
+                snowball: '❄️ You have been frozen for 5 seconds.',
+                ink_splat: '🐙 Ink splat! Clear your board carefully.',
+                swap_hand: '🌀 Your cards have been shuffled.',
+            };
+            dispatch({ type: 'setError', error: sabotageMessages[type] });
         });
-
-        setSocket(newSocket);
 
         return () => {
-            newSocket.disconnect();
+            client.disconnect();
         };
-    }, [serverUrl]);
+    }, [serverUrl, storage, pendingReconnect]);
 
-    // Connect socket when needed
-    const connect = useCallback(() => {
-        if (socket && !socket.connected) {
-            socket.connect();
+    useEffect(() => {
+        if (clientState.error && typeof window !== 'undefined' && 'scrollTo' in window) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-    }, [socket]);
+    }, [clientState.error]);
 
-    // Create a new room
-    const createRoom = useCallback((name: string, settings?: Partial<GameSettings>) => {
-        if (!socket || !playerToken) return;
-        setIsLoading(true);
-        setPlayerName(name);
-        localStorage.setItem('loto_playerName', name);
-        localStorage.setItem('loto_playerAvatar', playerAvatar);
-        socket.emit('room:create', name, playerAvatar, settings || {}, playerToken);
-    }, [socket, playerToken, playerAvatar]);
+    useEffect(() => {
+        if (!clientState.error) return;
+        if (errorTimerRef.current) {
+            clearTimeout(errorTimerRef.current);
+        }
+        errorTimerRef.current = setTimeout(() => {
+            dispatch({ type: 'setError', error: null });
+        }, ERROR_DISMISS_DELAY);
+        return () => {
+            if (errorTimerRef.current) {
+                clearTimeout(errorTimerRef.current);
+            }
+        };
+    }, [clientState.error]);
 
-    // Join an existing room
-    const joinRoom = useCallback((roomCode: string, name: string) => {
-        if (!socket || !playerToken) return;
-        setIsLoading(true);
-        setPlayerName(name);
-        localStorage.setItem('loto_playerName', name);
-        localStorage.setItem('loto_playerAvatar', playerAvatar);
-        socket.emit('room:join', roomCode.toUpperCase(), name, playerAvatar, playerToken);
-    }, [socket, playerToken, playerAvatar]);
+    const isHost = useMemo(
+        () => !!clientState.gameState && clientState.gameState.hostId === clientState.playerId,
+        [clientState.gameState, clientState.playerId],
+    );
 
-    // Leave the current room
+    const handleProfilePersist = useCallback(
+        (name: string, avatar: string) => {
+            dispatch({ type: 'setPlayerName', playerName: name });
+            dispatch({ type: 'setPlayerAvatar', playerAvatar: avatar });
+            storage?.setItem(NAME_STORAGE_KEY, name);
+            storage?.setItem(AVATAR_STORAGE_KEY, avatar);
+        },
+        [storage],
+    );
+
+    const createRoom = useCallback(
+        (name: string, settings?: Partial<GameSettings>) => {
+            if (!socket || !token.current) return;
+            setIsLoading(true);
+            handleProfilePersist(name, clientState.playerAvatar);
+            socket.emit('room:create', name, clientState.playerAvatar, settings ?? {}, token.current);
+        },
+        [socket, token, handleProfilePersist, clientState.playerAvatar],
+    );
+
+    const joinRoom = useCallback(
+        (roomCode: string, name: string) => {
+            if (!socket || !token.current) return;
+            setIsLoading(true);
+            handleProfilePersist(name, clientState.playerAvatar);
+            socket.emit('room:join', roomCode.toUpperCase(), name, clientState.playerAvatar, token.current);
+        },
+        [socket, token, handleProfilePersist, clientState.playerAvatar],
+    );
+
     const leaveRoom = useCallback(() => {
         if (!socket) return;
         socket.emit('room:leave');
-        setGameState(null);
-        localStorage.removeItem('loto_lastRoom');
-    }, [socket]);
+        dispatch({ type: 'setGameState', gameState: null });
+        storage?.removeItem(ROOM_STORAGE_KEY);
+    }, [socket, storage]);
 
-    // Start the game (host only)
     const startGame = useCallback(() => {
         if (!socket || !isHost) return;
         socket.emit('game:start');
     }, [socket, isHost]);
 
-    // Call the next number (host only)
     const callNextNumber = useCallback(() => {
         if (!socket || !isHost) return;
         socket.emit('game:callNumber');
     }, [socket, isHost]);
 
-    // Mark a cell on a card
-    const markCell = useCallback((cardId: string, row: number, col: number) => {
-        if (!socket) return;
-        socket.emit('game:markCell', cardId, row, col);
-    }, [socket]);
+    const markCell = useCallback(
+        (cardId: string, row: number, col: number) => {
+            socket?.emit('game:markCell', cardId, row, col);
+        },
+        [socket],
+    );
 
-    // Claim a win
-    const claimWin = useCallback((cardId: string) => {
-        if (!socket) return;
-        socket.emit('game:claimWin', cardId);
-    }, [socket]);
+    const claimWin = useCallback(
+        (cardId: string) => {
+            socket?.emit('game:claimWin', cardId);
+        },
+        [socket],
+    );
 
-    // Claim a flat (intermediate win)
-    const claimFlat = useCallback((flatType: number) => {
-        if (!socket) return;
-        socket.emit('game:claimFlat', flatType);
-    }, [socket]);
+    const claimFlat = useCallback(
+        (flatType: number) => {
+            socket?.emit('game:claimFlat', flatType);
+        },
+        [socket],
+    );
 
-
-
-    // Pause the game (host only)
     const pauseGame = useCallback(() => {
         if (!socket || !isHost) return;
         socket.emit('game:pause');
     }, [socket, isHost]);
 
-    // Resume the game (host only)
     const resumeGame = useCallback(() => {
         if (!socket || !isHost) return;
         socket.emit('game:resume');
     }, [socket, isHost]);
 
-    // Restart the game (host only)
     const restartGame = useCallback(() => {
         if (!socket || !isHost) return;
         socket.emit('game:restart');
     }, [socket, isHost]);
 
-    // Clear error manually
-    const clearError = useCallback(() => {
-        setError(null);
-    }, []);
-
-    const updateProfile = useCallback((name: string, avatarUrl: string) => {
-        if (socket) {
+    const updateProfile = useCallback(
+        (name: string, avatarUrl: string) => {
+            if (!socket) return;
             socket.emit('room:updateProfile', name, avatarUrl);
-            setPlayerName(name);
-            setPlayerAvatar(avatarUrl);
-            localStorage.setItem('loto_playerName', name);
-            localStorage.setItem('loto_playerAvatar', avatarUrl);
-        }
-    }, [socket, setPlayerAvatar]);
+            handleProfilePersist(name, avatarUrl);
+        },
+        [socket, handleProfilePersist],
+    );
 
-    const kickPlayer = useCallback((targetId: string) => {
-        if (socket && isHost) {
+    const kickPlayer = useCallback(
+        (targetId: string) => {
+            if (!socket || !isHost) return;
             socket.emit('room:kickPlayer', targetId);
-        }
-    }, [socket, isHost]);
+        },
+        [socket, isHost],
+    );
 
     const closeRoom = useCallback(() => {
-        if (socket && isHost) {
-            socket.emit('room:close');
-        }
+        if (!socket || !isHost) return;
+        socket.emit('room:close');
     }, [socket, isHost]);
 
-    const useSabotage = useCallback((targetId: string, type: import('./types').SabotageType) => {
-        if (socket) {
-            socket.emit('game:useSabotage', targetId, type);
-        }
-    }, [socket]);
-
-    const value: GameContextType = {
-        socket,
-        gameState,
-        playerId,
-        playerName,
-        playerAvatar,
-        setPlayerAvatar,
-        isConnected,
-        isLoading,
-        isHost,
-        error,
-        clearError,
-        createRoom,
-        joinRoom,
-        leaveRoom,
-        startGame,
-        callNextNumber,
-        markCell,
-        claimWin,
-        claimFlat,
-        pauseGame,
-        resumeGame,
-        restartGame,
-        updateProfile,
-        kickPlayer,
-        closeRoom,
-        useSabotage,
-    };
-
-    return (
-        <GameContext.Provider value={value}>
-            {children}
-        </GameContext.Provider>
+    const setPlayerAvatar = useCallback(
+        (avatar: string) => {
+            handleProfilePersist(clientState.playerName ?? '', avatar);
+        },
+        [handleProfilePersist, clientState.playerName],
     );
+
+    const useSabotage = useCallback(
+        (targetId: string, type: SabotageType) => {
+            socket?.emit('game:useSabotage', targetId, type);
+        },
+        [socket],
+    );
+
+    const clearError = useCallback(() => {
+        if (errorTimerRef.current) {
+            clearTimeout(errorTimerRef.current);
+        }
+        dispatch({ type: 'setError', error: null });
+    }, []);
+
+    const value = useMemo<GameContextType>(
+        () => ({
+            socket,
+            playerId: clientState.playerId,
+            playerName: clientState.playerName,
+            playerAvatar: clientState.playerAvatar,
+            gameState: clientState.gameState,
+            isConnected: clientState.connectionStatus === 'connected' || clientState.connectionStatus === 'reconnecting',
+            isLoading,
+            isHost,
+            error: clientState.error,
+            clearError,
+            createRoom,
+            joinRoom,
+            leaveRoom,
+            startGame,
+            callNextNumber,
+            markCell,
+            claimWin,
+            claimFlat,
+            pauseGame,
+            resumeGame,
+            restartGame,
+            updateProfile,
+            kickPlayer,
+            setPlayerAvatar,
+            closeRoom,
+            useSabotage,
+        }),
+        [
+            socket,
+            clientState.playerId,
+            clientState.playerName,
+            clientState.playerAvatar,
+            clientState.gameState,
+            clientState.connectionStatus,
+            isLoading,
+            isHost,
+            clientState.error,
+            clearError,
+            createRoom,
+            joinRoom,
+            leaveRoom,
+            startGame,
+            callNextNumber,
+            markCell,
+            claimWin,
+            claimFlat,
+            pauseGame,
+            resumeGame,
+            restartGame,
+            updateProfile,
+            kickPlayer,
+            setPlayerAvatar,
+            closeRoom,
+            useSabotage,
+        ],
+    );
+
+    return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
