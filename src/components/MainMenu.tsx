@@ -1,10 +1,31 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+/**
+ * MainMenu Component
+ * 
+ * Entry screen for the Loto game with:
+ * - Create Game option (for hosts)
+ * - Join Game option (for players)
+ * - Language selection
+ * - Avatar picker
+ * 
+ * Handles:
+ * - Player name input and validation
+ * - Room code input for joining
+ * - Crazy Mode toggle
+ * - URL-based room code recovery
+ */
 
+import React, { useCallback, useEffect, useState } from 'react';
 import { GameSettings } from '@/lib/types';
 import { translations, Language } from '@/lib/translations';
 import { useGame } from '@/lib/GameContext';
+import {
+    storageService,
+    STORAGE_KEYS,
+    getPlayerName,
+    setPlayerName as savePlayerName,
+} from '@/lib/services/storage';
 import AvatarPicker from './AvatarPicker';
 import LanguageSelector from './LanguageSelector';
 
@@ -27,32 +48,32 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
     const [crazyMode, setCrazyMode] = useState(false);
 
     // Hydrate state from client storage/URL after mount
-    React.useEffect(() => {
+    useEffect(() => {
         // 1. Recover Language
-        const savedLang = window.localStorage.getItem('loto_language') as Language | null;
-        const fallback = (window.navigator.language || window.navigator.languages?.[0] || 'en').toLowerCase();
-        let nextLang: Language = 'en';
+        const savedLang = storageService.getString(STORAGE_KEYS.LANGUAGE) as Language | null;
+        const browserLang = (window.navigator.language || window.navigator.languages?.[0] || 'en').toLowerCase();
+        let detectedLanguage: Language = 'en';
 
         if (savedLang && savedLang in translations) {
-            nextLang = savedLang;
-        } else if (fallback.includes('sk')) {
-            nextLang = 'sk';
-        } else if (fallback.includes('uk')) {
-            nextLang = 'uk';
-        } else if (fallback.includes('ru')) {
-            nextLang = 'ru';
+            detectedLanguage = savedLang;
+        } else if (browserLang.includes('sk')) {
+            detectedLanguage = 'sk';
+        } else if (browserLang.includes('uk')) {
+            detectedLanguage = 'uk';
+        } else if (browserLang.includes('ru')) {
+            detectedLanguage = 'ru';
         }
-        setLanguage(nextLang);
+        setLanguage(detectedLanguage);
 
         // 2. Recover Player Name
-        const savedName = window.localStorage.getItem('loto_playerName');
+        const savedName = getPlayerName();
         if (savedName) setPlayerName(savedName);
 
-        // 3. Recover Room Code from URL
+        // 3. Recover Room Code from URL (for shared links)
         const params = new URLSearchParams(window.location.search);
-        const urlRoom = params.get('room');
-        if (urlRoom) {
-            setRoomCode(urlRoom.toUpperCase());
+        const urlRoomCode = params.get('room');
+        if (urlRoomCode) {
+            setRoomCode(urlRoomCode.toUpperCase());
             setMode('join');
         }
     }, []);
@@ -61,24 +82,20 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
 
     const t = translations[language];
 
-    const handleLanguageChange = (lang: Language) => {
+    const handleLanguageChange = useCallback((lang: Language) => {
         setLanguage(lang);
-        if (typeof window !== 'undefined') {
-            window.localStorage.setItem('loto_language', lang);
-        }
-    };
+        storageService.set(STORAGE_KEYS.LANGUAGE, lang);
+    }, []);
 
-    const validateCommonFields = () => {
+    const validateCommonFields = useCallback(() => {
         if (playerName.trim().length < 2) {
             setError(t.nameError);
             return false;
         }
         setError(null);
-        if (typeof window !== 'undefined') {
-            window.localStorage.setItem('loto_playerName', playerName.trim());
-        }
+        savePlayerName(playerName.trim());
         return true;
-    };
+    }, [playerName, t.nameError]);
 
     const handleCreate = () => {
         if (!validateCommonFields()) return;

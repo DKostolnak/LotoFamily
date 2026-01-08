@@ -1,8 +1,24 @@
 'use client';
 
+/**
+ * LotoCard Component
+ * 
+ * Displays a European Loto 90 card with:
+ * - 9 columns x 3 rows grid
+ * - 5 numbers per row (rest are blank)
+ * - Interactive cell marking with visual/audio feedback
+ * - Progress tracking
+ * 
+ * Features:
+ * - Memoized cell rendering for performance
+ * - Optimistic marking with visual feedback
+ * - Mistake prevention (shows red for uncalled numbers)
+ * - Haptic feedback on valid marks
+ */
+
 import React, { useState, useMemo, useCallback, memo } from 'react';
 import { LotoCard as LotoCardType } from '@/lib/types';
-import { playCellMarkSound, playBonusSound, playErrorSound } from './GameAudioPlayer';
+import { playCellMarkSound, playBonusSound, playErrorSound } from '@/lib/audio';
 import { useHaptics } from '@/hooks/useHaptics';
 import '@/styles/lotoCard.css';
 import { TranslationDictionary } from '@/lib/translations';

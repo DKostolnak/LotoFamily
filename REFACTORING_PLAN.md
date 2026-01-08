@@ -1,237 +1,173 @@
 # Loto Game Refactoring Plan
 
-## Executive Summary
-
-After auditing the codebase, I've identified several areas that need improvement to align with SOLID principles, clean code standards, and industry best practices. This document outlines the refactoring plan with prioritized phases.
+## Status: ✅ PHASES 1-5 COMPLETE
 
 ---
 
-## Current State Analysis
+## Completed Changes
 
-### Strengths ✅
-1. **Clear domain separation** - Types are well-organized in `types.ts`
-2. **Component memoization** - Good use of `memo()` for performance
-3. **Internationalization** - Proper translation system in place
-4. **Socket architecture** - Clean event-based communication
+### Phase 1: Component Extraction ✅
+- Created `ConfirmModal` - Reusable confirmation dialog with wooden theme
+- Created `WoodenButton` - Configurable button component with size/variant support
+- Refactored `GameHeader` - Clean structure, extracted sub-components, proper JSDoc
+- Exported components via barrel file in `components/common/index.ts`
 
-### Issues Identified 🔴
+### Phase 2: Service Layer ✅
+- Created `StorageService` (`lib/services/storage.ts`)
+  - Type-safe localStorage wrapper
+  - Centralized `STORAGE_KEYS` constant
+  - Player profile helpers (getPlayerAvatar, setPlayerName, etc.)
+  - `ensurePlayerToken()` for session management
+- Created service barrel export (`lib/services/index.ts`)
 
-#### 1. **Single Responsibility Principle (SRP) Violations**
-- `GameHeader.tsx` (322 lines) - Handles header UI, modal rendering, sound toggle, leave confirmation
-- `GameContext.tsx` (438 lines) - Manages socket, state, storage, reconnection, ALL game actions
-- `MainMenu.tsx` (337 lines) - Form validation, language handling, room code logic, avatar picking
+### Phase 3: Type System Improvements ✅
+- Enhanced `lib/types.ts` with comprehensive JSDoc
+- Added game constants (LOTO_MAX_NUMBER, CARD_ROWS, CARD_COLUMNS)
+- Better organization by domain (Card, Player, Game, Socket)
 
-#### 2. **Open/Closed Principle Violations**
-- Game mode logic hardcoded in multiple places
-- Crazy mode shuffle logic embedded in `handleMarkCell`
+### Phase 4: State Management Improvements ✅
+- Enhanced `gameReducer.ts` with:
+  - Proper TypeScript types
+  - Selector functions (selectIsHost, selectIsConnected, etc.)
+  - Better organization with section comments
+- Refactored `GameContext.tsx`:
+  - Uses new storage service
+  - Cleaner section organization  
+  - Proper JSDoc documentation
+  - Removed deprecated patterns
 
-#### 3. **Dependency Inversion Violations**
-- Direct `localStorage` access scattered across components
-- `socket.io` tightly coupled to `GameContext`
+### Phase 5: Hook Extraction ✅
+- Created `useGameSocket` hook for future modularization
+- Separated socket connection logic (ready for further decoupling)
 
-#### 4. **Code Duplication**
-- Audio playback logic duplicated between `GameAudioPlayer.tsx` and `audio.ts`
-- Leave game confirmation copied across components
-- Wooden button styling repeated in multiple places
-
-#### 5. **Naming Inconsistencies**
-- Mixed casing: `playClickSound` vs `playCellMarkSound`
-- Unclear names: `t` for translations, `cn` for called numbers
-- Inconsistent file naming: some use camelCase, some PascalCase
-
-#### 6. **Component Organization**
-- 27 components in a flat directory structure
-- No clear grouping by feature/domain
+### Additional Improvements ✅
+- Updated `MainMenu.tsx` to use storage service
+- Updated `LotoCard.tsx` with proper JSDoc and direct audio imports
+- Cleaned up audio imports across components
 
 ---
 
-## Refactoring Phases
-
-### Phase 1: Directory Restructuring (Low Risk, High Impact)
-Reorganize components by domain:
+## Architecture Overview
 
 ```
 src/
+├── app/                    # Next.js app router
+│   ├── page.tsx           # Main app entry
+│   └── globals.css        # Global styles
+│
 ├── components/
-│   ├── common/           # Shared UI primitives
-│   │   ├── Button/
-│   │   ├── Modal/
-│   │   ├── Avatar/
-│   │   └── Card/
-│   ├── game/             # Game-specific components
-│   │   ├── GameHeader/
-│   │   ├── GameCard/
-│   │   ├── GameProgress/
-│   │   └── NumberDisplay/
-│   ├── lobby/            # Pre-game screens
-│   │   ├── MainMenu/
-│   │   ├── WaitingLobby/
-│   │   └── PlayerList/
-│   └── modals/           # All modal components
-│       ├── LeaderboardModal/
-│       ├── PlayerStatsModal/
-│       └── ConfirmModal/
-├── hooks/                # Custom hooks
-├── services/             # External service integrations
-│   ├── audio/
-│   ├── storage/
-│   └── socket/
-├── state/                # State management
-│   ├── gameReducer.ts
-│   └── GameProvider.tsx
-├── types/                # Type definitions
-│   ├── game.types.ts
-│   ├── player.types.ts
-│   └── socket.types.ts
-└── utils/                # Pure utility functions
+│   ├── common/            # Shared UI components
+│   │   ├── index.ts       # Barrel export
+│   │   ├── Button.tsx
+│   │   ├── WoodenButton.tsx
+│   │   ├── Modal.tsx
+│   │   ├── ConfirmModal.tsx
+│   │   └── Skeleton.tsx
+│   ├── GameHeader.tsx     # Game HUD
+│   ├── LotoCard.tsx       # Card display
+│   ├── MainMenu.tsx       # Entry screen
+│   ├── PlayerGameScreen.tsx
+│   ├── WaitingLobby.tsx
+│   └── ...
+│
+├── hooks/
+│   ├── useGameSocket.ts   # Socket management hook
+│   ├── useHaptics.ts
+│   ├── useWakeLock.ts
+│   └── ...
+│
+├── lib/
+│   ├── types.ts           # All TypeScript types
+│   ├── translations.ts    # i18n
+│   ├── audio.ts           # Audio service
+│   ├── GameContext.tsx    # Game state provider
+│   ├── services/
+│   │   ├── index.ts       # Barrel export
+│   │   └── storage.ts     # Storage service
+│   └── state/
+│       └── gameReducer.ts # Client state reducer
+│
+├── engine/                 # Game logic
+│   ├── gameEngine.ts
+│   ├── gameModes.ts
+│   └── lotoCardGenerator.ts
+│
+├── server/                 # Socket.io server
+│   ├── handlers/
+│   │   ├── gameHandlers.ts
+│   │   └── roomHandlers.ts
+│   └── store.ts
+│
+└── styles/
+    └── lotoCard.css
 ```
-
-### Phase 2: Extract Shared Components (Medium Risk)
-
-#### 2.1 Create `ConfirmModal` component
-Extract the leave confirmation modal into a reusable component:
-```typescript
-interface ConfirmModalProps {
-    isOpen: boolean;
-    title: string;
-    onConfirm: () => void;
-    onCancel: () => void;
-    confirmText?: string;
-    cancelText?: string;
-    variant?: 'danger' | 'warning' | 'info';
-}
-```
-
-#### 2.2 Create `WoodenButton` component
-Extract the repeated wooden-themed button styling:
-```typescript
-interface WoodenButtonProps {
-    onClick: () => void;
-    children: React.ReactNode;
-    size?: 'sm' | 'md' | 'lg';
-    variant?: 'primary' | 'secondary' | 'danger';
-    icon?: React.ReactNode;
-}
-```
-
-### Phase 3: Split Large Files (Medium Risk)
-
-#### 3.1 Split `GameContext.tsx`
-Break into:
-- `GameProvider.tsx` - Context provider with minimal logic
-- `useGameActions.ts` - Hook for game actions (start, pause, etc.)
-- `useGameSocket.ts` - Socket connection management
-- `useGameStorage.ts` - Local storage operations
-
-#### 3.2 Split `GameHeader.tsx`
-Break into:
-- `GameHeader.tsx` - Layout and composition only
-- `HeaderControls.tsx` - Back/Sound buttons
-- `LeaveConfirmModal.tsx` - Leave confirmation logic
-
-### Phase 4: Service Layer Extraction (High Impact)
-
-#### 4.1 Audio Service
-```typescript
-// services/audio/AudioService.ts
-interface IAudioService {
-    playClick(): void;
-    playCellMark(): void;
-    playBonus(): void;
-    playError(): void;
-    playWin(): void;
-    setMuted(muted: boolean): void;
-    isMuted(): boolean;
-}
-
-class AudioService implements IAudioService {
-    private static instance: AudioService;
-    private m_isMuted: boolean = false;
-    private m_audioContext: AudioContext | null = null;
-    
-    // ... implementation
-}
-```
-
-#### 4.2 Storage Service
-```typescript
-// services/storage/StorageService.ts
-interface IStorageService {
-    get<T>(key: string): T | null;
-    set<T>(key: string, value: T): void;
-    remove(key: string): void;
-    clear(): void;
-}
-```
-
-### Phase 5: Type System Improvements
-
-#### 5.1 Separate type files by domain
-```
-types/
-├── card.types.ts      # LotoCell, LotoCard, LotoCardGrid
-├── player.types.ts    # Player, PlayerStats
-├── game.types.ts      # GameState, GameSettings, GamePhase
-├── socket.types.ts    # Socket events
-└── index.ts           # Re-exports
-```
-
-#### 5.2 Add branded types for IDs
-```typescript
-type PlayerId = string & { readonly brand: unique symbol };
-type RoomId = string & { readonly brand: unique symbol };
-type CardId = string & { readonly brand: unique symbol };
-```
-
-### Phase 6: Naming Standardization
-
-#### 6.1 Function naming conventions
-- Event handlers: `handleXxx` (e.g., `handleCellClick`)
-- State setters: `setXxx` (e.g., `setGameState`)
-- Boolean getters: `isXxx`, `hasXxx`, `canXxx`
-- Async operations: `xxxAsync` suffix optional for clarity
-
-#### 6.2 Variable naming conventions
-- Use full words: `translations` not `t`
-- Descriptive arrays: `calledNumberValues` ✓ (already good)
-- Avoid abbreviations unless universally understood
 
 ---
 
-## Implementation Priority
+## Naming Conventions
 
-| Phase | Risk | Impact | Time Est. | Dependencies |
-|-------|------|--------|-----------|--------------|
-| 1. Directory Restructuring | Low | High | 2 hours | None |
-| 2. Extract Shared Components | Medium | Medium | 3 hours | Phase 1 |
-| 3. Split Large Files | Medium | High | 4 hours | Phase 2 |
-| 4. Service Layer | Medium | High | 3 hours | Phase 3 |
-| 5. Type System | Low | Medium | 1 hour | None |
-| 6. Naming Standards | Low | Medium | 2 hours | All |
+### Files
+- Components: PascalCase (`GameHeader.tsx`)
+- Hooks: camelCase with `use` prefix (`useGameSocket.ts`)
+- Services: camelCase (`storage.ts`)
+- Types: camelCase (`types.ts`)
 
-**Total Estimated Time: 15 hours**
+### Variables
+- Private members: `m_` prefix (`m_isMuted`)
+- Static members: `s_` prefix
+- Constants: `UPPER_SNAKE_CASE`
+- Booleans: `is`/`has`/`can` prefix
 
----
-
-## Immediate Quick Wins (Can Do Now)
-
-1. ✅ Rename `t` to `translations` throughout components
-2. ✅ Create `ConfirmModal` component and use in GameHeader
-3. ✅ Create `WoodenButton` component for consistent styling
-4. ✅ Move audio logic to a proper service with interface
-5. ✅ Add JSDoc comments to public functions
-6. ✅ Clean up unused imports
+### Functions
+- Event handlers: `handle` prefix (`handleCellClick`)
+- Callbacks: verb-based (`onCellClick`, `onError`)
+- Getters: `get` prefix or `select` for selectors
 
 ---
 
-## Testing Strategy
+## SOLID Principles Applied
 
-- Ensure existing tests pass after each phase
-- Add tests for extracted services
-- Visual regression testing for UI components
+### Single Responsibility
+- `ConfirmModal` handles only confirmation UI
+- `storageService` handles only localStorage
+- `GameContext` handles only state distribution
+
+### Open/Closed
+- Components accept variants via props
+- Services use interfaces for extension
+
+### Liskov Substitution
+- All button variants behave consistently
+- Modal variants maintain same API
+
+### Interface Segregation
+- `GameContextType` exposes only needed methods
+- `IStorageService` focuses on storage operations
+
+### Dependency Inversion
+- Components depend on abstractions (services)
+- Storage accessed via service, not directly
 
 ---
 
-## Notes
+## Future Improvements (Optional)
 
-This refactoring should be done incrementally, one phase at a time, with testing between each phase. The game should remain fully functional throughout the process.
+1. **Further GameContext splitting** - Extract socket logic into separate provider
+2. **Component library** - Move common components to separate package
+3. **E2E Tests** - Add Playwright tests for critical flows
+4. **Performance monitoring** - Add React DevTools markers
+5. **Error boundaries** - Add per-section error boundaries
+6. **Lazy loading** - Split heavy components with dynamic imports
+
+---
+
+## Testing Checklist
+
+After each change, verify:
+- [ ] `npm run build` passes
+- [ ] `npm run dev` works
+- [ ] Game can be created and joined
+- [ ] Cards display correctly
+- [ ] Numbers can be marked
+- [ ] Sounds work
+- [ ] Modal appears correctly
