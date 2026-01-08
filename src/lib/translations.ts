@@ -65,6 +65,9 @@ export const translations: Record<Language, TranslationDictionary> = {
         confirmKick: 'Are you sure you want to kick',
         kicked: 'kicked', confirmCloseRoom: 'Are you sure you want to close the room? All players will be disconnected.',
         joinMyGame: 'Join my Loto game!', joinWithCode: 'Join my Loto game with code:',
+        gameSpeed: 'Game Speed', pausedByHost: 'Game is paused by host',
+        selectTarget: 'Select Target 🎯', cancel: 'Cancel', mode: 'Mode',
+        copiedError: 'Failed to copy',
     },
     sk: {
         // Menu
@@ -128,6 +131,9 @@ export const translations: Record<Language, TranslationDictionary> = {
         confirmKick: 'Naozaj chcete vyhodiť',
         kicked: 'vyhodený', confirmCloseRoom: 'Naozaj chcete zavrieť miestnosť? Všetci hráči budú odpojení.',
         joinMyGame: 'Pripoj sa k mojej hre Loto!', joinWithCode: 'Pripoj sa kódom:',
+        gameSpeed: 'Rýchlosť hry', pausedByHost: 'Hra je pozastavená hostiteľom',
+        selectTarget: 'Vyber cieľ 🎯', cancel: 'Zrušiť', mode: 'Režim',
+        copiedError: 'Nepodarilo sa skopírovať',
     },
     ru: {
         // Menu
@@ -191,6 +197,9 @@ export const translations: Record<Language, TranslationDictionary> = {
         confirmKick: 'Вы уверены, что хотите выгнать',
         kicked: 'выгнан', confirmCloseRoom: 'Вы уверены, что хотите закрыть комнату? Все игроки будут отключены.',
         joinMyGame: 'Присоединяйся к моей игре в Лото!', joinWithCode: 'Присоединяйся с кодом:',
+        gameSpeed: 'Скорость игры', pausedByHost: 'Игра приостановлена ведущим',
+        selectTarget: 'Выбрать цель 🎯', cancel: 'Отмена', mode: 'Режим',
+        copiedError: 'Не удалось скопировать',
     },
     uk: {
         // Menu
@@ -254,5 +263,8 @@ export const translations: Record<Language, TranslationDictionary> = {
         confirmKick: 'Ви впевнені, що хочете вигнати',
         kicked: 'вигнаний', confirmCloseRoom: 'Ви впевнені, що хочете закрити кімнату? Всіх гравців буде відключено.',
         joinMyGame: 'Приєднуйся до моєї гри в Лото!', joinWithCode: 'Приєднуйся з кодом:',
+        gameSpeed: 'Швидкість гри', pausedByHost: 'Гра призупинена ведучим',
+        selectTarget: 'Обрати ціль 🎯', cancel: 'Скасувати', mode: 'Режим',
+        copiedError: 'Не вдалося скопіювати',
     }
 };

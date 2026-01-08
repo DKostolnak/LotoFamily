@@ -148,7 +148,7 @@ function PlayerGameScreen({
                     <div className="text-center">
                         <div className="text-6xl mb-4">⏸️</div>
                         <div className="text-white text-2xl font-bold">{t.paused}</div>
-                        <p className="text-white/60 text-sm mt-2">Game is paused by host</p>
+                        <p className="text-white/60 text-sm mt-2">{t.pausedByHost}</p>
                     </div>
                 </div>
             )}
@@ -210,7 +210,7 @@ function PlayerGameScreen({
                         className="fixed inset-0 z-[9998] bg-black/85 flex flex-col items-center justify-center p-4"
                         style={{ animation: 'fadeIn 0.2s ease-out' }}
                     >
-                        <h2 className="text-white text-xl font-bold mb-4">Select Target 🎯</h2>
+                        <h2 className="text-white text-xl font-bold mb-4">{t.selectTarget}</h2>
                         <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
                             {otherPlayers.map(p => (
                                 <button
@@ -229,7 +229,7 @@ function PlayerGameScreen({
                             className="mt-8 btn btn-secondary px-8"
                             onClick={() => setTargetingItem(null)}
                         >
-                            ✕ Cancel
+                            ✕ {t.cancel}
                         </button>
                         <style jsx>{`
                             @keyframes fadeIn {
@@ -243,7 +243,7 @@ function PlayerGameScreen({
 
             {/* Footer / Mode Info */}
             <div className="text-center py-1 text-[10px] opacity-40 shrink-0">
-                Mode: {gameState.settings.gameMode}
+                {t.mode}: {gameState.settings.gameMode}
                 {gameState.settings.crazyMode && ` 🎲 ${t.crazy}`}
             </div>
             {/* Sabotage Effects Overlay */}

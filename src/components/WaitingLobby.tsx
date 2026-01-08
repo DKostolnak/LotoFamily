@@ -50,7 +50,7 @@ export default function WaitingLobby({
             await navigator.clipboard.writeText(gameState.roomCode);
             showToast(t.copied, 'success', '📋');
         } catch {
-            showToast('Failed to copy', 'error');
+            showToast(t.copiedError, 'error');
         }
     };
 
@@ -58,8 +58,8 @@ export default function WaitingLobby({
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Join my Loto game!',
-                    text: `Join my Loto game with code: ${gameState.roomCode}`,
+                    title: t.joinMyGame,
+                    text: `${t.joinWithCode} ${gameState.roomCode}`,
                     url: joinUrl,
                 });
             } catch {
@@ -220,7 +220,7 @@ export default function WaitingLobby({
                     <>
                         <div style={{ marginBottom: '12px' }}>
                             <p style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px', textAlign: 'center' }}>
-                                Game Speed
+                                {t.gameSpeed}
                             </p>
                             <div className="flex gap-2 justify-center">
                                 {(['slow', 'normal', 'fast'] as const).map((s) => (
