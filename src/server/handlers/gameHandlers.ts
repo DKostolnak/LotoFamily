@@ -16,13 +16,6 @@ import {
     claimFlat,
 } from '../../engine/gameEngine';
 import { markCell } from '../../engine/lotoCardGenerator';
-import {
-    ENERGY_FAST_MARK,
-    ENERGY_SLOW_MARK,
-    ENERGY_MISTAKE_PENALTY,
-    FAST_MARK_WINDOW_MS,
-    MAX_ENERGY,
-} from '../../lib/constants';
 import * as store from '../store';
 import { gameLog } from '../../lib/logger';
 
@@ -206,38 +199,19 @@ export function handleMarkCell(
 
     const updatedCard = markCell(card, row, col);
 
-    // Energy calculation
-    let energyChange = 0;
-    if (isCorrectMark) {
-        const calledInfo = game.calledNumbers.find(cn => cn.value === cellValue);
-        if (calledInfo) {
-            const timeDiff = Date.now() - calledInfo.timestamp;
-            energyChange = timeDiff < FAST_MARK_WINDOW_MS ? ENERGY_FAST_MARK : ENERGY_SLOW_MARK;
-        }
-    } else {
-        energyChange = ENERGY_MISTAKE_PENALTY;
+    // Crazy Mode shuffle
+    if (game!.settings.crazyMode && isCorrectMark) {
+        newCards = newCards.map(c => shuffleCardPositions(c));
     }
 
-    const newEnergy = Math.max(0, Math.min(MAX_ENERGY, (player.energy || 0) + energyChange));
-
-    // Update player cards
-    const updatedPlayers = game.players.map(p => {
-        if (p.id === socket.id) {
-            let newCards = p.cards.map(c => c.id === cardId ? updatedCard : c);
-
-            // Crazy Mode shuffle
-            if (game!.settings.crazyMode && isCorrectMark) {
-                newCards = newCards.map(c => shuffleCardPositions(c));
-            }
-
-            return { ...p, cards: newCards, energy: newEnergy };
-        }
-        return p;
+    return { ...p, cards: newCards };
+}
+return p;
     });
 
-    game = { ...game, players: updatedPlayers };
-    store.setGame(roomCode, game);
-    io.to(roomCode).emit('game:state', game);
+game = { ...game, players: updatedPlayers };
+store.setGame(roomCode, game);
+io.to(roomCode).emit('game:state', game);
 }
 
 export function handleClaimWin(

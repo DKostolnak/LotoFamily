@@ -15,7 +15,6 @@ import { io, type Socket } from 'socket.io-client';
 import type {
     GameSettings,
     GameState,
-    SabotageType,
     ServerToClientEvents,
     ClientToServerEvents,
 } from './types';
@@ -51,7 +50,7 @@ interface GameContextType {
     kickPlayer: (playerId: string) => void;
     setPlayerAvatar: (avatar: string) => void;
     closeRoom: () => void;
-    useSabotage: (targetId: string, type: SabotageType) => void;
+    closeRoom: () => void;
 }
 
 const GameContext = createContext<GameContextType | null>(null);
@@ -221,15 +220,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             dispatch({ type: 'setError', error: 'The host closed the room.' });
         });
 
-        client.on('game:sabotageEffect', (_attackerId, targetId, type) => {
-            if (targetId !== client.id) return;
-            const sabotageMessages: Record<SabotageType, string> = {
-                snowball: '❄️ You have been frozen for 5 seconds.',
-                ink_splat: '🐙 Ink splat! Clear your board carefully.',
-                swap_hand: '🌀 Your cards have been shuffled.',
-            };
-            dispatch({ type: 'setError', error: sabotageMessages[type] });
-        });
+
 
         return () => {
             client.disconnect();
@@ -374,12 +365,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         [handleProfilePersist, clientState.playerName],
     );
 
-    const useSabotage = useCallback(
-        (targetId: string, type: SabotageType) => {
-            socket?.emit('game:useSabotage', targetId, type);
-        },
-        [socket],
-    );
+
 
     const clearError = useCallback(() => {
         if (errorTimerRef.current) {
@@ -415,7 +401,9 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             kickPlayer,
             setPlayerAvatar,
             closeRoom,
-            useSabotage,
+            kickPlayer,
+            setPlayerAvatar,
+            closeRoom,
         }),
         [
             socket,

@@ -29,13 +29,6 @@ export interface LotoCard {
 // PLAYER TYPES
 // ============================================================================
 
-export type SabotageType = 'snowball' | 'ink_splat' | 'swap_hand';
-
-export interface ActiveDebuffs {
-  frozenUntil?: number; // Timestamp when freeze ends
-  inkSplats?: Array<{ x: number; y: number; id: string }>;
-}
-
 export interface Player {
   id: string;
   name: string;
@@ -45,9 +38,7 @@ export interface Player {
   isHost: boolean;
   isConnected: boolean;
   collectedFlats: number[];
-  energy: number;
   score: number;
-  activeDebuffs: ActiveDebuffs;
 }
 
 // ============================================================================
@@ -107,7 +98,6 @@ export type ServerToClientEvents = {
   'game:winner': (playerId: string, playerName: string) => void;
   'game:flatClaimed': (playerId: string, flatType: number) => void;
   'game:error': (message: string) => void;
-  'game:sabotageEffect': (attackerId: string, targetId: string, type: SabotageType) => void;
   'room:created': (roomCode: string) => void;
   'room:joined': (state: GameState) => void;
   'room:kicked': () => void;
@@ -130,7 +120,6 @@ export type ClientToServerEvents = {
   'game:pause': () => void;
   'game:resume': () => void;
   'game:restart': () => void;
-  'game:useSabotage': (targetId: string, type: SabotageType) => void;
 };
 
 // ============================================================================
@@ -147,5 +136,4 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
   crazyMode: false,
 };
 
-export const ENERGY_PER_CORRECT_MARK = 5;
-export const INITIAL_PLAYER_ENERGY = 0;
+

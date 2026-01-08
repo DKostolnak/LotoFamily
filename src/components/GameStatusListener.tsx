@@ -92,29 +92,7 @@ export function GlobalGameToasts() {
     useEffect(() => {
         if (!socket) return;
 
-        const handleSabotage = (attackerId: string, targetId: string, type: import('@/lib/types').SabotageType) => {
-            const attackerName = getPlayerName(attackerId);
-            const targetName = getPlayerName(targetId);
-            const isMe = targetId === playerId;
 
-            // Simplified messages for now as complex templating with grammar is hard
-            // We use generic icons and names
-            let message = '';
-            let icon = '';
-
-            if (type === 'snowball') {
-                message = `${attackerName} ➡️ ❄️ ➡️ ${isMe ? t.me : targetName}`;
-                icon = '❄️';
-            } else if (type === 'ink_splat') {
-                message = `${attackerName} ➡️ 🐙 ➡️ ${isMe ? t.me : targetName}`;
-                icon = '🐙';
-            } else if (type === 'swap_hand') {
-                message = `${attackerName} ➡️ 🌀 ➡️ ${isMe ? t.me : targetName}`;
-                icon = '🌀';
-            }
-
-            showToast(message, 'info', icon);
-        };
 
         const handleFlatClaim = (pid: string, type: number) => {
             const name = getPlayerName(pid);
@@ -142,14 +120,12 @@ export function GlobalGameToasts() {
             showToast(`${label} ${t.leftTheGame}`, 'warning', '🚪');
         };
 
-        socket.on('game:sabotageEffect', handleSabotage);
         socket.on('game:flatClaimed', handleFlatClaim);
         socket.on('game:winner', handleWinner);
         socket.on('game:playerJoined', handlePlayerJoined);
         socket.on('game:playerLeft', handlePlayerLeft);
 
         return () => {
-            socket.off('game:sabotageEffect', handleSabotage);
             socket.off('game:flatClaimed', handleFlatClaim);
             socket.off('game:winner', handleWinner);
             socket.off('game:playerJoined', handlePlayerJoined);
