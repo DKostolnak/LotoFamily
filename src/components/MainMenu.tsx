@@ -18,48 +18,44 @@ interface MainMenuProps {
  * Entry screen with Create/Join game options
  */
 export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
-    const defaults = useMemo(() => {
-        if (typeof window === 'undefined') {
-            return {
-                mode: 'menu' as const,
-                playerName: '',
-                roomCode: '',
-                language: 'en' as Language,
-            };
-        }
+    // Initialize with server-safe defaults to match SSR
+    const [mode, setMode] = useState<'menu' | 'create' | 'join'>('menu');
+    const [playerName, setPlayerName] = useState('');
+    const [roomCode, setRoomCode] = useState('');
+    const [language, setLanguage] = useState<Language>('en');
+    const [error, setError] = useState<string | null>(null);
+    const [crazyMode, setCrazyMode] = useState(false);
 
+    // Hydrate state from client storage/URL after mount
+    React.useEffect(() => {
+        // 1. Recover Language
         const savedLang = window.localStorage.getItem('loto_language') as Language | null;
         const fallback = (window.navigator.language || window.navigator.languages?.[0] || 'en').toLowerCase();
-        let language: Language = 'en';
+        let nextLang: Language = 'en';
 
         if (savedLang && savedLang in translations) {
-            language = savedLang;
+            nextLang = savedLang;
         } else if (fallback.includes('sk')) {
-            language = 'sk';
+            nextLang = 'sk';
         } else if (fallback.includes('uk')) {
-            language = 'uk';
+            nextLang = 'uk';
         } else if (fallback.includes('ru')) {
-            language = 'ru';
+            nextLang = 'ru';
         }
+        setLanguage(nextLang);
 
-        const savedName = window.localStorage.getItem('loto_playerName') ?? '';
+        // 2. Recover Player Name
+        const savedName = window.localStorage.getItem('loto_playerName');
+        if (savedName) setPlayerName(savedName);
+
+        // 3. Recover Room Code from URL
         const params = new URLSearchParams(window.location.search);
         const urlRoom = params.get('room');
-
-        return {
-            mode: urlRoom ? 'join' : ('menu' as const),
-            playerName: savedName,
-            roomCode: urlRoom ? urlRoom.toUpperCase() : '',
-            language,
-        };
+        if (urlRoom) {
+            setRoomCode(urlRoom.toUpperCase());
+            setMode('join');
+        }
     }, []);
-
-    const [mode, setMode] = useState<'menu' | 'create' | 'join'>(defaults.mode as 'menu' | 'create' | 'join');
-    const [playerName, setPlayerName] = useState(defaults.playerName);
-    const [roomCode, setRoomCode] = useState(defaults.roomCode);
-    const [error, setError] = useState<string | null>(null);
-
-    const [language, setLanguage] = useState<Language>(defaults.language);
 
     const { playerAvatar, setPlayerAvatar } = useGame();
 
@@ -96,7 +92,7 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         onCreateGame(playerName.trim(), {
             autoCallEnabled: false, // Default to false here, host enables in lobby
             language,
-            crazyMode: false,
+            crazyMode,
             customRoomCode: roomCode.length >= 3 ? roomCode.toUpperCase() : undefined,
         });
     };
@@ -233,7 +229,64 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                                     </p>
                                 </div>
 
-
+                                {/* Crazy Mode Toggle */}
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: 'var(--space-md)',
+                                        background: crazyMode ? 'linear-gradient(135deg, rgba(139, 69, 19, 0.3), rgba(160, 82, 45, 0.2))' : 'rgba(0,0,0,0.05)',
+                                        borderRadius: '12px',
+                                        border: crazyMode ? '2px solid var(--color-gold)' : '2px solid transparent',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                >
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-xs)' }}>
+                                            <span style={{ fontSize: '1.5rem' }}>🎲</span>
+                                            <span style={{ fontWeight: 700, fontSize: 'var(--font-size-base)' }}>
+                                                {t.crazyMode}
+                                            </span>
+                                        </div>
+                                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', margin: 0 }}>
+                                            {t.crazyModeDesc}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCrazyMode(!crazyMode)}
+                                        style={{
+                                            width: '56px',
+                                            height: '32px',
+                                            borderRadius: '16px',
+                                            border: 'none',
+                                            background: crazyMode
+                                                ? 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)'
+                                                : '#ccc',
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            transition: 'background 0.2s ease',
+                                            boxShadow: crazyMode ? '0 2px 4px rgba(0,0,0,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.2)',
+                                        }}
+                                        aria-pressed={crazyMode}
+                                        aria-label={t.crazyMode}
+                                    >
+                                        <div
+                                            style={{
+                                                width: '26px',
+                                                height: '26px',
+                                                borderRadius: '50%',
+                                                background: '#fff',
+                                                position: 'absolute',
+                                                top: '3px',
+                                                left: crazyMode ? '27px' : '3px',
+                                                transition: 'left 0.2s ease',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                            }}
+                                        />
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <div>

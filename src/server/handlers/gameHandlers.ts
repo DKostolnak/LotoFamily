@@ -76,21 +76,39 @@ export function stopAutoCall(roomCode: string): void {
 
 /**
  * Shuffle card positions for Crazy Mode
+ * Only shuffles unmarked cells - marked chips stay in place
  */
 function shuffleCardPositions(card: LotoCard): LotoCard {
-    const allCells = card.grid.flat().map(cell => ({ ...cell }));
+    // Collect all unmarked cell values (the numbers that will be shuffled)
+    const unmarkedValues: (number | null)[] = [];
+    const unmarkedPositions: { row: number; col: number }[] = [];
 
-    // Fisher-Yates shuffle
-    for (let i = allCells.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [allCells[i], allCells[j]] = [allCells[j], allCells[i]];
+    // Find all unmarked cells and their values
+    for (let row = 0; row < card.grid.length; row++) {
+        for (let col = 0; col < card.grid[row].length; col++) {
+            const cell = card.grid[row][col];
+            if (!cell.isMarked) {
+                unmarkedValues.push(cell.value);
+                unmarkedPositions.push({ row, col });
+            }
+        }
     }
 
-    const newGrid: LotoCardGrid = [
-        allCells.slice(0, 9),
-        allCells.slice(9, 18),
-        allCells.slice(18, 27),
-    ] as LotoCardGrid;
+    // Fisher-Yates shuffle the unmarked values
+    for (let i = unmarkedValues.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [unmarkedValues[i], unmarkedValues[j]] = [unmarkedValues[j], unmarkedValues[i]];
+    }
+
+    // Create a deep copy of the grid
+    const newGrid: LotoCardGrid = card.grid.map(row =>
+        row.map(cell => ({ ...cell }))
+    ) as LotoCardGrid;
+
+    // Apply shuffled values back to unmarked positions
+    unmarkedPositions.forEach((pos, index) => {
+        newGrid[pos.row][pos.col].value = unmarkedValues[index];
+    });
 
     return { ...card, grid: newGrid };
 }
@@ -199,15 +217,10 @@ export function handleMarkCell(
 
     const updatedCard = markCell(card, row, col);
 
+    // Update the player's card with the mark
     const updatedPlayers = game.players.map(p => {
         if (p.id === socket.id) {
-            let newCards = p.cards.map(c => c.id === cardId ? updatedCard : c);
-
-            // Crazy Mode shuffle
-            if (game!.settings.crazyMode && isCorrectMark) {
-                newCards = newCards.map(c => shuffleCardPositions(c));
-            }
-
+            const newCards = p.cards.map(c => c.id === cardId ? updatedCard : c);
             return { ...p, cards: newCards };
         }
         return p;
@@ -216,6 +229,26 @@ export function handleMarkCell(
     game = { ...game, players: updatedPlayers };
     store.setGame(roomCode, game);
     io.to(roomCode).emit('game:state', game);
+
+    // Crazy Mode: Shuffle ALL players' cards after a delay when a correct mark is made
+    if (game.settings.crazyMode && isCorrectMark) {
+        setTimeout(() => {
+            let currentGame = store.getGame(roomCode);
+            if (!currentGame || currentGame.phase !== 'playing') return;
+
+            // Shuffle all players' cards
+            const shuffledPlayers = currentGame.players.map(p => ({
+                ...p,
+                cards: p.cards.map(c => shuffleCardPositions(c))
+            }));
+
+            currentGame = { ...currentGame, players: shuffledPlayers };
+            store.setGame(roomCode, currentGame);
+            io.to(roomCode).emit('game:state', currentGame);
+
+            gameLog.info(`Crazy Mode shuffle triggered in ${roomCode}`);
+        }, 2000); // 2 second delay before shuffle
+    }
 }
 
 export function handleClaimWin(

@@ -9,7 +9,7 @@ import { createServer } from 'node:http';
 import os from 'node:os';
 import next from 'next';
 import { Server, Socket } from 'socket.io';
-import type { ServerToClientEvents, ClientToServerEvents, SabotageType } from './src/lib/types';
+import type { ServerToClientEvents, ClientToServerEvents } from './src/lib/types';
 import * as store from './src/server/store';
 import {
     handleRoomCreate,
@@ -29,7 +29,7 @@ import {
     handleResume,
     handleRestart,
 } from './src/server/handlers/gameHandlers';
-import { handleUseSabotage } from './src/server/handlers/sabotageHandlers';
+
 import { removePlayer } from './src/engine/gameEngine';
 import { serverLog, socketLog, roomLog } from './src/lib/logger';
 
@@ -154,10 +154,7 @@ app.prepare().then(() => {
             handleRestart(context, getRoomCode);
         });
 
-        // Sabotage Events
-        socket.on('game:useSabotage', (targetId, type: SabotageType) => {
-            handleUseSabotage(context, targetId, type, getRoomCode);
-        });
+
 
         // Disconnect Handler
         socket.on('disconnect', () => {

@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { Player } from '@/lib/types';
-import { playClickSound } from './GameAudioPlayer';
+import { playClickSound } from '@/lib/audio';
 
 interface HeaderPlayerListProps {
     players: Player[];
@@ -51,10 +51,11 @@ export default function HeaderPlayerList({
 
     return (
         <div
-            className="flex items-center pl-2 py-2 gap-3 w-full overflow-x-auto no-scrollbar"
+            className="flex items-center py-2 gap-3 w-full overflow-x-auto no-scrollbar"
             style={{
                 background: 'rgba(0,0,0,0.15)',
-                paddingRight: '60px',
+                paddingLeft: 'max(12px, env(safe-area-inset-left))',
+                paddingRight: '60px', /* Space for Leaderboard button + extra */
             }}
         >
             {sortedPlayers.map((player) => {

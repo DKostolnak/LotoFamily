@@ -22,7 +22,7 @@ const LANGUAGES: { code: Language; flag: string; title: string }[] = [
  */
 export default function LanguageSelector({ currentLanguage, onLanguageChange }: LanguageSelectorProps) {
     return (
-        <div className="flex gap-sm mt-4">
+        <div className="flex justify-center gap-sm mt-4">
             {LANGUAGES.map(({ code, flag, title }) => (
                 <button
                     key={code}

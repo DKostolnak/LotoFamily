@@ -6,7 +6,7 @@ import { translations } from '@/lib/translations';
 import GameHeader from './GameHeader';
 
 import { useWakeLock } from '@/hooks/useWakeLock';
-import { playClickSound } from './GameAudioPlayer';
+import { playClickSound } from '@/lib/audio';
 import { useScreenShake } from './ScreenShakeProvider';
 import LeaderboardModal from './LeaderboardModal';
 import GameProgress from './GameProgress';
@@ -27,6 +27,7 @@ interface PlayerGameScreenProps {
     onPause?: () => void;
     onResume?: () => void;
     onEndGame?: () => void;
+    onLeaveGame?: () => void;
 }
 
 // GameCardWrapper extracted for SRP in ./GameCardWrapper
@@ -43,7 +44,8 @@ function PlayerGameScreen({
     onCallNumber,
     onPause,
     onResume,
-    onEndGame
+    onEndGame,
+    onLeaveGame
 }: PlayerGameScreenProps) {
     // Memoize derived data
     const calledNumberValues = useMemo(
@@ -102,6 +104,7 @@ function PlayerGameScreen({
                 onShowLeaderboard={handleShowLeaderboard}
                 onPlayerClick={setSelectedPlayer}
                 leaveConfirmText={t.leaveConfirm}
+                onLeaveGame={onLeaveGame}
             />
 
             {/* Player Stats Modal */}

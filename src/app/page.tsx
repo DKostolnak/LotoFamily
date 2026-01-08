@@ -208,6 +208,7 @@ export default function Home() {
         onPause={handlePauseGame}
         onResume={handleResumeGame}
         onEndGame={handleEndGame}
+        onLeaveGame={handleLeaveGame}
       />
     </>
   );

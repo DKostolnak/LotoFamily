@@ -300,8 +300,17 @@ body {
 .btn-icon {
   width: 48px;
   height: 48px;
+  min-height: 0;
+  /* Reset global button min-height */
+  min-width: 0;
+  /* Reset potential min-width */
   padding: 0;
   border-radius: var(--radius-full);
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Card Container */

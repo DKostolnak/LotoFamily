@@ -283,9 +283,12 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
     );
 
     const leaveRoom = useCallback(() => {
-        if (!socket) return;
-        socket.emit('room:leave');
+        if (socket) {
+            socket.emit('room:leave');
+        }
+        // Always clear local state to exit the screen immediately
         dispatch({ type: 'setGameState', gameState: null });
+        dispatch({ type: 'setLastRoomCode', roomCode: null });
         storage?.removeItem(ROOM_STORAGE_KEY);
     }, [socket, storage]);
 

@@ -251,18 +251,7 @@ export default function WaitingLobby({
                         >
                             🎲 {t.startGame}
                         </button>
-                        <button
-                            className="btn btn-danger"
-                            onClick={() => {
-                                if (window.confirm(t.confirmCloseRoom)) {
-                                    playClickSound();
-                                    closeRoom();
-                                }
-                            }}
-                            style={{ padding: '10px 16px', width: '100%', marginBottom: '8px', fontSize: '0.9rem' }}
-                        >
-                            🚫 {t.closeRoom}
-                        </button>
+
                     </>
                 ) : (
                     <div className="wooden-panel text-center animate-pulse" style={{ fontSize: '0.9rem', padding: '12px', marginBottom: '8px' }}>
