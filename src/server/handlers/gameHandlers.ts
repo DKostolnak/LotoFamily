@@ -230,7 +230,7 @@ export function handleMarkCell(
     store.setGame(roomCode, game);
     io.to(roomCode).emit('game:state', game);
 
-    // Crazy Mode: Shuffle ALL players' cards after a delay when a correct mark is made
+    // Crazy Mode: Shuffle ALL players' cards after a short delay when a correct mark is made
     if (game.settings.crazyMode && isCorrectMark) {
         setTimeout(() => {
             let currentGame = store.getGame(roomCode);
@@ -247,7 +247,7 @@ export function handleMarkCell(
             io.to(roomCode).emit('game:state', currentGame);
 
             gameLog.info(`Crazy Mode shuffle triggered in ${roomCode}`);
-        }, 2000); // 2 second delay before shuffle
+        }, 800); // 800ms delay - enough to see the chip placed, but keeps pace fast
     }
 }
 
