@@ -1,5 +1,17 @@
 'use client';
 
+/**
+ * GameContext
+ * 
+ * Central state management for the Loto game.
+ * Provides socket connection, game state, and action methods to all components.
+ * 
+ * Uses:
+ * - useReducer for client state (connection, player info, errors)
+ * - Socket.io for real-time communication with server
+ * - Storage service for persistence (tokens, preferences)
+ */
+
 import React, {
     createContext,
     useCallback,
@@ -12,28 +24,46 @@ import React, {
     type ReactNode,
 } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import type {
-    GameSettings,
-    GameState,
-    ServerToClientEvents,
-    ClientToServerEvents,
-} from './types';
+import type { GameSettings, GameState, ServerToClientEvents, ClientToServerEvents } from './types';
+import { gameClientReducer, initialGameClientState, DEFAULT_AVATARS } from './state/gameReducer';
 import {
-    DEFAULT_AVATARS,
-    gameClientReducer,
-    initialGameClientState,
-} from './state/gameReducer';
+    ensurePlayerToken,
+    getPlayerAvatar,
+    getPlayerName,
+    getLastRoomCode,
+    setPlayerAvatar as saveAvatar,
+    setPlayerName as saveName,
+    setLastRoomCode,
+    clearLastRoomCode,
+    STORAGE_KEYS,
+    storageService,
+} from './services/storage';
 
-interface GameContextType {
+// ============================================================================
+// TYPES
+// ============================================================================
+
+export interface GameContextType {
+    /** Socket instance for direct access if needed */
     socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
+    /** Current player's socket ID */
     playerId: string | null;
+    /** Current player's display name */
     playerName: string | null;
+    /** Current player's avatar emoji */
     playerAvatar: string;
+    /** Current game state (null when not in a room) */
     gameState: GameState | null;
+    /** Whether socket is connected */
     isConnected: boolean;
+    /** Whether a network operation is in progress */
     isLoading: boolean;
+    /** Whether current player is the host */
     isHost: boolean;
+    /** Current error message (null if none) */
     error: string | null;
+
+    // Actions
     clearError: () => void;
     createRoom: (playerName: string, settings?: Partial<GameSettings>) => void;
     joinRoom: (roomCode: string, playerName: string) => void;
@@ -52,8 +82,16 @@ interface GameContextType {
     closeRoom: () => void;
 }
 
+// ============================================================================
+// CONTEXT
+// ============================================================================
+
 const GameContext = createContext<GameContextType | null>(null);
 
+/**
+ * Hook to access game context.
+ * Must be used within a GameProvider.
+ */
 export function useGame(): GameContextType {
     const context = useContext(GameContext);
     if (!context) {
@@ -62,82 +100,63 @@ export function useGame(): GameContextType {
     return context;
 }
 
+// ============================================================================
+// PROVIDER PROPS
+// ============================================================================
+
 interface GameProviderProps {
     children: ReactNode;
+    /** Optional custom server URL (defaults to current origin) */
     serverUrl?: string;
 }
 
-const TOKEN_STORAGE_KEY = 'loto_playerToken';
-const AVATAR_STORAGE_KEY = 'loto_playerAvatar';
-const NAME_STORAGE_KEY = 'loto_playerName';
-const ROOM_STORAGE_KEY = 'loto_lastRoom';
-const ERROR_DISMISS_DELAY = 5000;
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 
-function safeLocalStorage(): Storage | null {
-    if (typeof window === 'undefined') return null;
-    return window.localStorage;
-}
+/** How long to show error messages before auto-dismiss */
+const ERROR_AUTO_DISMISS_MS = 5000;
 
-function createStableId(): string {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-        return crypto.randomUUID();
-    }
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-        const r = (Math.random() * 16) | 0;
-        const v = c === 'x' ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-    });
-}
-
-function ensurePlayerToken(storage: Storage | null): string {
-    if (!storage) {
-        return createStableId();
-    }
-    let token = storage.getItem(TOKEN_STORAGE_KEY);
-    if (!token) {
-        token = createStableId();
-        storage.setItem(TOKEN_STORAGE_KEY, token);
-    }
-    return token;
-}
-
-function loadAvatar(storage: Storage | null): string {
-    if (!storage) return DEFAULT_AVATARS[0];
-    const savedAvatar = storage.getItem(AVATAR_STORAGE_KEY);
-    if (savedAvatar) {
-        return savedAvatar;
-    }
-    const randomAvatar = DEFAULT_AVATARS[Math.floor(Math.random() * DEFAULT_AVATARS.length)];
-    storage.setItem(AVATAR_STORAGE_KEY, randomAvatar);
-    return randomAvatar;
-}
+// ============================================================================
+// PROVIDER COMPONENT
+// ============================================================================
 
 export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
-    const storage = safeLocalStorage();
-    const token = useRef<string | null>(null);
+    // State management
     const [clientState, dispatch] = useReducer(gameClientReducer, initialGameClientState);
     const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Refs for values that shouldn't trigger re-renders
+    const tokenRef = useRef<string | null>(null);
     const errorTimerRef = useRef<NodeJS.Timeout | null>(null);
-    const [pendingReconnect, setPendingReconnect] = useState(false);
+    const pendingReconnectRef = useRef(false);
 
+    // ========================================================================
+    // INITIALIZATION
+    // ========================================================================
+
+    // Load saved player data on mount
     useEffect(() => {
-        const nextToken = ensurePlayerToken(storage);
-        token.current = nextToken;
+        tokenRef.current = ensurePlayerToken();
 
-        const avatar = loadAvatar(storage);
-        dispatch({ type: 'setPlayerAvatar', playerAvatar: avatar });
+        const savedAvatar = getPlayerAvatar();
+        dispatch({ type: 'setPlayerAvatar', playerAvatar: savedAvatar });
 
-        const savedName = storage?.getItem(NAME_STORAGE_KEY) ?? null;
+        const savedName = getPlayerName();
         if (savedName) {
             dispatch({ type: 'setPlayerName', playerName: savedName });
         }
 
-        const savedRoom = storage?.getItem(ROOM_STORAGE_KEY) ?? null;
+        const savedRoom = getLastRoomCode();
         if (savedRoom) {
             dispatch({ type: 'setLastRoomCode', roomCode: savedRoom });
         }
-    }, [storage]);
+    }, []);
+
+    // ========================================================================
+    // SOCKET CONNECTION
+    // ========================================================================
 
     useEffect(() => {
         const client: Socket<ServerToClientEvents, ClientToServerEvents> = io(serverUrl, {
@@ -148,98 +167,117 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             reconnectionDelay: 1000,
         });
 
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSocket(client);
         dispatch({ type: 'setConnectionStatus', status: 'connecting' });
         client.connect();
 
+        // Connection established
         client.on('connect', () => {
-            dispatch({ type: 'setConnectionStatus', status: pendingReconnect ? 'reconnecting' : 'connected' });
+            const status = pendingReconnectRef.current ? 'reconnecting' : 'connected';
+            dispatch({ type: 'setConnectionStatus', status });
             dispatch({ type: 'setPlayerId', playerId: client.id ?? null });
             dispatch({ type: 'setError', error: null });
             setIsLoading(false);
-            setPendingReconnect(false);
+            pendingReconnectRef.current = false;
 
-            const lastRoom = storage?.getItem(ROOM_STORAGE_KEY);
-            const lastName = storage?.getItem(NAME_STORAGE_KEY);
-            if (lastRoom && lastName && token.current) {
-                client.emit('room:join', lastRoom, lastName, token.current);
+            // Auto-reconnect to last room
+            const lastRoom = getLastRoomCode();
+            const lastName = getPlayerName();
+            const avatar = getPlayerAvatar();
+
+            if (lastRoom && lastName && tokenRef.current) {
+                client.emit('room:join', lastRoom, lastName, avatar, tokenRef.current);
                 setIsLoading(true);
             }
         });
 
+        // Connection lost
         client.on('disconnect', () => {
             dispatch({ type: 'setConnectionStatus', status: 'disconnected' });
             dispatch({ type: 'setWasDisconnected', wasDisconnected: true });
-            setPendingReconnect(true);
+            pendingReconnectRef.current = true;
         });
 
+        // Connection error
         client.on('connect_error', () => {
             dispatch({ type: 'setError', error: 'Connection failed. Retrying...' });
             setIsLoading(false);
         });
 
-        client.on('game:state', (nextState) => {
-            dispatch({ type: 'setGameState', gameState: nextState });
+        // Game state update
+        client.on('game:state', (state) => {
+            dispatch({ type: 'setGameState', gameState: state });
             setIsLoading(false);
-            if (nextState.roomCode) {
-                storage?.setItem(ROOM_STORAGE_KEY, nextState.roomCode);
+            if (state.roomCode) {
+                setLastRoomCode(state.roomCode);
             }
         });
 
+        // Game error
         client.on('game:error', (message) => {
             dispatch({ type: 'setError', error: message });
             setIsLoading(false);
             if (message === 'Room not found') {
-                storage?.removeItem(ROOM_STORAGE_KEY);
+                clearLastRoomCode();
             }
         });
 
-        client.on('room:joined', (nextState) => {
-            dispatch({ type: 'setGameState', gameState: nextState });
+        // Room joined
+        client.on('room:joined', (state) => {
+            dispatch({ type: 'setGameState', gameState: state });
             setIsLoading(false);
-            if (nextState.roomCode) {
-                storage?.setItem(ROOM_STORAGE_KEY, nextState.roomCode);
+            if (state.roomCode) {
+                setLastRoomCode(state.roomCode);
             }
         });
 
+        // Room created
         client.on('room:created', (code) => {
-            storage?.setItem(ROOM_STORAGE_KEY, code);
+            setLastRoomCode(code);
         });
 
+        // Kicked from room
         client.on('room:kicked', () => {
             dispatch({ type: 'setGameState', gameState: null });
-            storage?.removeItem(ROOM_STORAGE_KEY);
+            clearLastRoomCode();
             dispatch({ type: 'setError', error: 'You have been removed from the room.' });
         });
 
+        // Room closed
         client.on('room:closed', () => {
             dispatch({ type: 'setGameState', gameState: null });
-            storage?.removeItem(ROOM_STORAGE_KEY);
+            clearLastRoomCode();
             dispatch({ type: 'setError', error: 'The host closed the room.' });
         });
-
-
 
         return () => {
             client.disconnect();
         };
-    }, [serverUrl, storage, pendingReconnect]);
+    }, [serverUrl]);
 
+    // ========================================================================
+    // ERROR AUTO-DISMISS
+    // ========================================================================
+
+    // Scroll to top on error
     useEffect(() => {
-        if (clientState.error && typeof window !== 'undefined' && 'scrollTo' in window) {
+        if (clientState.error && typeof window !== 'undefined') {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }, [clientState.error]);
 
+    // Auto-dismiss errors after timeout
     useEffect(() => {
         if (!clientState.error) return;
+
         if (errorTimerRef.current) {
             clearTimeout(errorTimerRef.current);
         }
+
         errorTimerRef.current = setTimeout(() => {
             dispatch({ type: 'setError', error: null });
-        }, ERROR_DISMISS_DELAY);
+        }, ERROR_AUTO_DISMISS_MS);
+
         return () => {
             if (errorTimerRef.current) {
                 clearTimeout(errorTimerRef.current);
@@ -247,55 +285,65 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         };
     }, [clientState.error]);
 
+    // ========================================================================
+    // DERIVED STATE
+    // ========================================================================
+
     const isHost = useMemo(
         () => !!clientState.gameState && clientState.gameState.hostId === clientState.playerId,
         [clientState.gameState, clientState.playerId],
     );
 
-    const handleProfilePersist = useCallback(
-        (name: string, avatar: string) => {
-            dispatch({ type: 'setPlayerName', playerName: name });
-            dispatch({ type: 'setPlayerAvatar', playerAvatar: avatar });
-            storage?.setItem(NAME_STORAGE_KEY, name);
-            storage?.setItem(AVATAR_STORAGE_KEY, avatar);
-        },
-        [storage],
+    const isConnected = useMemo(
+        () => clientState.connectionStatus === 'connected' || clientState.connectionStatus === 'reconnecting',
+        [clientState.connectionStatus],
     );
+
+    // ========================================================================
+    // ACTIONS
+    // ========================================================================
+
+    const persistProfile = useCallback((name: string, avatar: string) => {
+        dispatch({ type: 'setPlayerName', playerName: name });
+        dispatch({ type: 'setPlayerAvatar', playerAvatar: avatar });
+        saveName(name);
+        saveAvatar(avatar);
+    }, []);
 
     const createRoom = useCallback(
         (name: string, settings?: Partial<GameSettings>) => {
-            if (!socket || !token.current) return;
+            if (!socket || !tokenRef.current) return;
             setIsLoading(true);
-            handleProfilePersist(name, clientState.playerAvatar);
-            socket.emit('room:create', name, clientState.playerAvatar, settings ?? {}, token.current);
+            persistProfile(name, clientState.playerAvatar);
+            socket.emit('room:create', name, clientState.playerAvatar, settings ?? {}, tokenRef.current);
         },
-        [socket, token, handleProfilePersist, clientState.playerAvatar],
+        [socket, persistProfile, clientState.playerAvatar],
     );
 
     const joinRoom = useCallback(
         (roomCode: string, name: string) => {
-            if (!socket || !token.current) return;
+            if (!socket || !tokenRef.current) return;
             setIsLoading(true);
-            handleProfilePersist(name, clientState.playerAvatar);
-            socket.emit('room:join', roomCode.toUpperCase(), name, clientState.playerAvatar, token.current);
+            persistProfile(name, clientState.playerAvatar);
+            socket.emit('room:join', roomCode.toUpperCase(), name, clientState.playerAvatar, tokenRef.current);
         },
-        [socket, token, handleProfilePersist, clientState.playerAvatar],
+        [socket, persistProfile, clientState.playerAvatar],
     );
 
     const leaveRoom = useCallback(() => {
-        if (socket) {
-            socket.emit('room:leave');
-        }
-        // Always clear local state to exit the screen immediately
+        socket?.emit('room:leave');
         dispatch({ type: 'setGameState', gameState: null });
         dispatch({ type: 'setLastRoomCode', roomCode: null });
-        storage?.removeItem(ROOM_STORAGE_KEY);
-    }, [socket, storage]);
+        clearLastRoomCode();
+    }, [socket]);
 
-    const startGame = useCallback((options?: { autoCallIntervalMs: number }) => {
-        if (!socket || !isHost) return;
-        socket.emit('game:start', options);
-    }, [socket, isHost]);
+    const startGame = useCallback(
+        (options?: { autoCallIntervalMs: number }) => {
+            if (!socket || !isHost) return;
+            socket.emit('game:start', options);
+        },
+        [socket, isHost],
+    );
 
     const callNextNumber = useCallback(() => {
         if (!socket || !isHost) return;
@@ -342,9 +390,9 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         (name: string, avatarUrl: string) => {
             if (!socket) return;
             socket.emit('room:updateProfile', name, avatarUrl);
-            handleProfilePersist(name, avatarUrl);
+            persistProfile(name, avatarUrl);
         },
-        [socket, handleProfilePersist],
+        [socket, persistProfile],
     );
 
     const kickPlayer = useCallback(
@@ -362,12 +410,10 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
 
     const setPlayerAvatar = useCallback(
         (avatar: string) => {
-            handleProfilePersist(clientState.playerName ?? '', avatar);
+            persistProfile(clientState.playerName ?? '', avatar);
         },
-        [handleProfilePersist, clientState.playerName],
+        [persistProfile, clientState.playerName],
     );
-
-
 
     const clearError = useCallback(() => {
         if (errorTimerRef.current) {
@@ -376,6 +422,10 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         dispatch({ type: 'setError', error: null });
     }, []);
 
+    // ========================================================================
+    // CONTEXT VALUE
+    // ========================================================================
+
     const value = useMemo<GameContextType>(
         () => ({
             socket,
@@ -383,7 +433,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             playerName: clientState.playerName,
             playerAvatar: clientState.playerAvatar,
             gameState: clientState.gameState,
-            isConnected: clientState.connectionStatus === 'connected' || clientState.connectionStatus === 'reconnecting',
+            isConnected,
             isLoading,
             isHost,
             error: clientState.error,
@@ -410,10 +460,10 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             clientState.playerName,
             clientState.playerAvatar,
             clientState.gameState,
-            clientState.connectionStatus,
+            clientState.error,
+            isConnected,
             isLoading,
             isHost,
-            clientState.error,
             clearError,
             createRoom,
             joinRoom,
@@ -435,3 +485,6 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
 
     return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
+
+// Re-export for convenience
+export { DEFAULT_AVATARS };
