@@ -13,7 +13,7 @@ interface WaitingLobbyProps {
     gameState: GameState;
     currentPlayerId: string;
     isHost: boolean;
-    onStartGame: () => void;
+    onStartGame: (options?: { autoCallIntervalMs: number }) => void;
     onLeaveGame: () => void;
 }
 
@@ -37,6 +37,7 @@ export default function WaitingLobby({
     const [isEditingProfile, setIsEditingProfile] = React.useState(false);
     const [tempName, setTempName] = React.useState(currentPlayer?.name || '');
     const [selectedPlayer, setSelectedPlayer] = React.useState<Player | null>(null);
+    const [selectedSpeed, setSelectedSpeed] = React.useState<'slow' | 'normal' | 'fast'>('normal');
 
     const t = translations[gameState.settings.language || 'en'];
 
@@ -217,11 +218,33 @@ export default function WaitingLobby({
                     </div>
                 ) : isHost ? (
                     <>
+                        <div style={{ marginBottom: '12px' }}>
+                            <p style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px', textAlign: 'center' }}>
+                                Game Speed
+                            </p>
+                            <div className="flex gap-2 justify-center">
+                                {(['slow', 'normal', 'fast'] as const).map((s) => (
+                                    <button
+                                        key={s}
+                                        className={`btn btn-xs ${selectedSpeed === s ? 'btn-primary' : 'btn-secondary'}`}
+                                        onClick={() => {
+                                            playClickSound();
+                                            setSelectedSpeed(s);
+                                        }}
+                                        style={{ minWidth: '60px' }}
+                                    >
+                                        {s === 'slow' ? '🐢' : s === 'normal' ? '🚶' : '🐇'} {t[s] || s}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <button
                             className="btn btn-primary"
                             onClick={() => {
                                 playClickSound();
-                                onStartGame();
+                                const intervals = { slow: 7000, normal: 5000, fast: 3000 };
+                                onStartGame({ autoCallIntervalMs: intervals[selectedSpeed] });
                             }}
                             disabled={!canStart}
                             style={{ padding: '12px 16px', width: '100%', marginBottom: '8px' }}

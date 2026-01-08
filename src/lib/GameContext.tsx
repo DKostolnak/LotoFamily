@@ -39,7 +39,7 @@ interface GameContextType {
     createRoom: (playerName: string, settings?: Partial<GameSettings>) => void;
     joinRoom: (roomCode: string, playerName: string) => void;
     leaveRoom: () => void;
-    startGame: () => void;
+    startGame: (options?: { autoCallIntervalMs: number }) => void;
     callNextNumber: () => void;
     markCell: (cardId: string, row: number, col: number) => void;
     claimWin: (cardId: string) => void;
@@ -299,9 +299,9 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         storage?.removeItem(ROOM_STORAGE_KEY);
     }, [socket, storage]);
 
-    const startGame = useCallback(() => {
+    const startGame = useCallback((options?: { autoCallIntervalMs: number }) => {
         if (!socket || !isHost) return;
-        socket.emit('game:start');
+        socket.emit('game:start', options);
     }, [socket, isHost]);
 
     const callNextNumber = useCallback(() => {

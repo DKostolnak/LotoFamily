@@ -117,8 +117,6 @@ function LotoCard({
     const [tappedCell, setTappedCell] = useState<string | null>(null);
     const [mistakeCell, setMistakeCell] = useState<string | null>(null);
     const [tempMarked, setTempMarked] = useState<string | null>(null);
-    const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
-    const floatingIdCounter = React.useRef(0);
     const { vibrate } = useHaptics();
 
     // Memoize the called numbers set for O(1) lookups
@@ -139,14 +137,6 @@ function LotoCard({
         };
     }, [card.grid, calledSet]);
 
-    const addFloatingText = (text: string, x: number, y: number, color: string) => {
-        const id = floatingIdCounter.current++;
-        setFloatingTexts(prev => [...prev, { id, text, x, y, color }]);
-        setTimeout(() => {
-            setFloatingTexts(prev => prev.filter(ft => ft.id !== id));
-        }, 1000);
-    };
-
     // Stable cell click handler
     const handleCellClick = useCallback((row: number, col: number, evt: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => {
         const cell = card.grid[row][col];
@@ -156,14 +146,6 @@ function LotoCard({
         const cellKey = `${row}-${col}`;
         const calledIndex = calledNumbers.indexOf(cell.value);
         const isCalled = calledIndex !== -1;
-
-        // Get relative click coordinates for floating text
-        const targetElement = evt.target as HTMLElement;
-        const cardElement = (evt.currentTarget.closest('.loto-card') as HTMLElement) ?? targetElement;
-        const targetRect = targetElement.getBoundingClientRect();
-        const cardRect = cardElement.getBoundingClientRect();
-        const x = targetRect.left - cardRect.left + targetRect.width / 2;
-        const y = targetRect.top - cardRect.top + targetRect.height / 2;
 
         // Already correctly marked
         if (cell.isMarked && isCalled) return;
@@ -189,13 +171,11 @@ function LotoCard({
         // Trigger actual mark in parent/state
         onCellClick(row, col);
 
-        // Points Calculation Visual
+        // Sound Feedback Only - No visual text
         if (isSafe) {
             playBonusSound(); // Fast mark!
-            addFloatingText('+15⚡', x, y, '#eab308'); // Gold
         } else {
             playCellMarkSound(); // Normal
-            addFloatingText('+5⚡', x, y, '#22c55e'); // Green
         }
         setTimeout(() => setTappedCell(null), 200);
         setTimeout(() => setTempMarked(null), 400);
@@ -226,23 +206,6 @@ function LotoCard({
             </div>
 
             <div className="loto-card-grid relative">
-                {/* Floating Texts Overlay */}
-                {floatingTexts.map(ft => (
-                    <div
-                        key={ft.id}
-                        className="absolute text-lg font-bold pointer-events-none z-10 animate-fade-up-float"
-                        style={{
-                            left: ft.x,
-                            top: ft.y,
-                            color: ft.color,
-                            transform: 'translate(-50%, -50%)',
-                            textShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                        }}
-                    >
-                        {ft.text}
-                    </div>
-                ))}
-
                 {card.grid.map((row, rowIndex) =>
                     row.map((cell, colIndex) => {
                         const calledIndex = cell.value !== null ? calledNumbers.indexOf(cell.value) : -1;

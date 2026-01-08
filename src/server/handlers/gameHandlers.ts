@@ -113,13 +113,22 @@ interface GameHandlerContext {
 
 export function handleGameStart(
     { io, socket }: GameHandlerContext,
-    getRoomCode: (socket: TypedSocket) => string | undefined
+    getRoomCode: (socket: TypedSocket) => string | undefined,
+    options?: { autoCallIntervalMs: number }
 ): void {
     const roomCode = getRoomCode(socket);
     if (!roomCode) return;
 
     let game = store.getGame(roomCode);
     if (!game || game.hostId !== socket.id) return;
+
+    // Apply auto-call settings from options or defaults
+    // FORCE autoCallEnabled to true as per user request
+    game.settings.autoCallEnabled = true;
+
+    if (options?.autoCallIntervalMs) {
+        game.settings.autoCallIntervalMs = options.autoCallIntervalMs;
+    }
 
     game = startGameEngine(game);
     store.setGame(roomCode, game);

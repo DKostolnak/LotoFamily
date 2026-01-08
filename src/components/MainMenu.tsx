@@ -6,7 +6,6 @@ import { GameSettings } from '@/lib/types';
 import { translations, Language } from '@/lib/translations';
 import { useGame } from '@/lib/GameContext';
 import AvatarPicker from './AvatarPicker';
-import GameSettingsForm from './GameSettingsForm';
 import LanguageSelector from './LanguageSelector';
 
 interface MainMenuProps {
@@ -60,10 +59,7 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
     const [roomCode, setRoomCode] = useState(defaults.roomCode);
     const [error, setError] = useState<string | null>(null);
 
-    const [autoCallEnabled, setAutoCallEnabled] = useState(false);
-    const [autoCallSpeed, setAutoCallSpeed] = useState<'slow' | 'normal' | 'fast'>('normal');
     const [language, setLanguage] = useState<Language>(defaults.language);
-    const [crazyMode, setCrazyMode] = useState(false);
 
     const { playerAvatar, setPlayerAvatar } = useGame();
 
@@ -98,10 +94,9 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         };
 
         onCreateGame(playerName.trim(), {
-            autoCallEnabled,
-            autoCallIntervalMs: intervalMap[autoCallSpeed],
+            autoCallEnabled: false, // Default to false here, host enables in lobby
             language,
-            crazyMode,
+            crazyMode: false,
             customRoomCode: roomCode.length >= 3 ? roomCode.toUpperCase() : undefined,
         });
     };
@@ -238,23 +233,7 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                                     </p>
                                 </div>
 
-                                <GameSettingsForm
-                                    autoCallEnabled={autoCallEnabled}
-                                    setAutoCallEnabled={setAutoCallEnabled}
-                                    autoCallSpeed={autoCallSpeed}
-                                    setAutoCallSpeed={setAutoCallSpeed}
-                                    crazyMode={crazyMode}
-                                    setCrazyMode={setCrazyMode}
-                                    t={{
-                                        autoCall: t.autoCall,
-                                        speed: t.speed,
-                                        slow: t.slow,
-                                        normal: t.normal,
-                                        fast: t.fast,
-                                        crazyMode: t.crazyMode,
-                                        crazyModeDesc: t.crazyModeDesc,
-                                    }}
-                                />
+
                             </div>
                         ) : (
                             <div>

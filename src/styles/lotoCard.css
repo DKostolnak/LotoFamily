@@ -145,28 +145,23 @@
     width: 85%;
     height: 85%;
 
-    /* Purple/Lavender Token with 3D effect */
-    background:
-        radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 30%),
-        radial-gradient(circle at 50% 50%, #b794d4 0%, #9b6dc6 50%, #7b4fb8 85%, #5a3a8a 100%);
+    /* Wooden Chip Style (matching preview numbers) */
+    background-image: url('/assets/wooden-medallion.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 
-    border-radius: 50%;
-
-    /* 3D Depth Shadows */
-    box-shadow:
-        inset 0 2px 4px rgba(255, 255, 255, 0.4),
-        inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-        0 3px 6px rgba(0, 0, 0, 0.4),
-        0 1px 2px rgba(0, 0, 0, 0.2);
+    /* Simple shadow to lift it off the card */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
 
     /* On top of number to cover it completely */
     z-index: 10;
     opacity: 1;
-    border: 2px solid #6b4a9e;
+    border: none;
     pointer-events: none;
 
     /* Simple fade-in instead of scale animation to prevent layout issues */
-    animation: chip-appear 0.2s ease-out forwards;
+    /* animation: chip-appear 0.2s ease-out forwards; Removed animation as requested */
 }
 
 /* Simple chip appear animation - no scaling to prevent layout issues */
@@ -184,11 +179,8 @@
 
 /* Ensure number color contrasts with the wooden barrel */
 .loto-cell--correct .loto-cell-number {
-    color: #d93025;
-    /* Red number like traditional Loto */
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
-    /* Bevel effect */
-    font-weight: 800;
+    /* Removed red color and specialized text shadow as requested */
+    color: inherit;
     z-index: 2;
     font-size: 1.1em;
 }
@@ -196,7 +188,7 @@
 /* Mistake visual - clicking uncalled number - shows red cross without animation */
 .loto-cell--mistake {
     position: relative;
-    background: rgba(255, 68, 68, 0.15) !important;
+    /* Red background removed as requested */
 }
 
 /* Red cross on mistake - no scale animation */
@@ -206,7 +198,7 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 60%;
+    width: 80%;
     height: 4px;
     background: #ef4444;
     border-radius: 99px;

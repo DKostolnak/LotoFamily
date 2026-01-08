@@ -4,7 +4,7 @@ import React, { useMemo, useCallback, useState, useEffect, memo } from 'react';
 import { GameState, LotoCard as LotoCardType, SabotageType, Player } from '@/lib/types';
 import { translations } from '@/lib/translations';
 import GameHeader from './GameHeader';
-import HostControls from './HostControls';
+
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { playClickSound } from './GameAudioPlayer';
 import SabotageOverlay from './SabotageOverlay';
@@ -257,20 +257,7 @@ function PlayerGameScreen({
                     />
                 );
             })()}
-            {/* Host Controls */}
-            {isHost && (
-                <HostControls
-                    remainingCount={gameState.remainingNumbers.length}
-                    currentNumber={gameState.currentNumber}
-                    calledNumbers={calledNumberValues}
-                    isPaused={isPaused}
-                    language={gameState.settings.language}
-                    onCallNumber={onCallNumber}
-                    onPause={onPause}
-                    onResume={onResume}
-                    onEndGame={onEndGame}
-                />
-            )}
+
         </div>
     );
 }

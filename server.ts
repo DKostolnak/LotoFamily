@@ -122,8 +122,8 @@ app.prepare().then(() => {
         });
 
         // Game Events
-        socket.on('game:start', () => {
-            handleGameStart(context, getRoomCode);
+        socket.on('game:start', (options) => {
+            handleGameStart(context, getRoomCode, options);
         });
 
         socket.on('game:callNumber', () => {
