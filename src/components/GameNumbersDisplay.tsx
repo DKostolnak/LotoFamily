@@ -13,7 +13,7 @@ interface GameNumbersDisplayProps {
  * Displays the current called number (Main Chip) and the recent history (History Chips).
  * Main chip is always centered. History chips appear to its right.
  */
-export default function GameNumbersDisplay({
+export function GameNumbersDisplay({
     currentNumber,
     history,
 }: GameNumbersDisplayProps) {
@@ -162,3 +162,6 @@ export default function GameNumbersDisplay({
         </div>
     );
 }
+
+export const GameNumbersDisplayMemo = React.memo(GameNumbersDisplay);
+export { GameNumbersDisplayMemo as default };

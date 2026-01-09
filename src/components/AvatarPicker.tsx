@@ -38,7 +38,7 @@ export default function AvatarPicker({ currentAvatar, onSelect, label }: AvatarP
                 display: 'flex',
                 flexWrap: 'wrap',
                 justifyContent: 'center',
-                gap: '8px',
+                gap: '6px',
                 maxWidth: '340px',
                 padding: '4px'
             }}>
@@ -54,10 +54,10 @@ export default function AvatarPicker({ currentAvatar, onSelect, label }: AvatarP
                             }}
                             className="active:scale-95 transition-transform hover:brightness-110"
                             style={{
-                                width: '48px',
-                                height: '48px',
-                                fontSize: '24px',
-                                borderRadius: '12px',
+                                width: '40px',
+                                height: '40px',
+                                fontSize: '20px',
+                                borderRadius: '10px',
                                 background: isSelected
                                     ? 'linear-gradient(145deg, #ffd700 0%, #daa520 100%)'
                                     : '#1a1109', // Dark wood background for inactive
@@ -66,7 +66,7 @@ export default function AvatarPicker({ currentAvatar, onSelect, label }: AvatarP
                                     : '2px solid #3d2814',
                                 cursor: 'pointer',
                                 boxShadow: isSelected
-                                    ? '0 0 15px rgba(255, 215, 0, 0.4)'
+                                    ? '0 0 12px rgba(255, 215, 0, 0.4)'
                                     : 'inset 0 2px 4px rgba(0,0,0,0.5)',
                                 display: 'flex',
                                 alignItems: 'center',

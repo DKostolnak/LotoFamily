@@ -264,11 +264,13 @@ function GameHeader({
                 </div>
 
                 {/* Row 2: Player List */}
-                <HeaderPlayerList
-                    players={gameState.players}
-                    currentPlayerId={playerId}
-                    onPlayerClick={onPlayerClick}
-                />
+                <div className="flex items-end py-2 gap-3 w-full overflow-x-auto no-scrollbar">
+                    <HeaderPlayerList
+                        players={gameState.players}
+                        currentPlayerId={playerId}
+                        onPlayerClick={onPlayerClick}
+                    />
+                </div>
 
                 {/* Leaderboard Button (Bottom Right) */}
                 <button

@@ -156,6 +156,13 @@ app.prepare().then(() => {
 
 
 
+        // Debug Events
+        socket.on('room:addBots', () => {
+            import('./src/server/handlers/debugHandlers').then(({ handleAddBots }) => {
+                handleAddBots(context, getRoomCode);
+            });
+        });
+
         // Disconnect Handler
         socket.on('disconnect', () => {
             handleDisconnect(io, socket.id);

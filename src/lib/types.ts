@@ -68,6 +68,8 @@ export interface Player {
   collectedFlats: number[];
   /** Total points scored */
   score: number;
+  /** Whether this player is a bot */
+  isBot?: boolean;
 }
 
 // ============================================================================
@@ -248,6 +250,8 @@ export type ClientToServerEvents = {
   'game:resume': () => void;
   /** Restart game (host only) */
   'game:restart': () => void;
+  /** Debug: Add bots */
+  'room:addBots': () => void;
 };
 
 // ============================================================================

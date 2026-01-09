@@ -85,27 +85,9 @@ export function useCardLogic({ calledNumbers, onMarkCell }: UseCardLogicProps) {
         return { valid: true };
     }, [getCellState, onMarkCell]);
 
-    /**
-     * Calculate card progress (for progress bar)
-     */
-    const getCardProgress = useCallback((card: LotoCard): { total: number; marked: number; remaining: number; percentage: number } => {
-        const cells = card.grid.flat();
-        const total = cells.filter(c => c.value !== null).length;
-        const marked = cells.filter(c =>
-            c.value !== null &&
-            c.isMarked &&
-            calledNumbers.includes(c.value)
-        ).length;
-        const remaining = total - marked;
-        const percentage = total > 0 ? (marked / total) * 100 : 0;
-
-        return { total, marked, remaining, percentage };
-    }, [calledNumbers]);
-
     return {
         getCellState,
         handleCellClick,
-        getCardProgress,
         isInSafeWindow,
     };
 }

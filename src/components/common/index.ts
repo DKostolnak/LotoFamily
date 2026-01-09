@@ -17,3 +17,9 @@ export { ConfirmModal, type ConfirmModalProps, type ConfirmModalVariant } from '
 // Skeleton
 export { Skeleton, CardSkeleton, AvatarSkeleton, PlayerListItemSkeleton } from './Skeleton';
 
+// WoodenCard
+export { WoodenCard, type WoodenCardProps } from './WoodenCard';
+
+// WoodenInput
+export { WoodenInput, type WoodenInputProps } from './WoodenInput';
+

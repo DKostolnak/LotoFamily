@@ -23,9 +23,10 @@ import React, {
     useState,
     type ReactNode,
 } from 'react';
-import { io, type Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import type { GameSettings, GameState, ServerToClientEvents, ClientToServerEvents } from './types';
 import { gameClientReducer, initialGameClientState, DEFAULT_AVATARS } from './state/gameReducer';
+import { useGameSocket } from '../hooks/useGameSocket';
 import {
     ensurePlayerToken,
     getPlayerAvatar,
@@ -33,40 +34,26 @@ import {
     getLastRoomCode,
     setPlayerAvatar as saveAvatar,
     setPlayerName as saveName,
-    setLastRoomCode,
     clearLastRoomCode,
-    STORAGE_KEYS,
-    storageService,
 } from './services/storage';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export interface GameContextType {
-    /** Socket instance for direct access if needed */
-    socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
-    /** Current player's socket ID */
+interface GameContextType {
+    socket: Socket | null;
     playerId: string | null;
-    /** Current player's display name */
     playerName: string | null;
-    /** Current player's avatar emoji */
     playerAvatar: string;
-    /** Current game state (null when not in a room) */
     gameState: GameState | null;
-    /** Whether socket is connected */
     isConnected: boolean;
-    /** Whether a network operation is in progress */
     isLoading: boolean;
-    /** Whether current player is the host */
     isHost: boolean;
-    /** Current error message (null if none) */
     error: string | null;
-
-    // Actions
     clearError: () => void;
-    createRoom: (playerName: string, settings?: Partial<GameSettings>) => void;
-    joinRoom: (roomCode: string, playerName: string) => void;
+    createRoom: (name: string, settings?: Partial<GameSettings>) => void;
+    joinRoom: (roomCode: string, name: string) => void;
     leaveRoom: () => void;
     startGame: (options?: { autoCallIntervalMs: number }) => void;
     callNextNumber: () => void;
@@ -77,46 +64,29 @@ export interface GameContextType {
     resumeGame: () => void;
     restartGame: () => void;
     updateProfile: (name: string, avatarUrl: string) => void;
-    kickPlayer: (playerId: string) => void;
+    kickPlayer: (targetId: string) => void;
     setPlayerAvatar: (avatar: string) => void;
     closeRoom: () => void;
     addDebugPlayers: () => void;
 }
 
-// ============================================================================
-// CONTEXT
-// ============================================================================
+interface GameProviderProps {
+    children: ReactNode;
+    serverUrl?: string; // Optional for local dev vs production
+}
 
-const GameContext = createContext<GameContextType | null>(null);
+const ERROR_AUTO_DISMISS_MS = 5000;
 
-/**
- * Hook to access game context.
- * Must be used within a GameProvider.
- */
-export function useGame(): GameContextType {
+const GameContext = createContext<GameContextType | undefined>(undefined);
+
+export function useGame() {
     const context = useContext(GameContext);
-    if (!context) {
+    if (context === undefined) {
         throw new Error('useGame must be used within a GameProvider');
     }
     return context;
 }
 
-// ============================================================================
-// PROVIDER PROPS
-// ============================================================================
-
-interface GameProviderProps {
-    children: ReactNode;
-    /** Optional custom server URL (defaults to current origin) */
-    serverUrl?: string;
-}
-
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
-/** How long to show error messages before auto-dismiss */
-const ERROR_AUTO_DISMISS_MS = 5000;
 
 // ============================================================================
 // PROVIDER COMPONENT
@@ -125,14 +95,11 @@ const ERROR_AUTO_DISMISS_MS = 5000;
 export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
     // State management
     const [clientState, dispatch] = useReducer(gameClientReducer, initialGameClientState);
-    const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     // Refs for values that shouldn't trigger re-renders
     const tokenRef = useRef<string | null>(null);
     const errorTimerRef = useRef<NodeJS.Timeout | null>(null);
-    const pendingReconnectRef = useRef(false);
-    const isAutoReconnectAttemptRef = useRef(false);
 
     // ========================================================================
     // INITIALIZATION
@@ -157,118 +124,15 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
     }, []);
 
     // ========================================================================
-    // SOCKET CONNECTION
+    // SOCKET CONNECTION (Managed by useGameSocket)
     // ========================================================================
 
-    useEffect(() => {
-        const client: Socket<ServerToClientEvents, ClientToServerEvents> = io(serverUrl, {
-            autoConnect: false,
-            transports: ['websocket'],
-            // Reconnection with exponential backoff for mobile stability
-            reconnection: true,
-            reconnectionAttempts: 10,        // Increased from 5 for flaky mobile networks
-            reconnectionDelay: 1000,         // Start with 1 second
-            reconnectionDelayMax: 30000,     // Cap at 30 seconds
-            randomizationFactor: 0.5,        // Add jitter to prevent thundering herd
-            timeout: 20000,                  // 20 second connection timeout
-        });
-
-        setSocket(client);
-        dispatch({ type: 'setConnectionStatus', status: 'connecting' });
-        client.connect();
-
-        // Connection established
-        client.on('connect', () => {
-            const status = pendingReconnectRef.current ? 'reconnecting' : 'connected';
-            dispatch({ type: 'setConnectionStatus', status });
-            dispatch({ type: 'setPlayerId', playerId: client.id ?? null });
-            dispatch({ type: 'setError', error: null });
-            setIsLoading(false);
-            pendingReconnectRef.current = false;
-
-            // Auto-reconnect to last room
-            const lastRoom = getLastRoomCode();
-            const lastName = getPlayerName();
-            const avatar = getPlayerAvatar();
-
-            if (lastRoom && lastName && tokenRef.current) {
-                isAutoReconnectAttemptRef.current = true;
-                client.emit('room:join', lastRoom, lastName, avatar, tokenRef.current);
-                setIsLoading(true);
-            }
-        });
-
-        // Connection lost
-        client.on('disconnect', () => {
-            dispatch({ type: 'setConnectionStatus', status: 'disconnected' });
-            dispatch({ type: 'setWasDisconnected', wasDisconnected: true });
-            pendingReconnectRef.current = true;
-        });
-
-        // Connection error
-        client.on('connect_error', () => {
-            dispatch({ type: 'setError', error: 'Connection failed. Retrying...' });
-            setIsLoading(false);
-        });
-
-        // Game state update
-        client.on('game:state', (state) => {
-            dispatch({ type: 'setGameState', gameState: state });
-            setIsLoading(false);
-            if (state.roomCode) {
-                setLastRoomCode(state.roomCode);
-            }
-        });
-
-        // Game error
-        client.on('game:error', (message) => {
-            // Suppress "Room not found" on auto-reconnect (stale room code from previous session)
-            const isAutoReconnectFailure = message === 'Room not found' && isAutoReconnectAttemptRef.current;
-            isAutoReconnectAttemptRef.current = false;
-
-            if (message === 'Room not found') {
-                clearLastRoomCode();
-            }
-
-            // Don't show error to user if it's just a stale auto-reconnect
-            if (!isAutoReconnectFailure) {
-                dispatch({ type: 'setError', error: message });
-            }
-            setIsLoading(false);
-        });
-
-        // Room joined
-        client.on('room:joined', (state) => {
-            dispatch({ type: 'setGameState', gameState: state });
-            setIsLoading(false);
-            if (state.roomCode) {
-                setLastRoomCode(state.roomCode);
-            }
-        });
-
-        // Room created
-        client.on('room:created', (code) => {
-            setLastRoomCode(code);
-        });
-
-        // Kicked from room
-        client.on('room:kicked', () => {
-            dispatch({ type: 'setGameState', gameState: null });
-            clearLastRoomCode();
-            dispatch({ type: 'setError', error: 'You have been removed from the room.' });
-        });
-
-        // Room closed
-        client.on('room:closed', () => {
-            dispatch({ type: 'setGameState', gameState: null });
-            clearLastRoomCode();
-            dispatch({ type: 'setError', error: 'The host closed the room.' });
-        });
-
-        return () => {
-            client.disconnect();
-        };
-    }, [serverUrl]);
+    const socket = useGameSocket({
+        serverUrl,
+        dispatch,
+        tokenRef,
+        setIsLoading,
+    });
 
     // ========================================================================
     // ERROR AUTO-DISMISS
@@ -431,17 +295,9 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
     );
 
     const addDebugPlayers = useCallback(() => {
-        const dummy1 = { id: 'bot1', name: 'Bot Alice', avatarUrl: '🦊', isConnected: true, isHost: false, cards: [], collectedFlats: [], score: 0 };
-        const dummy2 = { id: 'bot2', name: 'Bot Bob', avatarUrl: '🦁', isConnected: true, isHost: false, cards: [], collectedFlats: [], score: 0 };
-
-        if (clientState.gameState) {
-            const newPlayers = [...clientState.gameState.players, dummy1, dummy2];
-            dispatch({
-                type: 'setGameState',
-                gameState: { ...clientState.gameState, players: newPlayers }
-            });
-        }
-    }, [clientState.gameState]);
+        if (!socket) return;
+        socket.emit('room:addBots');
+    }, [socket]);
 
     const clearError = useCallback(() => {
         if (errorTimerRef.current) {

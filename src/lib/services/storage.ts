@@ -48,44 +48,54 @@ export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];
 // STORAGE SERVICE IMPLEMENTATION
 // ============================================================================
 
-/**
- * Safely get the localStorage object.
- * Returns null during SSR or if localStorage is unavailable.
- */
-function getStorage(): Storage | null {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-    try {
-        return window.localStorage;
-    } catch {
-        // localStorage may be blocked by privacy settings
-        return null;
-    }
-}
+// ============================================================================
+// STORAGE SERVICE IMPLEMENTATION
+// ============================================================================
 
-/**
- * StorageService singleton instance.
- * Provides safe access to localStorage with type conversion.
- */
-export const storageService: IStorageService = {
+export class StorageService implements IStorageService {
+    private static instance: StorageService;
+
+    private constructor() { }
+
+    public static getInstance(): StorageService {
+        if (!StorageService.instance) {
+            StorageService.instance = new StorageService();
+        }
+        return StorageService.instance;
+    }
+
+    /**
+     * Safely get the localStorage object.
+     * Returns null during SSR or if localStorage is unavailable.
+     */
+    private getStorage(): Storage | null {
+        if (typeof window === 'undefined') {
+            return null;
+        }
+        try {
+            return window.localStorage;
+        } catch {
+            return null;
+        }
+    }
+
     /**
      * Gets a JSON-parsed value from storage.
      * @param key - Storage key
      * @returns Parsed value or null if not found
      */
-    get<T>(key: string): T | null {
-        const storage = getStorage();
-        if (!storage) return null;
-
+    public get<T>(key: string): T | null {
         try {
+            const storage = this.getStorage();
+            if (!storage) return null;
+
             const value = storage.getItem(key);
             if (value === null) return null;
             return JSON.parse(value) as T;
         } catch {
             return null;
         }
-    },
+    }
 
     /**
      * Gets a raw string value from storage.
@@ -93,19 +103,19 @@ export const storageService: IStorageService = {
      * @param key - Storage key
      * @returns String value or null if not found
      */
-    getString(key: string): string | null {
-        const storage = getStorage();
+    public getString(key: string): string | null {
+        const storage = this.getStorage();
         if (!storage) return null;
         return storage.getItem(key);
-    },
+    }
 
     /**
      * Sets a value in storage (JSON stringified).
      * @param key - Storage key
      * @param value - Value to store
      */
-    set<T>(key: string, value: T): void {
-        const storage = getStorage();
+    public set<T>(key: string, value: T): void {
+        const storage = this.getStorage();
         if (!storage) return;
 
         try {
@@ -114,31 +124,37 @@ export const storageService: IStorageService = {
         } catch {
             // Storage may be full or blocked
         }
-    },
+    }
 
     /**
      * Removes a value from storage.
      * @param key - Storage key to remove
      */
-    remove(key: string): void {
-        const storage = getStorage();
+    public remove(key: string): void {
+        const storage = this.getStorage();
         if (!storage) return;
         storage.removeItem(key);
-    },
+    }
 
     /**
      * Clears all game-related storage.
      * Only removes keys defined in STORAGE_KEYS.
      */
-    clear(): void {
-        const storage = getStorage();
+    public clear(): void {
+        const storage = this.getStorage();
         if (!storage) return;
 
         Object.values(STORAGE_KEYS).forEach(key => {
             storage.removeItem(key);
         });
-    },
-};
+    }
+}
+
+/**
+ * StorageService singleton instance.
+ * Provides safe access to localStorage with type conversion.
+ */
+export const storageService = StorageService.getInstance();
 
 // ============================================================================
 // UTILITY FUNCTIONS

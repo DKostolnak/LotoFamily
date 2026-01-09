@@ -67,7 +67,10 @@
     border: 3px solid #5c4a3a;
     border-radius: var(--radius-md);
     overflow: hidden;
+    /* Use calc to ensure grid + borders fit within container */
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .loto-cell {
@@ -392,15 +395,19 @@
     max-width: 100%;
     align-items: center;
     justify-content: flex-start;
-    padding: 0 var(--space-xs);
+    /* Add horizontal padding with safe-area insets for iPhone */
+    padding-left: max(var(--space-xs), env(safe-area-inset-left));
+    padding-right: max(var(--space-xs), env(safe-area-inset-right));
     box-sizing: border-box;
 }
 
 /* Individual card in container */
 .loto-cards-container>* {
     width: 100%;
-    max-width: min(400px, 100%);
+    /* Reduce max-width to ensure padding fits */
+    max-width: min(400px, calc(100% - 8px));
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 /* Card header with player info */

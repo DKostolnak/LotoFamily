@@ -15,9 +15,10 @@ import {
     type GameSettings,
     type Player,
     type CalledNumber,
+    type LotoCell,
 } from '../lib/types';
 import { ROOM_CODE_CHARS, ROOM_CODE_LENGTH, POINTS } from '../lib/constants';
-import { generateCards } from './lotoCardGenerator';
+import { generateCards, markCell } from './lotoCardGenerator';
 import { checkPlayerWin } from './gameModes';
 
 // ============================================================================
@@ -214,6 +215,63 @@ export function callNextNumber(state: GameState): GameState {
         currentNumber: nextNumber,
         calledNumbers: [...state.calledNumbers, calledNumber],
         remainingNumbers: remaining,
+    };
+}
+
+/**
+ * Automatically mark cards for bot players
+ */
+export function autoMarkBots(state: GameState): GameState {
+    if (state.phase !== 'playing' || !state.currentNumber) {
+        return state;
+    }
+
+    const currentNum = state.currentNumber;
+    let updatedPlayers = [...state.players];
+    let hasUpdates = false;
+
+    updatedPlayers = updatedPlayers.map(player => {
+        if (!player.isBot) return player;
+
+        let playerUpdated = false;
+        const newCards = player.cards.map(card => {
+            let cardUpdated = false;
+            // clone grid to be safe if we modify it
+            let newGrid = card.grid; // ref only, markCell handles immutability
+
+            // Check every cell
+            for (let r = 0; r < card.grid.length; r++) {
+                for (let c = 0; c < card.grid[r].length; c++) {
+                    const cell = card.grid[r][c];
+                    if (cell.value === currentNum && !cell.isMarked) {
+                        // Found a match!
+                        const updatedCard = markCell(card, r, c);
+                        newGrid = updatedCard.grid; // update our local ref
+                        cardUpdated = true;
+                        playerUpdated = true;
+                        hasUpdates = true;
+                        // Assuming unique numbers per card, we can break inner loops?
+                        // Loto 90 numbers are unique per card
+                        return updatedCard;
+                    }
+                }
+            }
+            return card;
+        });
+
+        if (playerUpdated) {
+            return { ...player, cards: newCards };
+        }
+        return player;
+    });
+
+    if (!hasUpdates) {
+        return state;
+    }
+
+    return {
+        ...state,
+        players: updatedPlayers
     };
 }
 

@@ -25,6 +25,10 @@ interface WaitingLobbyProps {
  * Pre-game lobby showing connected players and room code.
  * Styled with "Royal Wooden" theme using inline styles for guaranteed consistency.
  */
+import { WoodenCard, WoodenButton, WoodenInput } from '@/components/common';
+
+// ... (keep props interface)
+
 export default function WaitingLobby({
     gameState,
     currentPlayerId,
@@ -36,8 +40,7 @@ export default function WaitingLobby({
     const canStart = gameState.players.length >= 1;
 
     const { showToast } = useToast();
-
-    const { updateProfile, kickPlayer, playerAvatar, setPlayerAvatar } = useGame();
+    const { updateProfile, kickPlayer, playerAvatar, setPlayerAvatar, addDebugPlayers } = useGame();
 
     const [isEditingProfile, setIsEditingProfile] = React.useState(false);
     const [tempName, setTempName] = React.useState(currentPlayer?.name || '');
@@ -45,6 +48,8 @@ export default function WaitingLobby({
     const [selectedSpeed, setSelectedSpeed] = React.useState<'slow' | 'normal' | 'fast'>('normal');
 
     const t = translations[gameState.settings.language || 'en'];
+
+    // ... (keep logic: joinUrl, handleCopyCode, handleShare, handleUpdateProfile, handleKick)
 
     const joinUrl = gameState.serverUrl
         ? `${gameState.serverUrl}?room=${gameState.roomCode}`
@@ -67,9 +72,7 @@ export default function WaitingLobby({
                     text: `${t.joinWithCode} ${gameState.roomCode}`,
                     url: joinUrl,
                 });
-            } catch {
-                // User cancelled
-            }
+            } catch { }
         } else {
             handleCopyCode();
         }
@@ -122,22 +125,6 @@ export default function WaitingLobby({
         padding: '24px 16px',
     };
 
-    const cardStyle: React.CSSProperties = {
-        position: 'relative', // Vital for capturing the absolute back button
-        width: '100%',
-        maxWidth: '420px',
-        backgroundColor: 'rgba(26, 17, 9, 0.95)',
-        border: '4px solid #8b6b4a',
-        borderRadius: '24px',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 0 2px rgba(0,0,0,0.5)',
-        padding: '24px',
-        marginBottom: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '20px',
-    };
-
     const sectionTitleStyle: React.CSSProperties = {
         color: '#8b6b4a',
         fontWeight: 'bold',
@@ -160,83 +147,19 @@ export default function WaitingLobby({
         boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
     };
 
-    const buttonBaseStyle: React.CSSProperties = {
-        padding: '16px',
-        borderRadius: '12px',
-        border: 'none',
-        fontWeight: 800,
-        textTransform: 'uppercase',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '8px',
-        transition: 'all 0.1s',
-        fontSize: '1rem',
-    };
-
-    const primaryBtnStyle: React.CSSProperties = {
-        ...buttonBaseStyle,
-        background: 'linear-gradient(180deg, #ffd700 0%, #daa520 100%)',
-        color: '#3d2814',
-        borderBottom: '4px solid #b8860b',
-        width: '100%',
-        fontSize: '1.25rem',
-    };
-
-    const secondaryBtnStyle: React.CSSProperties = {
-        ...buttonBaseStyle,
-        background: '#3d2814',
-        color: '#f5e6c8',
-        border: '2px solid #5a4025',
-        fontSize: '0.9rem',
-        padding: '8px 16px',
-    };
-
-    const woodBtnStyle: React.CSSProperties = {
-        ...buttonBaseStyle,
-        background: 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)',
-        color: '#3d2814',
-        border: '2px solid #5a4025',
-        boxShadow: '0 4px 0 #3d2814, inset 0 1px 0 rgba(255,255,255,0.3)',
-        width: '100%',
-    };
-
     return (
         <div style={mainStyle}>
             <div className="absolute inset-0 bg-black/40 pointer-events-none" />
 
             <div style={{ ...scrollContainerStyle, position: 'relative', zIndex: 10 }}>
                 {/* Room Card */}
-                <div style={cardStyle}>
-                    {/* Back Arrow Button */}
-                    <button
-                        onClick={() => { playClickSound(); onLeaveGame(); }}
-                        style={{
-                            position: 'absolute',
-                            top: '20px',
-                            left: '20px',
-                            width: '40px',
-                            height: '40px',
-                            background: 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)',
-                            borderRadius: '8px',
-                            border: '2px solid #5a4025',
-                            boxShadow: '0 2px 0 #3d2814, inset 0 1px 0 rgba(255,255,255,0.3)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            zIndex: 20,
-                            color: '#3d2814',
-                        }}
-                        title={t.back}
-                    >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M15 18l-6-6 6-6" />
-                        </svg>
-                    </button>
-
-                    <div style={{ width: '100%', marginTop: '48px' }}>
+                <WoodenCard
+                    maxWidth="420px"
+                    showBackArrow={true}
+                    onBack={() => { playClickSound(); onLeaveGame(); }}
+                    style={{ marginBottom: '24px', gap: '20px' }}
+                >
+                    <div style={{ width: '100%', marginTop: '32px' }}>
                         <p style={sectionTitleStyle}>{t.roomCodeLabel}</p>
                         <div style={codeBoxStyle}>
                             <h1 className="text-5xl font-mono font-black text-white tracking-widest drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] mb-4 uppercase" style={{ textShadow: '0 0 15px rgba(255, 215, 0, 0.6)' }}>
@@ -249,27 +172,28 @@ export default function WaitingLobby({
                                 </div>
                             )}
 
-                            <div className="flex gap-3 mt-2">
-                                <button
+                            <div className="flex gap-3 mt-2 w-full justify-center">
+                                <WoodenButton
                                     onClick={() => { playClickSound(); handleCopyCode(); }}
-                                    style={secondaryBtnStyle}
-                                    className="active:scale-95 hover:bg-[#4d3319]"
+                                    variant="secondary"
+                                    size="sm"
+                                    icon={<span>📋</span>}
                                 >
-                                    <span>📋</span> {t.copy}
-                                </button>
+                                    {t.copy}
+                                </WoodenButton>
                                 {typeof navigator !== 'undefined' && 'share' in navigator && (
-                                    <button
+                                    <WoodenButton
                                         onClick={() => { playClickSound(); handleShare(); }}
-                                        style={secondaryBtnStyle}
-                                        className="active:scale-95 hover:bg-[#4d3319]"
+                                        variant="secondary"
+                                        size="sm"
+                                        icon={<span>📤</span>}
                                     >
-                                        <span>📤</span> {t.share}
-                                    </button>
+                                        {t.share}
+                                    </WoodenButton>
                                 )}
                             </div>
                         </div>
                     </div>
-
 
                     {/* Players Section */}
                     <div style={{ width: '100%' }}>
@@ -312,86 +236,96 @@ export default function WaitingLobby({
                                     <div className="w-[48px] h-[48px] bg-[#1a1109] rounded-lg flex items-center justify-center text-2xl border border-[#5a4025]">
                                         {playerAvatar}
                                     </div>
-                                    <input
-                                        type="text"
-                                        value={tempName}
-                                        onChange={(e) => setTempName(e.target.value)}
-                                        className="flex-1 bg-[#1a1109] border border-[#5a4025] rounded-lg px-3 text-yellow-400 font-bold outline-none focus:border-yellow-500"
-                                        placeholder={t.playerNamePlaceholder}
-                                    />
+                                    <div style={{ flex: 1 }}>
+                                        <WoodenInput
+                                            type="text"
+                                            value={tempName}
+                                            onChange={(e) => setTempName(e.target.value)}
+                                            placeholder={t.playerNamePlaceholder}
+                                            fullWidth
+                                        />
+                                    </div>
                                 </div>
                                 <div className="mb-3">
                                     <AvatarPicker currentAvatar={playerAvatar} onSelect={setPlayerAvatar} />
                                 </div>
                                 <div className="flex gap-2">
-                                    <button onClick={handleUpdateProfile} style={{ ...secondaryBtnStyle, background: '#15803d', flex: 1 }} >
+                                    <WoodenButton
+                                        onClick={handleUpdateProfile}
+                                        variant="secondary"
+                                        fullWidth
+                                        style={{ background: '#15803d', borderColor: '#14532d' }}
+                                    >
                                         ✅ {t.save}
-                                    </button>
-                                    <button onClick={() => setIsEditingProfile(false)} style={{ ...secondaryBtnStyle, background: '#2d1f10', width: 'auto' }}>
+                                    </WoodenButton>
+                                    <WoodenButton
+                                        onClick={() => setIsEditingProfile(false)}
+                                        variant="secondary"
+                                        style={{ background: '#2d1f10' }}
+                                    >
                                         ✖️
-                                    </button>
+                                    </WoodenButton>
                                 </div>
                             </div>
                         ) : isHost ? (
                             <div className="flex flex-col gap-4">
+                                {/* Debug: Add Bots for Testing */}
+                                {process.env.NODE_ENV === 'development' && (
+                                    <WoodenButton
+                                        onClick={() => { playClickSound(); addDebugPlayers(); }}
+                                        variant="secondary"
+                                        size="sm"
+                                        style={{ marginBottom: '8px', opacity: 0.7 }}
+                                    >
+                                        🤖 Add Bots (Debug)
+                                    </WoodenButton>
+                                )}
+
                                 {/* Speed Control */}
                                 <div>
                                     <p style={sectionTitleStyle}>{t.gameSpeed}</p>
-                                    <div className="flex gap-4 justify-center">
+                                    <div className="flex gap-2 justify-center">
                                         {(['slow', 'normal', 'fast'] as const).map((s) => (
-                                            <button
+                                            <WoodenButton
                                                 key={s}
                                                 onClick={() => { playClickSound(); setSelectedSpeed(s); }}
+                                                variant={selectedSpeed === s ? 'gold' : 'secondary'}
                                                 style={{
                                                     flex: 1,
                                                     height: '56px',
-                                                    background: selectedSpeed === s
-                                                        ? 'linear-gradient(145deg, #ffd700 0%, #daa520 100%)'
-                                                        : 'linear-gradient(145deg, #2d1f10 0%, #1a1109 100%)',
-                                                    borderRadius: '12px',
-                                                    border: selectedSpeed === s ? '2px solid #b8860b' : '2px solid #3d2814',
-                                                    boxShadow: selectedSpeed === s
-                                                        ? '0 0 15px rgba(255, 215, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.4)'
-                                                        : 'inset 0 2px 4px rgba(0,0,0,0.5)',
-                                                    color: selectedSpeed === s ? '#3d2814' : '#5a4025', // Dark text on gold, dark brown on wood
                                                     fontSize: '1.75rem',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s',
-                                                    filter: selectedSpeed === s ? 'brightness(1.1)' : 'grayscale(0.5)',
-                                                    opacity: selectedSpeed === s ? 1 : 0.7
+                                                    opacity: selectedSpeed === s ? 1 : 0.7,
+                                                    filter: selectedSpeed === s ? 'brightness(1.1)' : 'grayscale(0.5)'
                                                 }}
                                                 title={t[s]}
-                                                className="active:scale-95"
                                             >
                                                 {s === 'slow' ? '🐢' : s === 'normal' ? '🚶' : '🐇'}
-                                            </button>
+                                            </WoodenButton>
                                         ))}
                                     </div>
                                 </div>
 
-                                <button
+                                <WoodenButton
                                     onClick={() => {
                                         playClickSound();
                                         const intervals = { slow: 7000, normal: 5000, fast: 3000 };
                                         onStartGame({ autoCallIntervalMs: intervals[selectedSpeed] });
                                     }}
                                     disabled={!canStart}
-                                    style={{ ...primaryBtnStyle, opacity: canStart ? 1 : 0.5 }}
-                                    className="active:translate-y-1 active:border-b-0 shadow-lg"
+                                    variant="gold"
+                                    size="lg"
+                                    fullWidth
                                 >
                                     <span style={{ fontSize: '1.5rem' }}>🎲</span> {t.startGame}
-                                </button>
+                                </WoodenButton>
                             </div>
                         ) : (
                             <div className="p-4 bg-[#1a1109]/50 rounded-xl border border-[#3d2814] text-center animate-pulse">
                                 <p className="text-stone-400 font-medium">{t.waitingForHost}</p>
                             </div>
                         )}
-
-
                     </div>
-                </div>
+                </WoodenCard>
             </div>
 
             {/* Modal */}

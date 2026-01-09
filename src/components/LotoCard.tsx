@@ -53,9 +53,8 @@ interface CellProps {
     onActivate: (row: number, col: number, evt: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => void;
 }
 
-/**
- * Memoized Cell Component - Only re-renders when its props change
- */
+
+// Memoized Cell Component - Only re-renders when its props change
 const LotoCell = memo(function LotoCell({
     value,
     isMarked,
@@ -163,7 +162,7 @@ function LotoCard({
         if (!onCellClick) return;
 
         const cellKey = `${row}-${col}`;
-        const calledIndex = calledNumbers.indexOf(cell.value);
+        const calledIndex = calledNumbers.indexOf(cell.value); // Keep array lookup for exact index logic
         const isCalled = calledIndex !== -1;
 
         // Already correctly marked
@@ -227,28 +226,34 @@ function LotoCard({
             <div className="loto-card-grid relative">
                 {card.grid.map((row, rowIndex) =>
                     row.map((cell, colIndex) => {
-                        const calledIndex = cell.value !== null ? calledNumbers.indexOf(cell.value) : -1;
-                        const isCalled = calledIndex !== -1;
-                        const isMissed = isCalled && !cell.isMarked && (callsCount - 1 - calledIndex >= 2);
+                        // OPTIMIZATION: Use O(1) Set lookup inside the render loop
+                        const isCalled = cell.value !== null && calledSet.has(cell.value);
+
+                        // Only calculate expensive "missed" logic if it's actually relevant
+                        let isMissed = false;
+                        if (isCalled && !cell.isMarked) {
+                            const calledIndex = calledNumbers.indexOf(cell.value!);
+                            isMissed = (callsCount - 1 - calledIndex >= 2);
+                        }
+
                         // Show token overlay immediately for called numbers marked optimistically
-                        const tappedKey = `${rowIndex}-${colIndex}`;
-                        const isCorrect = isCalled && (cell.isMarked || (tempMarked === tappedKey));
-                        const cellKey = `${rowIndex}-${colIndex}-${cell.value ?? 'x'}-${cell.isMarked ? 'm' : 'u'}`;
+                        const coordinatesKey = `${rowIndex}-${colIndex}`; // NEW STABLE KEY
+                        const isCorrect = isCalled && (cell.isMarked || (tempMarked === coordinatesKey));
 
                         // Effective marked includes temp optimistic state
-                        const effectiveIsMarked = cell.isMarked || (tempMarked === tappedKey);
+                        const effectiveIsMarked = cell.isMarked || (tempMarked === coordinatesKey);
 
                         return (
                             <LotoCell
-                                key={cellKey}
+                                key={coordinatesKey} // FIXED: Stable key depends only on position
                                 value={cell.value}
                                 isMarked={effectiveIsMarked}
                                 row={rowIndex}
                                 col={colIndex}
                                 isMissed={isMissed}
                                 isCorrect={isCorrect}
-                                isTapped={tappedCell === tappedKey}
-                                isMistake={mistakeCell === tappedKey}
+                                isTapped={tappedCell === coordinatesKey}
+                                isMistake={mistakeCell === coordinatesKey}
                                 onActivate={handleCellClick}
                             />
                         );

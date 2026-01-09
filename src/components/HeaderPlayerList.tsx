@@ -52,7 +52,7 @@ export default function HeaderPlayerList({
     return (
         <>
             <div
-                className="flex items-center py-2 gap-3 w-full overflow-x-auto no-scrollbar"
+                className="flex items-end py-2 gap-3 w-full overflow-x-auto no-scrollbar"
                 style={{
                     background: 'rgba(0,0,0,0.15)',
                     paddingLeft: 'max(12px, env(safe-area-inset-left))',
@@ -121,16 +121,7 @@ export default function HeaderPlayerList({
                                 )}
                             </div>
 
-                            {/* Player Name */}
-                            <span
-                                className="text-xs font-medium truncate"
-                                style={{
-                                    color: '#e8d4b8',
-                                    maxWidth: isMe ? '100px' : '64px'
-                                }}
-                            >
-                                {player.name}
-                            </span>
+
                         </button>
                     );
                 })}

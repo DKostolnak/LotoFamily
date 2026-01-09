@@ -36,6 +36,10 @@ interface MainMenuProps {
 // COMPONENT
 // ============================================================================
 
+import { WoodenCard, WoodenButton, WoodenInput } from '@/components/common';
+
+// ... (keep others)
+
 export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
     const [mode, setMode] = useState<'menu' | 'create' | 'join'>('menu');
     const [playerName, setPlayerName] = useState('');
@@ -158,107 +162,19 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         pointerEvents: 'none',
     };
 
-    const cardStyle: React.CSSProperties = {
-        position: 'relative',
-        zIndex: 10,
-        width: '100%',
-        // Responsive: 420px on phones, up to 520px on tablets
-        maxWidth: 'clamp(320px, 90vw, 520px)',
-        padding: 'clamp(20px, 4vw, 32px)',
-        backgroundColor: 'rgba(26, 17, 9, 0.95)',
-        border: '4px solid #8b6b4a',
-        borderRadius: '24px',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 0 2px rgba(0,0,0,0.5)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 'clamp(16px, 3vw, 24px)',
-        margin: 'auto',
-    };
-
-    const buttonStyle: React.CSSProperties = {
-        width: '100%',
-        padding: '20px',
-        borderRadius: '16px',
-        border: 'none',
-        fontSize: '1.25rem',
-        fontWeight: 800,
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '12px',
-        transition: 'transform 0.1s',
-        boxShadow: '0 8px 15px rgba(0,0,0,0.3)',
-    };
-
-    const goldBtnStyle: React.CSSProperties = {
-        ...buttonStyle,
-        background: 'linear-gradient(180deg, #ffd700 0%, #daa520 100%)',
-        color: '#3d2814',
-        borderBottom: '4px solid #b8860b',
-    };
-
-    const woodBtnStyle: React.CSSProperties = {
-        ...buttonStyle,
-        background: 'linear-gradient(180deg, #5a4025 0%, #3d2814 100%)',
-        color: '#f5e6c8',
-        borderBottom: '4px solid #2d1f10',
-    };
-
-    const inputStyle: React.CSSProperties = {
-        width: '100%',
-        padding: '16px',
-        backgroundColor: '#1a1109',
-        border: '2px solid #5a4025',
-        borderRadius: '12px',
-        fontSize: '1.25rem',
-        color: '#ffd700',
-        fontWeight: 'bold',
-        outline: 'none',
-        textAlign: 'left',
-    };
-
     return (
         <main style={mainStyle}>
             <div style={overlayStyle} />
 
-            <div style={cardStyle}>
-                {/* Back Button - Integrated into Card */}
-                {mode !== 'menu' && (
-                    <button
-                        type="button"
-                        onClick={() => onModeChange('menu')}
-                        style={{
-                            position: 'absolute',
-                            top: '20px',
-                            left: '20px',
-                            width: '40px',
-                            height: '40px',
-                            background: 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)',
-                            borderRadius: '8px',
-                            border: '2px solid #5a4025',
-                            boxShadow: '0 2px 0 #3d2814, inset 0 1px 0 rgba(255,255,255,0.3)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            zIndex: 20,
-                            color: '#3d2814',
-                        }}
-                    >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M15 18l-6-6 6-6" />
-                        </svg>
-                    </button>
-                )}
+            <WoodenCard
+                showBackArrow={mode !== 'menu'}
+                onBack={() => onModeChange('menu')}
+            >
                 {/* Header */}
                 <div style={{ textAlign: 'center', width: '100%' }}>
-                    <div style={{ fontSize: '4rem', marginBottom: '8px', lineHeight: 1 }}>🎱</div>
+                    <div style={{ fontSize: mode === 'menu' ? '4rem' : '2.5rem', marginBottom: mode === 'menu' ? '8px' : '4px', lineHeight: 1 }}>🎱</div>
                     <h1 style={{
-                        fontSize: '2.5rem',
+                        fontSize: mode === 'menu' ? '2.5rem' : 'clamp(1.5rem, 5vw, 2rem)',
                         fontWeight: 900,
                         color: '#ffd700',
                         textTransform: 'uppercase',
@@ -275,34 +191,44 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
 
                 {mode === 'menu' ? (
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <button
+                        <WoodenButton
                             onClick={() => onModeChange('create')}
-                            style={goldBtnStyle}
-                            className="active:translate-y-1"
+                            variant="gold"
+                            size="lg"
+                            fullWidth
+                            style={{ fontSize: 'clamp(1rem, 3vw, 1.25rem)' }}
                         >
                             <span style={{ fontSize: '1.5rem' }}>👑</span> {t.createGame}
-                        </button>
+                        </WoodenButton>
 
-                        <button
+                        <WoodenButton
                             onClick={() => onModeChange('join')}
-                            style={woodBtnStyle}
-                            className="active:translate-y-1"
+                            variant="secondary"
+                            size="lg"
+                            fullWidth
+                            style={{
+                                fontSize: 'clamp(1rem, 3vw, 1.25rem)',
+                                background: 'linear-gradient(180deg, #5a4025 0%, #3d2814 100%)',
+                                borderColor: '#2d1f10'
+                            }}
                         >
                             <span style={{ fontSize: '1.5rem' }}>🎮</span> {t.joinGame}
-                        </button>
+                        </WoodenButton>
 
                         {/* Stats Button */}
-                        <button
+                        <WoodenButton
                             onClick={() => { playClickSound(); setShowStats(true); }}
+                            variant="secondary"
+                            size="lg"
+                            fullWidth
                             style={{
-                                ...woodBtnStyle,
+                                fontSize: 'clamp(1rem, 3vw, 1.25rem)',
                                 background: 'linear-gradient(180deg, #3d2814 0%, #2d1f10 100%)',
                                 borderBottom: '4px solid #1a1109',
                             }}
-                            className="active:translate-y-1"
                         >
                             <span style={{ fontSize: '1.5rem' }}>📊</span> {t.score || 'Stats'}
-                        </button>
+                        </WoodenButton>
 
                         <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(139, 107, 74, 0.3)', display: 'flex', justifyContent: 'center' }}>
                             <LanguageSelector currentLanguage={language} onLanguageChange={handleLanguageChange} />
@@ -310,7 +236,7 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                     </div>
                 ) : (
                     <form
-                        style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}
+                        style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 2.5vw, 20px)' }}
                         onSubmit={(e) => {
                             e.preventDefault();
                             playClickSound();
@@ -319,25 +245,24 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                     >
                         {/* Player Name */}
                         <div>
-                            <label style={{ display: 'block', color: '#8b6b4a', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', textTransform: 'uppercase' }}>
-                                {t.playerName}
-                            </label>
                             <div style={{ display: 'flex', gap: '12px' }}>
                                 <div style={{
                                     width: '60px', height: '60px', borderRadius: '12px',
                                     backgroundColor: '#3d2814', border: '1px solid #5a4025',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem'
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem',
+                                    flexShrink: 0
                                 }}>
                                     {playerAvatar}
                                 </div>
-                                <input
+                                <WoodenInput
+                                    label={t.playerName}
                                     type="text"
                                     value={playerName}
                                     onChange={(e) => setPlayerName(e.target.value)}
                                     placeholder={t.playerNamePlaceholder}
                                     maxLength={18}
-                                    style={inputStyle}
                                     required
+                                    fullWidth
                                 />
                             </div>
                             <div style={{ marginTop: '12px' }}>
@@ -349,16 +274,14 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                         {mode === 'create' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 <div>
-                                    <label style={{ display: 'block', color: '#8b6b4a', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', textTransform: 'uppercase' }}>
-                                        {t.roomCode} <span style={{ opacity: 0.7, fontWeight: 'normal', textTransform: 'none' }}>({t.optionalLabel})</span>
-                                    </label>
-                                    <input
+                                    <WoodenInput
+                                        label={`${t.roomCode} (${t.optionalLabel})`}
                                         type="text"
                                         value={roomCode}
                                         onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                                         placeholder="AUTO"
                                         maxLength={8}
-                                        style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: '0.1em', textAlign: 'center', textTransform: 'uppercase' }}
+                                        style={{ fontFamily: 'monospace', letterSpacing: '0.1em', textAlign: 'center', textTransform: 'uppercase' }}
                                     />
                                     <p style={{ fontSize: '0.8rem', color: '#5a4025', marginTop: '8px', textAlign: 'center' }}>{t.customCodeHelp}</p>
                                 </div>
@@ -397,16 +320,14 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                             </div>
                         ) : (
                             <div>
-                                <label style={{ display: 'block', color: '#8b6b4a', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', textTransform: 'uppercase' }}>
-                                    {t.roomCode}
-                                </label>
-                                <input
+                                <WoodenInput
+                                    label={t.roomCode}
                                     type="text"
                                     value={roomCode}
                                     onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                                     placeholder={t.roomCodePlaceholder}
                                     maxLength={8}
-                                    style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: '0.2em', textAlign: 'center', fontSize: '1.5rem', padding: '20px', textTransform: 'uppercase' }}
+                                    style={{ fontFamily: 'monospace', letterSpacing: '0.2em', textAlign: 'center', fontSize: '1.5rem', padding: '20px', textTransform: 'uppercase' }}
                                     required
                                 />
                             </div>
@@ -421,16 +342,18 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                             </div>
                         )}
 
-                        <button
+                        <WoodenButton
                             type="submit"
-                            style={{ ...goldBtnStyle, marginTop: '8px' }}
-                            className="active:translate-y-1"
+                            variant="gold"
+                            size="lg"
+                            fullWidth
+                            style={{ marginTop: '8px' }}
                         >
                             {mode === 'create' ? t.createBtn : t.joinBtn}
-                        </button>
+                        </WoodenButton>
                     </form>
                 )}
-            </div>
+            </WoodenCard>
 
             {/* Stats Modal */}
             {showStats && (

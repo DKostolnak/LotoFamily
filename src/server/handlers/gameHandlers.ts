@@ -14,6 +14,7 @@ import {
     resumeGame,
     resetGame,
     claimFlat,
+    autoMarkBots,
 } from '../../engine/gameEngine';
 import { markCell } from '../../engine/lotoCardGenerator';
 import * as store from '../store';
@@ -39,6 +40,7 @@ export function startAutoCall(roomCode: string, game: GameState, io: TypedServer
         }
 
         currentGame = callNextNumber(currentGame);
+        currentGame = autoMarkBots(currentGame);
 
         const winResult = checkForWinners(currentGame);
         if (winResult) {
@@ -169,6 +171,7 @@ export function handleCallNumber(
     }
 
     game = callNextNumber(game);
+    game = autoMarkBots(game);
 
     const winResult = checkForWinners(game);
     if (winResult) {
