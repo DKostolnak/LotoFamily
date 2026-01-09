@@ -303,24 +303,66 @@ export class AudioService {
 // EXPORTS (FACADE FOR BACKWARD COMPATIBILITY)
 // ============================================================================
 
+/** Singleton instance of the AudioService */
 export const audioService = AudioService.getInstance();
 
+/** Initialize the audio context on first user interaction */
 export const initAudioContext = () => audioService.initialize();
+
+/** Check if audio context is ready */
 export const isAudioReady = () => audioService.isReady;
+
+/** Check if audio is currently muted */
 export const isMuted = () => audioService.isMuted;
+
+/** Toggle mute state and return new state (true = muted) */
 export const toggleMute = () => audioService.toggleMute();
+
+/** Set mute state explicitly */
 export const setMuted = (muted: boolean) => audioService.setMuted(muted);
+
+/** Trigger device vibration if allowed */
 export const vibrate = (pattern: number | number[]) => audioService.vibrate(pattern);
 
+/** Play UI click sound effect */
 export const playClickSound = () => audioService.playClick();
-export const playNumberCallSound = () => audioService.playBallCall();
-export const playCellMarkSound = () => audioService.playMark();
-export const playErrorSound = () => audioService.playError();
-export const playFlatClaimSound = () => audioService.playFlat();
-export const playVictoryFanfare = () => audioService.playVictory();
-export const playWinSound = () => audioService.playVictory(); // Alias
-export const playLossSound = () => audioService.playLoss();
-export const playBonusSound = () => audioService.playBonus();
-export const speakNumber = (num: number, lang: SupportedLanguage) => audioService.speakNumber(num, lang);
-export const playBeep = (f: number, d: number, t: OscillatorType, v?: number) => audioService.playBeep(f, d, t, v);
 
+/** Play number call announcement sound */
+export const playNumberCallSound = () => audioService.playBallCall();
+
+/** Play cell mark confirmation sound */
+export const playCellMarkSound = () => audioService.playMark();
+
+/** Play error feedback sound */
+export const playErrorSound = () => audioService.playError();
+
+/** Play flat claim celebration sound */
+export const playFlatClaimSound = () => audioService.playFlat();
+
+/** Play victory fanfare for winning */
+export const playVictoryFanfare = () => audioService.playVictory();
+
+/** Alias for playVictoryFanfare */
+export const playWinSound = () => audioService.playVictory();
+
+/** Play loss/game over sound */
+export const playLossSound = () => audioService.playLoss();
+
+/** Play bonus reward sound (e.g., daily bonus) */
+export const playBonusSound = () => audioService.playBonus();
+
+/**
+ * Use text-to-speech to announce a number
+ * @param num - The number to speak
+ * @param lang - Language code ('en', 'sk', 'uk', 'ru')
+ */
+export const speakNumber = (num: number, lang: SupportedLanguage) => audioService.speakNumber(num, lang);
+
+/**
+ * Play a custom beep sound
+ * @param frequency - Frequency in Hz
+ * @param duration - Duration in milliseconds
+ * @param type - Oscillator type
+ * @param volume - Optional volume (0-1)
+ */
+export const playBeep = (f: number, d: number, t: OscillatorType, v?: number) => audioService.playBeep(f, d, t, v);

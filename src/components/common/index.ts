@@ -23,3 +23,8 @@ export { WoodenCard, type WoodenCardProps } from './WoodenCard';
 // WoodenInput
 export { WoodenInput, type WoodenInputProps } from './WoodenInput';
 
+// CoinBadge - Displays coin balance
+export { CoinBadge } from './CoinBadge';
+
+// RankBadge - Displays player tier/rank
+export { RankBadge } from './RankBadge';
