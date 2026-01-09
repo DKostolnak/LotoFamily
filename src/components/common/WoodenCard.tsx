@@ -9,6 +9,7 @@ export interface WoodenCardProps {
     onBack?: () => void;
     style?: React.CSSProperties;
     maxWidth?: string;
+    className?: string;
 }
 
 export function WoodenCard({
@@ -18,9 +19,11 @@ export function WoodenCard({
     onBack,
     style,
     maxWidth = 'clamp(320px, 90vw, 520px)',
+    className,
 }: WoodenCardProps) {
     return (
         <div
+            className={className}
             style={{
                 position: 'relative',
                 zIndex: 10,
