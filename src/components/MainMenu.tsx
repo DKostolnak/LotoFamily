@@ -298,30 +298,8 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                             </WoodenButton>
                         </div>
 
-                        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(139, 107, 74, 0.3)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(139, 107, 74, 0.3)', display: 'flex', justifyContent: 'center' }}>
                             <LanguageSelector currentLanguage={language} onLanguageChange={handleLanguageChange} />
-
-                            <button
-                                onClick={() => { playClickSound(); setShowRules(true); }}
-                                style={{
-                                    width: '36px',
-                                    height: '36px',
-                                    borderRadius: '50%',
-                                    backgroundColor: 'rgba(0,0,0,0.3)',
-                                    border: '1px solid rgba(139, 107, 74, 0.5)',
-                                    color: '#ffd700',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '1.2rem',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                                className="hover:bg-black/50 hover:scale-105 active:scale-95"
-                                title="Game Rules"
-                            >
-                                📖
-                            </button>
                         </div>
                     </div>
                 ) : (
