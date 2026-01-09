@@ -29,7 +29,7 @@ export function GameNumbersDisplay({
             <div
                 style={{
                     position: 'absolute',
-                    left: '50%',
+                    left: '40%',
                     top: '50%',
                     transform: 'translate(-50%, -50%)',
                     zIndex: 30,
@@ -97,8 +97,8 @@ export function GameNumbersDisplay({
                 <div
                     style={{
                         position: 'absolute',
-                        // Start at center + half of main chip width (45px) + small gap (8px)
-                        left: 'calc(50% + 53px)',
+                        // Start at 40% + half of main chip width + minimal gap
+                        left: 'calc(40% + 42px)',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         display: 'flex',
@@ -109,7 +109,7 @@ export function GameNumbersDisplay({
                         borderRadius: '25px',
                         padding: '6px 10px',
                         boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)',
-                        marginTop: '15px', // Slight offset down
+                        marginTop: '15px',
                     }}
                 >
                     {history.slice(-4).reverse().map((num, index) => {
