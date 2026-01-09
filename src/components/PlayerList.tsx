@@ -136,12 +136,13 @@ export default function PlayerList({
                                 fontSize: '0.75rem',
                                 color: isMe ? '#ffd700' : '#e8d4b8',
                                 fontWeight: isMe ? '800' : '500',
-                                maxWidth: '80px',
+                                maxWidth: '96px',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
                                 textShadow: '0 1px 2px rgba(0,0,0,0.8)',
-                                marginTop: '4px'
+                                marginTop: '4px',
+                                textAlign: 'center'
                             }}
                         >
                             {player.name} {isMe && '(You)'}

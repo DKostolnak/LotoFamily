@@ -92,7 +92,7 @@ export default function RulesModal({ isOpen, onClose }: RulesModalProps) {
                             <Section title="Controls">
                                 <ul style={{ paddingLeft: '20px', margin: 0, listStyle: 'disc' }}>
                                     <li><strong>Red Chip</strong>: Tap once to mark.</li>
-                                    <li><strong>Remove</strong>: Tap again to unmark logic if you made a mistake.</li>
+                                    <li><strong>Remove</strong>: Tap again to unmark if you made a mistake.</li>
                                 </ul>
                             </Section>
                         </div>

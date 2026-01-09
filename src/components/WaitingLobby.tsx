@@ -123,6 +123,7 @@ const WaitingLobby = memo(function WaitingLobby({
         flexDirection: 'column',
         alignItems: 'center',
         padding: '24px 16px',
+        paddingBottom: 'safe-area-inset-bottom', // Handle iPhone notch area
     };
 
     const sectionTitleStyle: React.CSSProperties = {
@@ -206,7 +207,7 @@ const WaitingLobby = memo(function WaitingLobby({
                             borderRadius: '16px',
                             padding: '16px',
                             width: '100%',
-                            minHeight: '100px',
+                            minHeight: '140px', // Increased from 100px for better visibility
                             boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
                             display: 'flex',
                             justifyContent: 'center'
