@@ -39,6 +39,7 @@ const LATENCY_THRESHOLDS = {
 };
 
 const PING_INTERVAL_MS = 10000; // Ping every 10 seconds
+const PING_TIMEOUT_MS = 5000;   // Consider ping failed after 5 seconds
 
 /**
  * Hook to monitor WebSocket connection health
@@ -52,6 +53,7 @@ export function useConnectionHealth(socket: Socket | null): ConnectionHealth {
 
     const pingStartRef = useRef<number>(0);
     const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const pingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Calculate connection quality from latency
     const quality: ConnectionQuality = (() => {
@@ -108,6 +110,12 @@ export function useConnectionHealth(socket: Socket | null): ConnectionHealth {
 
         // Pong response for latency measurement
         const handlePong = () => {
+            // Clear timeout since we got a response
+            if (pingTimeoutRef.current) {
+                clearTimeout(pingTimeoutRef.current);
+                pingTimeoutRef.current = null;
+            }
+
             if (pingStartRef.current) {
                 const rtt = Date.now() - pingStartRef.current;
                 setLatency(rtt);
@@ -147,6 +155,15 @@ export function useConnectionHealth(socket: Socket | null): ConnectionHealth {
             if (socket.connected) {
                 pingStartRef.current = Date.now();
                 socket.emit('ping');
+
+                // Set timeout - if no pong received, mark as poor connection
+                pingTimeoutRef.current = setTimeout(() => {
+                    if (pingStartRef.current !== 0) {
+                        // No response received, set high latency
+                        setLatency(PING_TIMEOUT_MS);
+                        pingStartRef.current = 0;
+                    }
+                }, PING_TIMEOUT_MS);
             }
         };
 
@@ -160,6 +177,10 @@ export function useConnectionHealth(socket: Socket | null): ConnectionHealth {
             if (pingIntervalRef.current) {
                 clearInterval(pingIntervalRef.current);
                 pingIntervalRef.current = null;
+            }
+            if (pingTimeoutRef.current) {
+                clearTimeout(pingTimeoutRef.current);
+                pingTimeoutRef.current = null;
             }
         };
     }, [socket, isConnected]);

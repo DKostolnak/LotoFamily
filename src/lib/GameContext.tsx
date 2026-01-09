@@ -311,8 +311,25 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         socket.emit('game:callNumber');
     }, [socket, isHost]);
 
+    // Prevent duplicate rapid marks on the same cell
+    const lastMarkRef = useRef<{ cardId: string; row: number; col: number; time: number } | null>(null);
+    const MARK_DEBOUNCE_MS = 300;
+
     const markCell = useCallback(
         (cardId: string, row: number, col: number) => {
+            const now = Date.now();
+            const lastMark = lastMarkRef.current;
+
+            // Prevent duplicate mark on same cell within debounce window
+            if (lastMark &&
+                lastMark.cardId === cardId &&
+                lastMark.row === row &&
+                lastMark.col === col &&
+                now - lastMark.time < MARK_DEBOUNCE_MS) {
+                return;
+            }
+
+            lastMarkRef.current = { cardId, row, col, time: now };
             socket?.emit('game:markCell', cardId, row, col);
         },
         [socket],
