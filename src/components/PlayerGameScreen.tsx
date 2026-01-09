@@ -3,6 +3,7 @@
 import React, { useMemo, useCallback, useState, useEffect, memo } from 'react';
 import { GameState, LotoCard as LotoCardType, Player } from '@/lib/types';
 import { translations } from '@/lib/translations';
+import { useGame } from '@/lib/GameContext';
 import GameHeader from './GameHeader';
 
 import { useWakeLock } from '@/hooks/useWakeLock';
@@ -47,6 +48,9 @@ function PlayerGameScreen({
     onEndGame,
     onLeaveGame
 }: PlayerGameScreenProps) {
+    // Get connection status from context
+    const { isConnected } = useGame();
+
     // Memoize derived data
     const calledNumberValues = useMemo(
         () => gameState.calledNumbers.map(cn => cn.value),
@@ -100,6 +104,7 @@ function PlayerGameScreen({
             <GameHeader
                 gameState={gameState}
                 playerId={playerId}
+                isConnected={isConnected}
                 calledNumberValues={calledNumberValues}
                 onShowLeaderboard={handleShowLeaderboard}
                 onPlayerClick={setSelectedPlayer}

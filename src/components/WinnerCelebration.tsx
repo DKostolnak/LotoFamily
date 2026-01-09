@@ -9,8 +9,9 @@ import type { TranslationDictionary } from '@/lib/translations';
 
 interface WinnerCelebrationProps {
     winner: Player;
-    players: Player[]; // Added players list
+    players: Player[];
     isHost: boolean;
+    isPersonalBest?: boolean;
     onNewGame: () => void;
     onBackToLobby: () => void;
     currentUserId: string;
@@ -25,6 +26,7 @@ export default function WinnerCelebration({
     winner,
     players,
     isHost,
+    isPersonalBest = false,
     onNewGame,
     onBackToLobby,
     currentUserId,
@@ -183,6 +185,25 @@ export default function WinnerCelebration({
                         {winner.score} PTS
                     </div>
                 </div>
+
+                {/* Personal Best Badge */}
+                {isPersonalBest && isMe && (
+                    <div style={{
+                        background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+                        borderRadius: '12px',
+                        padding: '12px 20px',
+                        textAlign: 'center',
+                        border: '2px solid #c0392b',
+                        boxShadow: '0 4px 15px rgba(238, 90, 36, 0.4)',
+                        color: 'white',
+                        animation: 'pulse 1.5s ease-in-out infinite',
+                    }}>
+                        <span style={{ fontSize: '1.5rem', marginRight: '8px' }}>🏆</span>
+                        <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                            Personal Best!
+                        </span>
+                    </div>
+                )}
 
                 {/* Other Players Leaderboard */}
                 {sortedOthers.length > 0 && (

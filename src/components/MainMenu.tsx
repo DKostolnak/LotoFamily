@@ -20,6 +20,7 @@ import {
 } from '@/lib/services/storage';
 import AvatarPicker from './AvatarPicker';
 import LanguageSelector from './LanguageSelector';
+import PlayerStatsPage from './PlayerStatsPage';
 import { playClickSound } from '@/lib/audio';
 
 // ============================================================================
@@ -42,6 +43,7 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
     const [language, setLanguage] = useState<Language>('en');
     const [error, setError] = useState<string | null>(null);
     const [crazyMode, setCrazyMode] = useState(false);
+    const [showStats, setShowStats] = useState(false);
 
     useEffect(() => {
         // Recover Language
@@ -288,6 +290,19 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                             <span style={{ fontSize: '1.5rem' }}>🎮</span> {t.joinGame}
                         </button>
 
+                        {/* Stats Button */}
+                        <button
+                            onClick={() => { playClickSound(); setShowStats(true); }}
+                            style={{
+                                ...woodBtnStyle,
+                                background: 'linear-gradient(180deg, #3d2814 0%, #2d1f10 100%)',
+                                borderBottom: '4px solid #1a1109',
+                            }}
+                            className="active:translate-y-1"
+                        >
+                            <span style={{ fontSize: '1.5rem' }}>📊</span> {t.score || 'Stats'}
+                        </button>
+
                         <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(139, 107, 74, 0.3)', display: 'flex', justifyContent: 'center' }}>
                             <LanguageSelector currentLanguage={language} onLanguageChange={handleLanguageChange} />
                         </div>
@@ -415,6 +430,14 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                     </form>
                 )}
             </div>
+
+            {/* Stats Modal */}
+            {showStats && (
+                <PlayerStatsPage
+                    onClose={() => setShowStats(false)}
+                    t={t}
+                />
+            )}
         </main>
     );
 }

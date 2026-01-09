@@ -1,20 +1,20 @@
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
-import dynamic from 'next/dynamic';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic'
 import MainMenu from '@/components/MainMenu';
 import { useGame } from '@/lib/GameContext';
 import { translations } from '@/lib/translations';
+import { recordGameResult } from '@/lib/stats';
 
-// Dynamically import heavy components to reduce initial bundle
+// Statically import components to avoid loading delays
 import WaitingLobby from '@/components/WaitingLobby';
 import PlayerGameScreen from '@/components/PlayerGameScreen';
 import WinnerCelebration from '@/components/WinnerCelebration';
 import GameAudioPlayer from '@/components/GameAudioPlayer';
 
 /*
- * LoadingSpinner removed as we are now statically importing components
- * to avoid UI delays during critical game phase transitions.
+ * LoadingSpinner kept for potential future use
  */
 function LoadingSpinner() {
   return (
@@ -66,6 +66,64 @@ export default function Home() {
 
   // Prefetch components for faster transitions
   usePrefetchComponents(gameState?.phase);
+
+  // ========================================================================
+  // STATS TRACKING
+  // ========================================================================
+  const gameStartTimeRef = useRef<number | null>(null);
+  const statsRecordedRef = useRef<string | null>(null); // Track which game we recorded
+  const [isPersonalBest, setIsPersonalBest] = useState(false);
+
+  // Track when game starts
+  useEffect(() => {
+    if (gameState?.phase === 'playing' && !gameStartTimeRef.current) {
+      gameStartTimeRef.current = Date.now();
+    }
+    // Reset when back to lobby
+    if (gameState?.phase === 'lobby') {
+      gameStartTimeRef.current = null;
+      statsRecordedRef.current = null;
+      setIsPersonalBest(false);
+    }
+  }, [gameState?.phase]);
+
+  // Record stats when game finishes
+  useEffect(() => {
+    if (gameState?.phase !== 'finished') return;
+    if (!gameState.winnerId || !playerId) return;
+
+    // Prevent duplicate recording (same game)
+    const gameKey = `${gameState.roomCode}-${gameState.winnerId}`;
+    if (statsRecordedRef.current === gameKey) return;
+    statsRecordedRef.current = gameKey;
+
+    const durationMs = gameStartTimeRef.current
+      ? Date.now() - gameStartTimeRef.current
+      : 0;
+
+    const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
+    const myPosition = sortedPlayers.findIndex(p => p.id === playerId) + 1;
+    const myScore = sortedPlayers.find(p => p.id === playerId)?.score ?? 0;
+    const winner = sortedPlayers[0];
+
+    const { isPersonalBest: isPB } = recordGameResult({
+      isWin: gameState.winnerId === playerId,
+      durationMs,
+      score: myScore,
+      position: myPosition,
+      playerCount: gameState.players.length,
+      winnerId: winner?.id ?? '',
+      winnerName: winner?.name ?? '',
+    });
+
+    if (isPB) {
+      setIsPersonalBest(true);
+    }
+  }, [gameState?.phase, gameState?.winnerId, playerId, gameState?.roomCode, gameState?.players]);
+
+  // ========================================================================
+  // TRANSLATIONS & DERIVED STATE
+  // ========================================================================
 
   // Get translations based on game settings or browser default
   const t = useMemo(() => {
@@ -160,6 +218,7 @@ export default function Home() {
           winner={winner}
           players={gameState.players}
           isHost={isHost}
+          isPersonalBest={isPersonalBest}
           onNewGame={handleNewGame}
           onBackToLobby={handleBackToLobby}
           currentUserId={playerId || ''}

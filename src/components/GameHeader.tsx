@@ -29,6 +29,8 @@ interface GameHeaderProps {
     gameState: GameState;
     /** Current player's ID */
     playerId: string;
+    /** Whether socket is connected */
+    isConnected?: boolean;
     /** Array of called number values for history display */
     calledNumberValues: number[];
     /** Callback to show the leaderboard modal */
@@ -137,6 +139,7 @@ const TrophyIcon = () => (
 function GameHeader({
     gameState,
     playerId,
+    isConnected = true,
     calledNumberValues,
     onShowLeaderboard,
     onPlayerClick,
@@ -233,6 +236,22 @@ function GameHeader({
                         <HeaderButton onClick={handleSoundToggle} ariaLabel="Toggle sound">
                             {isSoundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
                         </HeaderButton>
+
+                        {/* Connection Status Indicator */}
+                        <div
+                            title={isConnected ? 'Connected' : 'Reconnecting...'}
+                            style={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: '50%',
+                                backgroundColor: isConnected ? '#4ade80' : '#ef4444',
+                                boxShadow: isConnected
+                                    ? '0 0 8px rgba(74, 222, 128, 0.8)'
+                                    : '0 0 8px rgba(239, 68, 68, 0.8)',
+                                transition: 'background-color 0.3s, box-shadow 0.3s',
+                                animation: isConnected ? undefined : 'pulse 1.5s ease-in-out infinite',
+                            }}
+                        />
                     </div>
 
                     {/* Center: Game Numbers Display */}
