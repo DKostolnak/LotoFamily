@@ -29,6 +29,8 @@ interface GameHeaderProps {
     gameState: GameState;
     /** Current player's ID */
     playerId: string;
+    /** Current coin balance */
+    coins: number;
     /** Whether socket is connected */
     isConnected?: boolean;
     /** Array of called number values for history display */
@@ -145,6 +147,7 @@ function GameHeader({
     onPlayerClick,
     onLeaveGame,
     leaveConfirmText = "Leave game?",
+    coins,
 }: GameHeaderProps) {
     // State
     const [isSoundEnabled, setIsSoundEnabled] = useState(true);
@@ -252,6 +255,21 @@ function GameHeader({
                                 animation: isConnected ? undefined : 'pulse 1.5s ease-in-out infinite',
                             }}
                         />
+
+                        {/* Coin Badge */}
+                        <div style={{
+                            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            border: '1px solid rgba(255, 215, 0, 0.3)',
+                            height: 32,
+                        }}>
+                            <span style={{ fontSize: '1rem' }}>💰</span>
+                            <span style={{ color: '#ffd700', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '0.9rem' }}>{coins}</span>
+                        </div>
                     </div>
 
                     {/* Center: Game Numbers Display */}

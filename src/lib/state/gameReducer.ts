@@ -42,6 +42,10 @@ export interface GameClientState {
     lastRoomCode: string | null;
     /** Whether player was previously disconnected (for reconnect logic) */
     wasDisconnected: boolean;
+    /** Current player's coin balance */
+    coins: number;
+    /** Latest reward received (for animation) */
+    latestReward: { amount: number; reason: 'win' | 'flat' | 'participation' | 'daily'; timestamp: number } | null;
 }
 
 /**
@@ -53,6 +57,8 @@ export type GameClientAction =
     | { type: 'setPlayerId'; playerId: string | null }
     | { type: 'setPlayerName'; playerName: string | null }
     | { type: 'setPlayerAvatar'; playerAvatar: string }
+    | { type: 'setCoins'; coins: number }
+    | { type: 'setLatestReward'; reward: GameClientState['latestReward'] }
     | { type: 'setError'; error: string | null }
     | { type: 'setLastRoomCode'; roomCode: string | null }
     | { type: 'setWasDisconnected'; wasDisconnected: boolean };
@@ -65,17 +71,11 @@ export type GameClientAction =
  * Available avatar emojis.
  */
 export const DEFAULT_AVATARS = [
-    '🐻', // Bear
-    '🦊', // Fox
-    '🐱', // Cat
-    '🐼', // Panda
-    '🦁', // Lion
-    '🐯', // Tiger
-    '🐨', // Koala
-    '🐸', // Frog
-] as const;
+    '🐻', '🦊', '🐱', '🐼', '🦁', '🐯', '🐨', '🐸',
+    '🐣', '🦄', '🐲', '🐙', '🦋', '🐝', '🐞', '🐢'
+];
 
-export type DefaultAvatar = typeof DEFAULT_AVATARS[number];
+export type DefaultAvatar = string;
 
 // ============================================================================
 // INITIAL STATE
@@ -93,6 +93,8 @@ export const initialGameClientState: GameClientState = {
     error: null,
     lastRoomCode: null,
     wasDisconnected: false,
+    coins: 0,
+    latestReward: null,
 };
 
 // ============================================================================
@@ -122,6 +124,12 @@ export function gameClientReducer(
 
         case 'setPlayerAvatar':
             return { ...state, playerAvatar: action.playerAvatar };
+
+        case 'setCoins':
+            return { ...state, coins: action.coins };
+
+        case 'setLatestReward':
+            return { ...state, latestReward: action.reward };
 
         case 'setError':
             return { ...state, error: action.error };

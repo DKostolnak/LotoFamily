@@ -21,7 +21,10 @@ import {
 import AvatarPicker from './AvatarPicker';
 import LanguageSelector from './LanguageSelector';
 import PlayerStatsPage from './PlayerStatsPage';
+import ShopModal from './ShopModal';
+import RulesModal from './RulesModal';
 import { playClickSound } from '@/lib/audio';
+import { CoinShower } from '@/components/effects/CoinShower';
 
 // ============================================================================
 // TYPES
@@ -48,6 +51,8 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
     const [error, setError] = useState<string | null>(null);
     const [crazyMode, setCrazyMode] = useState(false);
     const [showStats, setShowStats] = useState(false);
+    const [showShop, setShowShop] = useState(false);
+    const [showRules, setShowRules] = useState(false);
 
     useEffect(() => {
         // Recover Language
@@ -84,7 +89,7 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         }
     }, []);
 
-    const { playerAvatar, setPlayerAvatar } = useGame();
+    const { playerAvatar, setPlayerAvatar, coins } = useGame();
     const t = translations[language];
 
     const handleLanguageChange = useCallback((lang: Language) => {
@@ -164,12 +169,59 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
 
     return (
         <main style={mainStyle}>
+            <CoinShower />
             <div style={overlayStyle} />
 
             <WoodenCard
                 showBackArrow={mode !== 'menu'}
                 onBack={() => onModeChange('menu')}
             >
+                {/* Rules Button (Top Left) - Only in Menu Mode */}
+                {mode === 'menu' && (
+                    <button
+                        onClick={() => { playClickSound(); setShowRules(true); }}
+                        style={{
+                            position: 'absolute',
+                            top: '12px',
+                            left: '12px',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(0,0,0,0.3)',
+                            border: '1px solid rgba(139, 107, 74, 0.5)',
+                            color: '#ffd700',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.2rem',
+                            cursor: 'pointer',
+                            zIndex: 10,
+                            transition: 'all 0.2s'
+                        }}
+                        className="hover:bg-black/50 hover:scale-105 active:scale-95"
+                        title="Game Rules"
+                    >
+                        📖
+                    </button>
+                )}
+
+                {/* Coin Badge (Top Right of Card) */}
+                <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                    padding: '4px 8px',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                }}>
+                    <span style={{ fontSize: '1.2rem' }}>💰</span>
+                    <span style={{ color: '#ffd700', fontWeight: 'bold', fontFamily: 'monospace' }}>{coins}</span>
+                </div>
+
                 {/* Header */}
                 <div style={{ textAlign: 'center', width: '100%' }}>
                     <div style={{ fontSize: mode === 'menu' ? '4rem' : '2.5rem', marginBottom: mode === 'menu' ? '8px' : '4px', lineHeight: 1 }}>🎱</div>
@@ -215,23 +267,61 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                             <span style={{ fontSize: '1.5rem' }}>🎮</span> {t.joinGame}
                         </WoodenButton>
 
-                        {/* Stats Button */}
-                        <WoodenButton
-                            onClick={() => { playClickSound(); setShowStats(true); }}
-                            variant="secondary"
-                            size="lg"
-                            fullWidth
-                            style={{
-                                fontSize: 'clamp(1rem, 3vw, 1.25rem)',
-                                background: 'linear-gradient(180deg, #3d2814 0%, #2d1f10 100%)',
-                                borderBottom: '4px solid #1a1109',
-                            }}
-                        >
-                            <span style={{ fontSize: '1.5rem' }}>📊</span> {t.score || 'Stats'}
-                        </WoodenButton>
+                        {/* Stats & Shop Buttons Row */}
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                            <WoodenButton
+                                onClick={() => { playClickSound(); setShowStats(true); }}
+                                variant="secondary"
+                                size="lg"
+                                style={{
+                                    flex: 1,
+                                    fontSize: 'clamp(1rem, 3vw, 1.25rem)',
+                                    background: 'linear-gradient(180deg, #3d2814 0%, #2d1f10 100%)',
+                                    borderBottom: '4px solid #1a1109',
+                                }}
+                            >
+                                <span style={{ fontSize: '1.5rem' }}>📊</span> {t.score || 'Stats'}
+                            </WoodenButton>
 
-                        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(139, 107, 74, 0.3)', display: 'flex', justifyContent: 'center' }}>
+                            <WoodenButton
+                                onClick={() => { playClickSound(); setShowShop(true); }}
+                                variant="secondary"
+                                size="lg"
+                                style={{
+                                    flex: 1,
+                                    fontSize: 'clamp(1rem, 3vw, 1.25rem)',
+                                    background: 'linear-gradient(180deg, #3d2814 0%, #2d1f10 100%)',
+                                    borderBottom: '4px solid #1a1109',
+                                }}
+                            >
+                                <span style={{ fontSize: '1.5rem' }}>🛒</span> Shop
+                            </WoodenButton>
+                        </div>
+
+                        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(139, 107, 74, 0.3)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px' }}>
                             <LanguageSelector currentLanguage={language} onLanguageChange={handleLanguageChange} />
+
+                            <button
+                                onClick={() => { playClickSound(); setShowRules(true); }}
+                                style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '50%',
+                                    backgroundColor: 'rgba(0,0,0,0.3)',
+                                    border: '1px solid rgba(139, 107, 74, 0.5)',
+                                    color: '#ffd700',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '1.2rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                className="hover:bg-black/50 hover:scale-105 active:scale-95"
+                                title="Game Rules"
+                            >
+                                📖
+                            </button>
                         </div>
                     </div>
                 ) : (
@@ -362,6 +452,18 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                     t={t}
                 />
             )}
+
+            {/* Shop Modal */}
+            <ShopModal
+                isOpen={showShop}
+                onClose={() => setShowShop(false)}
+            />
+
+            {/* Rules Modal */}
+            <RulesModal
+                isOpen={showRules}
+                onClose={() => setShowRules(false)}
+            />
         </main>
     );
 }

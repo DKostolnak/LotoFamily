@@ -70,6 +70,10 @@ export interface Player {
   score: number;
   /** Whether this player is a bot */
   isBot?: boolean;
+  /** Current coin balance (Loto Coins) */
+  coins?: number;
+  /** IDs of unlocked items */
+  inventory?: string[];
 }
 
 // ============================================================================
@@ -206,6 +210,10 @@ export type ServerToClientEvents = {
   'room:closed': () => void;
   /** Server info (URL for reconnection) */
   'server:info': (url: string) => void;
+  /** Economy Update (coins, inventory) */
+  'economy:update': (data: { coins: number; inventory: string[] }) => void;
+  /** Generic Error */
+  'error': (error: { message: string }) => void;
 };
 
 /**
@@ -252,6 +260,12 @@ export type ClientToServerEvents = {
   'game:restart': () => void;
   /** Debug: Add bots */
   'room:addBots': () => void;
+  /** Purchase Item */
+  'economy:purchase': (token: string, itemId: string, cost: number) => void;
+  /** Sync Economy State */
+  'economy:sync': (token: string) => void;
+  /** Claim Daily Bonus */
+  'economy:claimBonus': (token: string) => void;
 };
 
 // ============================================================================

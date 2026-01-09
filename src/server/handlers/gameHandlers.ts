@@ -18,6 +18,7 @@ import {
 } from '../../engine/gameEngine';
 import { markCell } from '../../engine/lotoCardGenerator';
 import * as store from '../store';
+import * as persistence from '../persistence';
 import { gameLog } from '../../lib/logger';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
@@ -61,6 +62,7 @@ export function startAutoCall(roomCode: string, game: GameState, io: TypedServer
 
         if (winResult) {
             const winner = currentGame.players.find(p => p.id === winResult.winnerId);
+            awardGameRewards(io, currentGame, winResult.winnerId);
             io.to(roomCode).emit('game:winner', winResult.winnerId, winner?.name || 'Unknown');
         }
     }, game.settings.autoCallIntervalMs);
@@ -188,6 +190,7 @@ export function handleCallNumber(
 
     if (winResult) {
         const winner = game.players.find(p => p.id === winResult.winnerId);
+        awardGameRewards(io, game, winResult.winnerId);
         io.to(roomCode).emit('game:winner', winResult.winnerId, winner?.name || 'Unknown');
     }
 }
@@ -279,6 +282,7 @@ export function handleClaimWin(
         store.setGame(roomCode, game);
         stopAutoCall(roomCode);
 
+        awardGameRewards(io, game, socket.id);
         io.to(roomCode).emit('game:state', game);
         gameLog.info(`Winner claimed: ${socket.id} in ${roomCode}`);
     }
@@ -301,6 +305,17 @@ export function handleClaimFlat(
 
     const player = game.players.find(p => p.id === socket.id);
     if (player && player.collectedFlats.includes(flatType)) {
+        // Award Flat Coins (30)
+        if (player.token) {
+            persistence.addCoins(player.token, 30);
+            const pData = persistence.getPlayer(player.token);
+            if (pData) {
+                socket.emit('economy:update', {
+                    coins: pData.coins,
+                    inventory: pData.inventory
+                });
+            }
+        }
         io.to(roomCode).emit('game:flatClaimed', socket.id, flatType);
     }
 }
@@ -319,6 +334,36 @@ export function handlePause(
     game = pauseGame(game);
     store.setGame(roomCode, game);
     io.to(roomCode).emit('game:state', game);
+}
+
+/**
+ * Helper to award coins to winner and participants
+ */
+function awardGameRewards(io: TypedServer, game: GameState, winnerId: string) {
+    game.players.forEach(player => {
+        if (!player.token) return;
+
+        if (player.id === winnerId) {
+            // Winner gets 100 coins
+            persistence.addCoins(player.token, 100);
+        } else {
+            // Participants get 10 coins
+            persistence.addCoins(player.token, 10);
+        }
+
+        // Send update only to this player's socket?
+        // We can't easily target by token without a map, but we can target by socket ID (player.id)
+        // assuming they are still connected with that socket ID.
+        if (player.isConnected) {
+            const pData = persistence.getPlayer(player.token);
+            if (pData) {
+                io.to(player.id).emit('economy:update', {
+                    coins: pData.coins,
+                    inventory: pData.inventory
+                });
+            }
+        }
+    });
 }
 
 export function handleResume(

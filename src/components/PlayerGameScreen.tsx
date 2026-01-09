@@ -14,6 +14,7 @@ import LeaderboardModal from './LeaderboardModal';
 import GameProgress from './GameProgress';
 import PlayerStatsModal from './PlayerStatsModal';
 import GameCardWrapper from './GameCardWrapper';
+import { CoinShower } from '@/components/effects/CoinShower';
 
 interface PlayerGameScreenProps {
     gameState: GameState;
@@ -50,7 +51,7 @@ function PlayerGameScreen({
     onLeaveGame
 }: PlayerGameScreenProps) {
     // Get connection status from context
-    const { isConnected } = useGame();
+    const { isConnected, coins } = useGame();
 
     // Memoize derived data
     const calledNumberValues = useMemo(
@@ -101,6 +102,7 @@ function PlayerGameScreen({
 
     return (
         <div className="flex flex-col overflow-hidden bg-[var(--color-bg)]" style={{ height: '100dvh', minHeight: '100vh' }}>
+            <CoinShower />
             {/* Game Header */}
             <GameHeader
                 gameState={gameState}
@@ -111,6 +113,7 @@ function PlayerGameScreen({
                 onPlayerClick={setSelectedPlayer}
                 leaveConfirmText={t.leaveConfirm}
                 onLeaveGame={onLeaveGame}
+                coins={coins}
             />
 
             {/* Player Stats Modal */}

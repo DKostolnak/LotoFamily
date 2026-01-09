@@ -36,6 +36,7 @@ import {
     setPlayerName as saveName,
     clearLastRoomCode,
 } from './services/storage';
+import { economyService } from './services/economy';
 
 // ============================================================================
 // TYPES
@@ -46,6 +47,8 @@ interface GameContextType {
     playerId: string | null;
     playerName: string | null;
     playerAvatar: string;
+    coins: number;
+    latestReward: { amount: number; reason: 'win' | 'flat' | 'participation' | 'daily'; timestamp: number } | null;
     gameState: GameState | null;
     isConnected: boolean;
     isLoading: boolean;
@@ -68,6 +71,9 @@ interface GameContextType {
     setPlayerAvatar: (avatar: string) => void;
     closeRoom: () => void;
     addDebugPlayers: () => void;
+    refreshEconomy: () => void;
+    purchaseItem: (itemId: string, cost: number) => void;
+    claimDailyBonus: () => void;
 }
 
 interface GameProviderProps {
@@ -133,6 +139,75 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         tokenRef,
         setIsLoading,
     });
+
+    // ========================================================================
+    // ECONOMY & REWARDS
+    // ========================================================================
+
+    // Initialize coins and check daily bonus
+    useEffect(() => {
+        // Load initial balance
+        const balance = economyService.getBalance();
+        dispatch({ type: 'setCoins', coins: balance });
+
+        // Check daily bonus
+        const bonus = economyService.checkDailyBonus();
+        if (bonus > 0) {
+            dispatch({ type: 'setCoins', coins: economyService.getBalance() });
+            dispatch({
+                type: 'setLatestReward',
+                reward: { amount: bonus, reason: 'daily', timestamp: Date.now() }
+            });
+            console.log(`Daily bonus collected: ${bonus} coins`);
+        }
+    }, []);
+
+    // Listen for game rewards (Win/Participation)
+    // Listen for economy updates from server
+    useEffect(() => {
+        if (!socket) return;
+
+        // Sync initial state
+        if (tokenRef.current) {
+            socket.emit('economy:sync', tokenRef.current);
+        }
+
+        const handleEconomyUpdate = (data: { coins: number; inventory: string[] }) => {
+            dispatch({ type: 'setCoins', coins: data.coins });
+            // TODO: Dispatch inventory update if we had it in reducer
+            console.log('Economy updated:', data);
+        };
+
+        const handleWinner = (winnerId: string, winnerName: string) => {
+            const isMe = winnerId === clientState.playerId;
+            const reward = isMe ? 100 : 10;
+
+            // Server now handles the actual storage, just show the toast
+            dispatch({
+                type: 'setLatestReward',
+                reward: { amount: reward, reason: isMe ? 'win' : 'participation', timestamp: Date.now() }
+            });
+        };
+
+        const handleFlat = (playerId: string, flatType: number) => {
+            if (playerId === clientState.playerId) {
+                dispatch({
+                    type: 'setLatestReward',
+                    reward: { amount: 30, reason: 'flat', timestamp: Date.now() }
+                });
+            }
+        };
+
+        socket.on('economy:update', handleEconomyUpdate);
+        socket.on('game:winner', handleWinner);
+        socket.on('game:flatClaimed', handleFlat);
+
+        return () => {
+            socket.off('economy:update', handleEconomyUpdate);
+            socket.off('game:winner', handleWinner);
+            socket.off('game:flatClaimed', handleFlat);
+        };
+    }, [socket, clientState.playerId]);
 
     // ========================================================================
     // ERROR AUTO-DISMISS
@@ -306,6 +381,24 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         dispatch({ type: 'setError', error: null });
     }, []);
 
+    const refreshEconomy = useCallback(() => {
+        if (socket && tokenRef.current) {
+            socket.emit('economy:sync', tokenRef.current);
+        }
+    }, [socket]);
+
+    const purchaseItem = useCallback((itemId: string, cost: number) => {
+        if (socket && tokenRef.current) {
+            socket.emit('economy:purchase', tokenRef.current, itemId, cost);
+        }
+    }, [socket]);
+
+    const claimDailyBonus = useCallback(() => {
+        if (socket && tokenRef.current) {
+            socket.emit('economy:claimBonus', tokenRef.current);
+        }
+    }, [socket]);
+
     // ========================================================================
     // CONTEXT VALUE
     // ========================================================================
@@ -316,6 +409,8 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             playerId: clientState.playerId,
             playerName: clientState.playerName,
             playerAvatar: clientState.playerAvatar,
+            coins: clientState.coins,
+            latestReward: clientState.latestReward,
             gameState: clientState.gameState,
             isConnected,
             isLoading,
@@ -338,12 +433,17 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             setPlayerAvatar,
             closeRoom,
             addDebugPlayers,
+            refreshEconomy,
+            purchaseItem,
+            claimDailyBonus,
         }),
         [
             socket,
             clientState.playerId,
             clientState.playerName,
             clientState.playerAvatar,
+            clientState.coins,
+            clientState.latestReward,
             clientState.gameState,
             clientState.error,
             isConnected,
@@ -366,6 +466,9 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             setPlayerAvatar,
             closeRoom,
             addDebugPlayers,
+            refreshEconomy,
+            purchaseItem,
+            claimDailyBonus,
         ],
     );
 

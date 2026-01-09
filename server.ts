@@ -29,6 +29,8 @@ import {
     handleResume,
     handleRestart,
 } from './src/server/handlers/gameHandlers';
+import { handlePurchaseItem, handleSyncEconomy, handleDailyBonus } from './src/server/handlers/economyHandlers';
+import * as persistence from './src/server/persistence';
 
 import { removePlayer } from './src/engine/gameEngine';
 import { serverLog, socketLog, roomLog } from './src/lib/logger';
@@ -71,6 +73,8 @@ const handler = app.getRequestHandler();
 
 // Start cleanup interval
 store.startCleanupInterval();
+// Init persistence
+persistence.initPersistence();
 
 app.prepare().then(() => {
     const httpServer = createServer(handler);
@@ -161,6 +165,19 @@ app.prepare().then(() => {
             import('./src/server/handlers/debugHandlers').then(({ handleAddBots }) => {
                 handleAddBots(context, getRoomCode);
             });
+        });
+
+        // Economy Events
+        socket.on('economy:purchase', (token, itemId, cost) => {
+            handlePurchaseItem(context, token, itemId, cost);
+        });
+
+        socket.on('economy:sync', (token) => {
+            handleSyncEconomy(context, token);
+        });
+
+        socket.on('economy:claimBonus', (token) => {
+            handleDailyBonus(context, token);
         });
 
         // Disconnect Handler
