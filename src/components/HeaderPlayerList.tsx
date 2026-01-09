@@ -50,86 +50,103 @@ export default function HeaderPlayerList({
     }, [players, currentPlayerId]);
 
     return (
-        <div
-            className="flex items-center py-2 gap-3 w-full overflow-x-auto no-scrollbar"
-            style={{
-                background: 'rgba(0,0,0,0.15)',
-                paddingLeft: 'max(12px, env(safe-area-inset-left))',
-                paddingRight: '60px', /* Space for Leaderboard button + extra */
-            }}
-        >
-            {sortedPlayers.map((player) => {
-                const isMe = player.id === currentPlayerId;
-                const heatLevel = calculateHeat(player);
-                const size = isMe ? '90px' : '54px';
+        <>
+            <div
+                className="flex items-center py-2 gap-3 w-full overflow-x-auto no-scrollbar"
+                style={{
+                    background: 'rgba(0,0,0,0.15)',
+                    paddingLeft: 'max(12px, env(safe-area-inset-left))',
+                    paddingRight: '60px', /* Space for Leaderboard button + extra */
+                }}
+            >
+                {sortedPlayers.map((player) => {
+                    const isMe = player.id === currentPlayerId;
+                    const heatLevel = calculateHeat(player);
+                    const size = isMe ? '90px' : '54px';
 
-                const fontSize = isMe ? '60px' : '30px';
+                    const fontSize = isMe ? '60px' : '30px';
 
-                return (
-                    <button
-                        key={player.id}
-                        type="button"
-                        className="shrink-0 flex flex-col items-center gap-1 hover:scale-105 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-gold)]"
-                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                        onClick={() => { playClickSound(); onPlayerClick?.(player); }}
-                        aria-label={`View ${player.name}`}
-                    >
-                        {/* Avatar Container with Dent Effect */}
-                        <div
-                            className="relative"
-                            style={{
-                                width: size,
-                                height: size,
-                                borderRadius: isMe ? '18px' : '14px',
-                                background: 'radial-gradient(circle at center, #3a2614 0%, #4a3520 70%, #2d1f10 100%)', // Dark dent effect
-                                boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.7), inset 0 -2px 8px rgba(0,0,0,0.4)',
-                                border: '2px solid #2d1f10',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                padding: '3px'
-                            }}
+                    return (
+                        <button
+                            key={player.id}
+                            type="button"
+                            className="shrink-0 flex flex-col items-center gap-1 hover:scale-105 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-gold)]"
+                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                            onClick={() => { playClickSound(); onPlayerClick?.(player); }}
+                            aria-label={`View ${player.name}`}
                         >
-                            {/* Avatar Image/Placeholder */}
-                            {player.avatarUrl && (player.avatarUrl.startsWith('http') || player.avatarUrl.startsWith('data:')) ? (
-                                <Image
-                                    src={player.avatarUrl}
-                                    alt={player.name}
-                                    fill
-                                    unoptimized
-                                    sizes={isMe ? '90px' : '54px'}
-                                    className="object-cover rounded-md shadow-inner"
-                                />
-                            ) : (
-                                <div
-                                    className="w-full h-full flex items-center justify-center font-bold text-[#e8d4b8]"
-                                    style={{ fontSize: fontSize, lineHeight: 1 }}
-                                >
-                                    {player.avatarUrl || player.name.charAt(0).toUpperCase()}
-                                </div>
-                            )}
+                            {/* Avatar Container with Dent Effect */}
+                            <div
+                                className="relative"
+                                style={{
+                                    width: size,
+                                    height: size,
+                                    borderRadius: isMe ? '18px' : '14px',
+                                    background: 'radial-gradient(circle at center, #3a2614 0%, #4a3520 70%, #2d1f10 100%)', // Dark dent effect
+                                    boxShadow: isMe
+                                        ? 'inset 0 4px 12px rgba(0,0,0,0.7), inset 0 -2px 8px rgba(0,0,0,0.4), 0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.3)'
+                                        : 'inset 0 4px 12px rgba(0,0,0,0.7), inset 0 -2px 8px rgba(0,0,0,0.4)',
+                                    border: isMe ? '3px solid #ffd700' : '2px solid #2d1f10',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '3px',
+                                    animation: isMe ? 'avatar-glow 2s ease-in-out infinite' : undefined,
+                                }}
+                            >
+                                {/* Avatar Image/Placeholder */}
+                                {player.avatarUrl && (player.avatarUrl.startsWith('http') || player.avatarUrl.startsWith('data:')) ? (
+                                    <Image
+                                        src={player.avatarUrl}
+                                        alt={player.name}
+                                        fill
+                                        unoptimized
+                                        sizes={isMe ? '90px' : '54px'}
+                                        className="object-cover rounded-md shadow-inner"
+                                    />
+                                ) : (
+                                    <div
+                                        className="w-full h-full flex items-center justify-center font-bold text-[#e8d4b8]"
+                                        style={{ fontSize: fontSize, lineHeight: 1 }}
+                                    >
+                                        {player.avatarUrl || player.name.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
 
-                            {/* Heat Indicator Badge */}
-                            {heatLevel > 0 && (
-                                <div className={`absolute -top-2 -right-1 text-sm z-10 ${heatLevel === 1 ? 'animate-bounce' : ''}`}>
-                                    {heatLevel === 1 ? '🔥' : '⚠️'}
-                                </div>
-                            )}
-                        </div>
+                                {/* Heat Indicator Badge */}
+                                {heatLevel > 0 && (
+                                    <div className={`absolute -top-2 -right-1 text-sm z-10 ${heatLevel === 1 ? 'animate-bounce' : ''}`}>
+                                        {heatLevel === 1 ? '🔥' : '⚠️'}
+                                    </div>
+                                )}
+                            </div>
 
-                        {/* Player Name */}
-                        <span
-                            className="text-xs font-medium truncate"
-                            style={{
-                                color: '#e8d4b8',
-                                maxWidth: isMe ? '100px' : '64px'
-                            }}
-                        >
-                            {player.name}
-                        </span>
-                    </button>
-                );
-            })}
-        </div>
+                            {/* Player Name */}
+                            <span
+                                className="text-xs font-medium truncate"
+                                style={{
+                                    color: '#e8d4b8',
+                                    maxWidth: isMe ? '100px' : '64px'
+                                }}
+                            >
+                                {player.name}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* CSS Animations for avatar glow */}
+            <style jsx global>{`
+                @keyframes avatar-glow {
+                    0%, 100% { 
+                        box-shadow: inset 0 4px 12px rgba(0,0,0,0.7), inset 0 -2px 8px rgba(0,0,0,0.4), 0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.3);
+                    }
+                    50% { 
+                        box-shadow: inset 0 4px 12px rgba(0,0,0,0.7), inset 0 -2px 8px rgba(0,0,0,0.4), 0 0 30px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.4);
+                    }
+                }
+            `}</style>
+        </>
     );
 }

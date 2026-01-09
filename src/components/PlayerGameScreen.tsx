@@ -5,6 +5,7 @@ import { GameState, LotoCard as LotoCardType, Player } from '@/lib/types';
 import { translations } from '@/lib/translations';
 import { useGame } from '@/lib/GameContext';
 import GameHeader from './GameHeader';
+import GamePausedOverlay from './GamePausedOverlay';
 
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { playClickSound } from '@/lib/audio';
@@ -134,15 +135,16 @@ function PlayerGameScreen({
 
             {/* Paused Overlay */}
             {isPaused && (
-                <div
-                    className="fixed inset-0 z-[9990] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-                >
-                    <div className="text-center">
-                        <div className="text-6xl mb-4">⏸️</div>
-                        <div className="text-white text-2xl font-bold">{t.paused}</div>
-                        <p className="text-white/60 text-sm mt-2">{t.pausedByHost}</p>
-                    </div>
-                </div>
+                <GamePausedOverlay
+                    roomCode={gameState.roomCode}
+                    joinUrl={gameState.serverUrl
+                        ? `${gameState.serverUrl}?room=${gameState.roomCode}`
+                        : `${typeof window !== 'undefined' ? window.location.origin : ''}?room=${gameState.roomCode}`
+                    }
+                    isHost={isHost}
+                    onResume={onResume || (() => { })}
+                    t={t}
+                />
             )}
 
             {/* Progress Indicator */}

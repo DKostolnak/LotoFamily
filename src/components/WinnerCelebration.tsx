@@ -136,8 +136,17 @@ export default function WinnerCelebration({
                 {/* Header / Avatar */}
                 <div className="relative mb-2">
                     <div className="absolute inset-0 bg-yellow-500 rounded-full blur-2xl opacity-40 animate-pulse"></div>
-                    <div className="w-32 h-32 rounded-full border-4 border-[#ffd700] shadow-lg bg-[#f5f0e8] z-10 relative flex items-center justify-center text-5xl">
-                        {winner.avatarUrl || '👤'}
+                    <div className="w-32 h-32 rounded-full border-4 border-[#ffd700] shadow-lg bg-[#f5f0e8] z-10 relative flex items-center justify-center text-5xl overflow-hidden">
+                        {winner.avatarUrl && (winner.avatarUrl.startsWith('http') || winner.avatarUrl.startsWith('data:')) ? (
+                            <Image
+                                src={winner.avatarUrl}
+                                alt={winner.name}
+                                fill
+                                className="object-cover"
+                            />
+                        ) : (
+                            <span>{winner.avatarUrl || '👤'}</span>
+                        )}
                     </div>
                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-7xl drop-shadow-xl animate-bounce z-20">
                         👑
@@ -238,9 +247,20 @@ export default function WinnerCelebration({
                                             fontSize: '1.2rem',
                                             background: '#3d2814',
                                             marginRight: '12px',
-                                            border: '1px solid #5a4025'
+                                            border: '1px solid #5a4025',
+                                            overflow: 'hidden',
+                                            position: 'relative'
                                         }}>
-                                            {player.avatarUrl || '👤'}
+                                            {player.avatarUrl && (player.avatarUrl.startsWith('http') || player.avatarUrl.startsWith('data:')) ? (
+                                                <Image
+                                                    src={player.avatarUrl}
+                                                    alt={player.name}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            ) : (
+                                                <span>{player.avatarUrl || '👤'}</span>
+                                            )}
                                         </div>
                                         <div style={{ flex: 1, fontWeight: 'bold', color: isUser ? '#ffd700' : '#e8d4b8' }}>
                                             {player.name} {isUser && '(You)'}
