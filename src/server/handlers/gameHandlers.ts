@@ -311,8 +311,11 @@ export function handleClaimFlat(
             persistence.addCoins(player.token, 30);
             const pData = persistence.getPlayer(player.token);
             if (pData) {
+                const tier = getTier(pData.rp || 0);
                 socket.emit('economy:update', {
                     coins: pData.coins,
+                    rp: pData.rp || 0,
+                    tier: tier.name,
                     inventory: pData.inventory
                 });
             }
