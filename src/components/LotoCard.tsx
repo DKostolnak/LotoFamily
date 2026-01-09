@@ -46,7 +46,6 @@ interface CellProps {
     isMarked: boolean;
     row: number;
     col: number;
-    isCalled: boolean;
     isMissed: boolean;
     isCorrect: boolean;
     isTapped: boolean;
@@ -62,7 +61,6 @@ const LotoCell = memo(function LotoCell({
     isMarked,
     row,
     col,
-    isCalled,
     isMissed,
     isCorrect,
     isTapped,
@@ -75,7 +73,6 @@ const LotoCell = memo(function LotoCell({
         return [
             'loto-cell',
             isEmpty && 'loto-cell--empty',
-            isCalled && !isCorrect && 'loto-cell--called', // Gold pulse for called but not yet marked
             isCorrect && 'loto-cell--correct',
             isCorrect && 'loto-cell--marked',
             isMissed && 'loto-cell--missed',
@@ -84,7 +81,7 @@ const LotoCell = memo(function LotoCell({
         ]
             .filter(Boolean)
             .join(' ');
-    }, [isEmpty, isCalled, isCorrect, isMissed, isMistake, isTapped]);
+    }, [isEmpty, isCorrect, isMissed, isMistake, isTapped]);
 
     const handleClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
         onActivate(row, col, event);
@@ -248,7 +245,6 @@ function LotoCard({
                                 isMarked={effectiveIsMarked}
                                 row={rowIndex}
                                 col={colIndex}
-                                isCalled={isCalled}
                                 isMissed={isMissed}
                                 isCorrect={isCorrect}
                                 isTapped={tappedCell === tappedKey}
