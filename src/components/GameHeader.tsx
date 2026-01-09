@@ -16,6 +16,19 @@
 import React, { useCallback, useState, useEffect, useRef, memo } from 'react';
 import { GameState, Player } from '@/lib/types';
 import { playClickSound, toggleMute, isMuted } from '@/lib/audio';
+import {
+    k_headerHeight,
+    k_buttonSize,
+    k_leaderboardButtonSize,
+    k_zIndexHeaderControls,
+    k_gradientWoodenButton,
+    k_colorWoodDark,
+    k_colorWoodDarkest,
+    k_shadowButton,
+    k_colorSuccess,
+    k_colorError,
+    k_colorGold,
+} from '@/lib/constants';
 import GameNumbersDisplay from './GameNumbersDisplay';
 import HeaderPlayerList from './HeaderPlayerList';
 import { ConfirmModal } from './common';
@@ -46,14 +59,6 @@ interface GameHeaderProps {
 }
 
 // ============================================================================
-// CONSTANTS
-// ============================================================================
-
-const HEADER_HEIGHT = 130;
-const BUTTON_SIZE = 40;
-const LEADERBOARD_BUTTON_SIZE = 44;
-
-// ============================================================================
 // SUB-COMPONENTS
 // ============================================================================
 
@@ -71,7 +76,7 @@ const HeaderButton = memo(function HeaderButton({
     onClick,
     ariaLabel,
     children,
-    size = BUTTON_SIZE,
+    size = k_buttonSize,
 }: HeaderButtonProps) {
     return (
         <button
@@ -82,10 +87,10 @@ const HeaderButton = memo(function HeaderButton({
             style={{
                 width: size,
                 height: size,
-                background: 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)',
+                background: k_gradientWoodenButton,
                 borderRadius: '8px',
-                border: '2px solid #5a4025',
-                boxShadow: '0 2px 0 #3d2814, inset 0 1px 0 rgba(255,255,255,0.3)',
+                border: `2px solid ${k_colorWoodDark}`,
+                boxShadow: k_shadowButton,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -216,7 +221,7 @@ function GameHeader({
                     backgroundImage: 'url(/assets/wood-seamless.png)',
                     backgroundSize: '256px 256px',
                     backgroundRepeat: 'repeat',
-                    borderBottom: '3px solid #2d1f10',
+                    borderBottom: `3px solid ${k_colorWoodDarkest}`,
                     position: 'relative',
                 }}
             >
@@ -254,7 +259,7 @@ function GameHeader({
                             width: 12,
                             height: 12,
                             borderRadius: '50%',
-                            backgroundColor: isConnected ? '#4ade80' : '#ef4444',
+                            backgroundColor: isConnected ? k_colorSuccess : k_colorError,
                             border: '1px solid rgba(0,0,0,0.2)',
                             boxShadow: isConnected
                                 ? '0 0 10px rgba(74, 222, 128, 0.8)'
@@ -277,7 +282,7 @@ function GameHeader({
                         boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
                     }}>
                         <span style={{ fontSize: '1.2rem' }}>💰</span>
-                        <span style={{ color: '#ffd700', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '1.1rem' }}>{coins}</span>
+                        <span style={{ color: k_colorGold, fontWeight: 'bold', fontFamily: 'monospace', fontSize: '1.1rem' }}>{coins}</span>
                     </div>
                 </div>
 
@@ -285,7 +290,7 @@ function GameHeader({
                 <div
                     className="relative w-full"
                     style={{
-                        height: HEADER_HEIGHT,
+                        height: k_headerHeight,
                         borderBottom: '2px solid rgba(0,0,0,0.4)',
                     }}
                 >
@@ -317,12 +322,12 @@ function GameHeader({
                         position: 'absolute',
                         bottom: '12px',
                         right: 'max(12px, env(safe-area-inset-right))',
-                        width: LEADERBOARD_BUTTON_SIZE,
-                        height: LEADERBOARD_BUTTON_SIZE,
-                        background: 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)',
+                        width: k_leaderboardButtonSize,
+                        height: k_leaderboardButtonSize,
+                        background: k_gradientWoodenButton,
                         borderRadius: '8px',
-                        border: '2px solid #5a4025',
-                        boxShadow: '0 3px 0 #3d2814, inset 0 1px 0 rgba(255,255,255,0.3)',
+                        border: `2px solid ${k_colorWoodDark}`,
+                        boxShadow: k_shadowButton,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

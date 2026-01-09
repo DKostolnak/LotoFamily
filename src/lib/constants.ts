@@ -3,7 +3,8 @@
  * Single source of truth for all game configuration values
  */
 
-
+// Re-export UI constants
+export * from './constants/ui';
 
 // ============================================================================
 // SCORING SYSTEM
