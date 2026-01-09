@@ -53,6 +53,7 @@ const LANGUAGE_CODES: Record<SupportedLanguage, string> = {
 };
 
 const MUTE_STORAGE_KEY = 'loto_muted';
+const VOICE_MUTE_STORAGE_KEY = 'loto_voice_muted';
 
 // ============================================================================
 // SERVICE CLASS
@@ -63,10 +64,12 @@ export class AudioService {
     private context: AudioContext | null = null;
     private isInitialized = false;
     private _isMuted = false;
+    private _isVoiceMuted = false;
 
     private constructor() {
         if (typeof window !== 'undefined') {
             this._isMuted = window.localStorage.getItem(MUTE_STORAGE_KEY) === 'true';
+            this._isVoiceMuted = window.localStorage.getItem(VOICE_MUTE_STORAGE_KEY) === 'true';
             this.setupLifecycleListeners();
         }
     }
@@ -148,6 +151,10 @@ export class AudioService {
         return this._isMuted;
     }
 
+    public get isVoiceMuted(): boolean {
+        return this._isVoiceMuted;
+    }
+
     public setMuted(muted: boolean) {
         this._isMuted = muted;
         if (typeof window !== 'undefined') {
@@ -156,9 +163,21 @@ export class AudioService {
         if (!muted) this.initialize();
     }
 
+    public setVoiceMuted(muted: boolean) {
+        this._isVoiceMuted = muted;
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(VOICE_MUTE_STORAGE_KEY, String(muted));
+        }
+    }
+
     public toggleMute(): boolean {
         this.setMuted(!this._isMuted);
         return this._isMuted;
+    }
+
+    public toggleVoiceMute(): boolean {
+        this.setVoiceMuted(!this._isVoiceMuted);
+        return this._isVoiceMuted;
     }
 
     // --- Haptics ---
@@ -223,7 +242,8 @@ export class AudioService {
     }
 
     public speakNumber(num: number, lang: SupportedLanguage) {
-        if (this._isMuted || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+        // Check global mute AND voice specific mute
+        if (this._isMuted || this._isVoiceMuted || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(`${num}`);
@@ -320,6 +340,15 @@ export const toggleMute = () => audioService.toggleMute();
 
 /** Set mute state explicitly */
 export const setMuted = (muted: boolean) => audioService.setMuted(muted);
+
+/** Check if voice is currently muted */
+export const isVoiceMuted = () => audioService.isVoiceMuted;
+
+/** Toggle voice mute state */
+export const toggleVoiceMute = () => audioService.toggleVoiceMute();
+
+/** Set voice mute state explicitly */
+export const setVoiceMuted = (muted: boolean) => audioService.setVoiceMuted(muted);
 
 /** Trigger device vibration if allowed */
 export const vibrate = (pattern: number | number[]) => audioService.vibrate(pattern);
