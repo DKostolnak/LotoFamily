@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { GameState, Player } from '@/lib/types';
 import { translations } from '@/lib/translations';
@@ -29,7 +29,7 @@ import { WoodenCard, WoodenButton, WoodenInput } from '@/components/common';
 
 // ... (keep props interface)
 
-export default function WaitingLobby({
+const WaitingLobby = memo(function WaitingLobby({
     gameState,
     currentPlayerId,
     isHost,
@@ -42,10 +42,10 @@ export default function WaitingLobby({
     const { showToast } = useToast();
     const { updateProfile, kickPlayer, playerAvatar, setPlayerAvatar, addDebugPlayers } = useGame();
 
-    const [isEditingProfile, setIsEditingProfile] = React.useState(false);
-    const [tempName, setTempName] = React.useState(currentPlayer?.name || '');
-    const [selectedPlayer, setSelectedPlayer] = React.useState<Player | null>(null);
-    const [selectedSpeed, setSelectedSpeed] = React.useState<'slow' | 'normal' | 'fast'>('normal');
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [tempName, setTempName] = useState(currentPlayer?.name || '');
+    const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+    const [selectedSpeed, setSelectedSpeed] = useState<'slow' | 'normal' | 'fast'>('normal');
 
     const t = translations[gameState.settings.language || 'en'];
 
@@ -343,4 +343,6 @@ export default function WaitingLobby({
             )}
         </div>
     );
-}
+});
+
+export default WaitingLobby;

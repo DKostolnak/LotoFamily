@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { TranslationDictionary } from '@/lib/translations';
 import { playClickSound } from '@/lib/audio';
@@ -19,7 +19,7 @@ interface GamePausedOverlayProps {
  * Full-screen overlay shown when the host pauses the game.
  * Displays pause message, QR code for new players, and resume button (host only).
  */
-export default function GamePausedOverlay({
+const GamePausedOverlay = memo(function GamePausedOverlay({
     roomCode,
     joinUrl,
     isHost,
@@ -208,4 +208,6 @@ export default function GamePausedOverlay({
             `}</style>
         </div>
     );
-}
+});
+
+export default GamePausedOverlay;

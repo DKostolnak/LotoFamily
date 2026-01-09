@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import Image from 'next/image';
 import { Player } from '@/lib/types';
 import { playClickSound } from '@/lib/audio';
@@ -37,7 +37,7 @@ function calculateHeat(player: Player): number {
  * Displays the scrollable list of players in the game header.
  * Applies the 'dent' aesthetic to avatars.
  */
-export default function HeaderPlayerList({
+const HeaderPlayerList = memo(function HeaderPlayerList({
     players,
     currentPlayerId,
     onPlayerClick,
@@ -140,4 +140,6 @@ export default function HeaderPlayerList({
             `}</style>
         </>
     );
-}
+});
+
+export default HeaderPlayerList;
