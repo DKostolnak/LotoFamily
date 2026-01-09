@@ -79,6 +79,26 @@ let m_isMuted = false;
 // Initialize mute state from localStorage on module load
 if (typeof window !== 'undefined') {
     m_isMuted = window.localStorage.getItem('loto_muted') === 'true';
+
+    // iOS Safari: AudioContext gets suspended when app goes to background
+    // Listen for visibility changes and resume audio when app comes back
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && m_sharedAudioContext) {
+            // App is now visible, try to resume audio
+            if (m_sharedAudioContext.state === 'suspended') {
+                m_sharedAudioContext.resume().catch(() => {
+                    // Will resume on next user interaction
+                });
+            }
+        }
+    });
+
+    // Also handle iOS-specific events
+    window.addEventListener('pageshow', () => {
+        if (m_sharedAudioContext && m_sharedAudioContext.state === 'suspended') {
+            m_sharedAudioContext.resume().catch(() => { });
+        }
+    });
 }
 
 /**

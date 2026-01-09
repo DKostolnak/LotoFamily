@@ -6,3 +6,5 @@ export { useCardLogic } from './useCardLogic';
 export { useWakeLock } from './useWakeLock';
 export { useCalledNumbersSet } from './useCalledNumbersSet';
 export { useHaptics, type HapticPattern } from './useHaptics';
+export { useConnectionHealth, type ConnectionHealth, type ConnectionQuality } from './useConnectionHealth';
+

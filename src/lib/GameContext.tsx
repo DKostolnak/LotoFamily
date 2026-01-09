@@ -132,6 +132,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
     const tokenRef = useRef<string | null>(null);
     const errorTimerRef = useRef<NodeJS.Timeout | null>(null);
     const pendingReconnectRef = useRef(false);
+    const isAutoReconnectAttemptRef = useRef(false);
 
     // ========================================================================
     // INITIALIZATION
@@ -163,9 +164,13 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         const client: Socket<ServerToClientEvents, ClientToServerEvents> = io(serverUrl, {
             autoConnect: false,
             transports: ['websocket'],
+            // Reconnection with exponential backoff for mobile stability
             reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000,
+            reconnectionAttempts: 10,        // Increased from 5 for flaky mobile networks
+            reconnectionDelay: 1000,         // Start with 1 second
+            reconnectionDelayMax: 30000,     // Cap at 30 seconds
+            randomizationFactor: 0.5,        // Add jitter to prevent thundering herd
+            timeout: 20000,                  // 20 second connection timeout
         });
 
         setSocket(client);
@@ -187,6 +192,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             const avatar = getPlayerAvatar();
 
             if (lastRoom && lastName && tokenRef.current) {
+                isAutoReconnectAttemptRef.current = true;
                 client.emit('room:join', lastRoom, lastName, avatar, tokenRef.current);
                 setIsLoading(true);
             }
@@ -216,11 +222,19 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
 
         // Game error
         client.on('game:error', (message) => {
-            dispatch({ type: 'setError', error: message });
-            setIsLoading(false);
+            // Suppress "Room not found" on auto-reconnect (stale room code from previous session)
+            const isAutoReconnectFailure = message === 'Room not found' && isAutoReconnectAttemptRef.current;
+            isAutoReconnectAttemptRef.current = false;
+
             if (message === 'Room not found') {
                 clearLastRoomCode();
             }
+
+            // Don't show error to user if it's just a stale auto-reconnect
+            if (!isAutoReconnectFailure) {
+                dispatch({ type: 'setError', error: message });
+            }
+            setIsLoading(false);
         });
 
         // Room joined

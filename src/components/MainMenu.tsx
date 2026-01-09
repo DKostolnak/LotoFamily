@@ -162,8 +162,9 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         position: 'relative',
         zIndex: 10,
         width: '100%',
-        maxWidth: '420px', // Slightly narrower for better guaranteed fit
-        padding: '24px', // Reduced from 32px
+        // Responsive: 420px on phones, up to 520px on tablets
+        maxWidth: 'clamp(320px, 90vw, 520px)',
+        padding: 'clamp(20px, 4vw, 32px)',
         backgroundColor: 'rgba(26, 17, 9, 0.95)',
         border: '4px solid #8b6b4a',
         borderRadius: '24px',
@@ -171,8 +172,8 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '20px',
-        margin: 'auto', // Flexbox centering magic
+        gap: 'clamp(16px, 3vw, 24px)',
+        margin: 'auto',
     };
 
     const buttonStyle: React.CSSProperties = {
