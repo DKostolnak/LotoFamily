@@ -8,6 +8,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { useGame } from '@/lib/GameContext';
 import {
     getPlayerStats,
     getMatchHistory,
@@ -26,6 +27,10 @@ interface PlayerStatsPageProps {
 }
 
 export default function PlayerStatsPage({ onClose, t }: PlayerStatsPageProps) {
+    const { rp, tier } = useGame();
+    // ...
+    // Main Stats Grid
+    // ...
     const stats = useMemo(() => getPlayerStats(), []);
     const history = useMemo(() => getMatchHistory(), []);
     const winRate = useMemo(() => getWinRate(stats), [stats]);
@@ -126,6 +131,16 @@ export default function PlayerStatsPage({ onClose, t }: PlayerStatsPageProps) {
                     marginBottom: '24px'
                 }}>
                     {/* Games Played */}
+                    {/* Rank Tier */}
+                    <div style={statBoxStyle}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#b9f2ff' }}>
+                            {tier || 'Bronze'}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#8b6b4a', textTransform: 'uppercase', fontWeight: 700 }}>
+                            {rp || 0} RP
+                        </div>
+                    </div>
+
                     <div style={statBoxStyle}>
                         <div style={{ fontSize: '2rem', fontWeight: 900, color: '#ffd700' }}>
                             {stats.gamesPlayed}

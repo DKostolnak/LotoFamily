@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { ServerToClientEvents, ClientToServerEvents } from '../../lib/types';
 import * as persistence from '../persistence';
+import { getTier } from '../../lib/ranking';
 
 type Context = {
     io: Server<ClientToServerEvents, ServerToClientEvents>;
@@ -22,8 +23,11 @@ export function handlePurchaseItem(
         persistence.addInventoryItem(token, itemId);
         const player = persistence.getPlayer(token);
         if (player) {
+            const tier = getTier(player.rp || 0);
             socket.emit('economy:update', {
                 coins: player.coins,
+                rp: player.rp || 0,
+                tier: tier.name,
                 inventory: player.inventory
             });
         }
@@ -35,15 +39,21 @@ export function handlePurchaseItem(
 export function handleSyncEconomy({ socket }: Context, token: string) {
     const player = persistence.getPlayer(token);
     if (player) {
+        const tier = getTier(player.rp || 0);
         socket.emit('economy:update', {
             coins: player.coins,
+            rp: player.rp || 0,
+            tier: tier.name,
             inventory: player.inventory
         });
     } else {
         // New player or lost session, create default
         const newPlayer = persistence.createOrUpdatePlayer(token, {});
+        const tier = getTier(newPlayer.rp || 0);
         socket.emit('economy:update', {
             coins: newPlayer.coins,
+            rp: newPlayer.rp || 0,
+            tier: tier.name,
             inventory: newPlayer.inventory
         });
     }
@@ -66,6 +76,12 @@ export function handleDailyBonus({ socket }: Context, token: string) {
     persistence.addCoins(token, 50);
     const updated = persistence.getPlayer(token);
     if (updated) {
-        socket.emit('economy:update', { coins: updated.coins, inventory: updated.inventory });
+        const tier = getTier(updated.rp || 0);
+        socket.emit('economy:update', {
+            coins: updated.coins,
+            rp: updated.rp || 0,
+            tier: tier.name,
+            inventory: updated.inventory
+        });
     }
 }

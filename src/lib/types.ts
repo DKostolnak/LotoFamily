@@ -211,7 +211,7 @@ export type ServerToClientEvents = {
   /** Server info (URL for reconnection) */
   'server:info': (url: string) => void;
   /** Economy Update (coins, inventory) */
-  'economy:update': (data: { coins: number; inventory: string[] }) => void;
+  'economy:update': (data: { coins: number; rp: number; tier: string; inventory: string[] }) => void;
   /** Generic Error */
   'error': (error: { message: string }) => void;
 };

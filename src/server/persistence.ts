@@ -8,7 +8,8 @@ export interface PersistentPlayer {
     id: string; // Token
     name: string;
     coins: number;
-    inventory: string[];
+    rp: number;
+    inventory: string[]
     stats: {
         gamesPlayed: number;
         wins: number;
@@ -54,6 +55,7 @@ export function createOrUpdatePlayer(token: string, data: Partial<PersistentPlay
         id: token,
         name: 'Player',
         coins: 100, // Starting bonus
+        rp: 0,
         inventory: [],
         stats: { gamesPlayed: 0, wins: 0, flats: 0 },
         lastLogin: Date.now()
@@ -90,4 +92,12 @@ export function addInventoryItem(token: string, itemId: string): boolean {
         return true;
     }
     return false;
+}
+
+export function addRp(token: string, amount: number): number {
+    const player = getPlayer(token);
+    if (!player) return 0;
+    player.rp = (player.rp || 0) + amount;
+    savePersistence();
+    return player.rp;
 }

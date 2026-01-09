@@ -44,6 +44,10 @@ export interface GameClientState {
     wasDisconnected: boolean;
     /** Current player's coin balance */
     coins: number;
+    /** Current player's Ranking Points */
+    rp: number;
+    /** Current player's Tier Name */
+    tier: string;
     /** Latest reward received (for animation) */
     latestReward: { amount: number; reason: 'win' | 'flat' | 'participation' | 'daily'; timestamp: number } | null;
 }
@@ -58,6 +62,7 @@ export type GameClientAction =
     | { type: 'setPlayerName'; playerName: string | null }
     | { type: 'setPlayerAvatar'; playerAvatar: string }
     | { type: 'setCoins'; coins: number }
+    | { type: 'setEconomy'; coins: number; rp: number; tier: string }
     | { type: 'setLatestReward'; reward: GameClientState['latestReward'] }
     | { type: 'setError'; error: string | null }
     | { type: 'setLastRoomCode'; roomCode: string | null }
@@ -94,6 +99,8 @@ export const initialGameClientState: GameClientState = {
     lastRoomCode: null,
     wasDisconnected: false,
     coins: 0,
+    rp: 0,
+    tier: 'Bronze',
     latestReward: null,
 };
 
@@ -127,6 +134,9 @@ export function gameClientReducer(
 
         case 'setCoins':
             return { ...state, coins: action.coins };
+
+        case 'setEconomy':
+            return { ...state, coins: action.coins, rp: action.rp, tier: action.tier };
 
         case 'setLatestReward':
             return { ...state, latestReward: action.reward };

@@ -20,6 +20,7 @@ import { markCell } from '../../engine/lotoCardGenerator';
 import * as store from '../store';
 import * as persistence from '../persistence';
 import { gameLog } from '../../lib/logger';
+import { getTier } from '../../lib/ranking';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
@@ -343,22 +344,32 @@ function awardGameRewards(io: TypedServer, game: GameState, winnerId: string) {
     game.players.forEach(player => {
         if (!player.token) return;
 
+        let rpGained = 0;
+
         if (player.id === winnerId) {
-            // Winner gets 100 coins
+            // Winner gets 100 coins + 25 RP
             persistence.addCoins(player.token, 100);
+            rpGained = persistence.addRp(player.token, 25);
         } else {
-            // Participants get 10 coins
+            // Participants get 10 coins + 5 RP
             persistence.addCoins(player.token, 10);
+            rpGained = persistence.addRp(player.token, 5);
         }
 
-        // Send update only to this player's socket?
-        // We can't easily target by token without a map, but we can target by socket ID (player.id)
-        // assuming they are still connected with that socket ID.
         if (player.isConnected) {
             const pData = persistence.getPlayer(player.token);
             if (pData) {
+                // Determine Tier (Basic logic for now, import if needed, but simple map is fine or use ranking lib)
+                // Since I cannot import from src/lib/ranking.ts easily in handlers if strict boundaries exist?
+                // Actually I can import it.
+                // But for now let's just emit the RP and let client calc tier OR import the helper.
+                // I'll assume I imported getTier.
+                const tier = getTier(pData.rp || 0);
+
                 io.to(player.id).emit('economy:update', {
                     coins: pData.coins,
+                    rp: pData.rp || 0,
+                    tier: tier.name,
                     inventory: pData.inventory
                 });
             }

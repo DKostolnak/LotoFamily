@@ -48,6 +48,8 @@ interface GameContextType {
     playerName: string | null;
     playerAvatar: string;
     coins: number;
+    rp: number;
+    tier: string;
     latestReward: { amount: number; reason: 'win' | 'flat' | 'participation' | 'daily'; timestamp: number } | null;
     gameState: GameState | null;
     isConnected: boolean;
@@ -172,9 +174,13 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             socket.emit('economy:sync', tokenRef.current);
         }
 
-        const handleEconomyUpdate = (data: { coins: number; inventory: string[] }) => {
-            dispatch({ type: 'setCoins', coins: data.coins });
-            // TODO: Dispatch inventory update if we had it in reducer
+        const handleEconomyUpdate = (data: { coins: number; rp: number; tier: string; inventory: string[] }) => {
+            dispatch({
+                type: 'setEconomy',
+                coins: data.coins,
+                rp: data.rp,
+                tier: data.tier
+            });
             console.log('Economy updated:', data);
         };
 
@@ -410,6 +416,8 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             playerName: clientState.playerName,
             playerAvatar: clientState.playerAvatar,
             coins: clientState.coins,
+            rp: clientState.rp,
+            tier: clientState.tier,
             latestReward: clientState.latestReward,
             gameState: clientState.gameState,
             isConnected,
@@ -443,6 +451,8 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             clientState.playerName,
             clientState.playerAvatar,
             clientState.coins,
+            clientState.rp,
+            clientState.tier,
             clientState.latestReward,
             clientState.gameState,
             clientState.error,
