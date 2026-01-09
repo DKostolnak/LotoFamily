@@ -123,8 +123,9 @@ export default function WaitingLobby({
     };
 
     const cardStyle: React.CSSProperties = {
+        position: 'relative', // Vital for capturing the absolute back button
         width: '100%',
-        maxWidth: '480px',
+        maxWidth: '420px',
         backgroundColor: 'rgba(26, 17, 9, 0.95)',
         border: '4px solid #8b6b4a',
         borderRadius: '24px',
@@ -208,7 +209,34 @@ export default function WaitingLobby({
             <div style={{ ...scrollContainerStyle, position: 'relative', zIndex: 10 }}>
                 {/* Room Card */}
                 <div style={cardStyle}>
-                    <div style={{ width: '100%' }}>
+                    {/* Back Arrow Button */}
+                    <button
+                        onClick={() => { playClickSound(); onLeaveGame(); }}
+                        style={{
+                            position: 'absolute',
+                            top: '20px',
+                            left: '20px',
+                            width: '40px',
+                            height: '40px',
+                            background: 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)',
+                            borderRadius: '8px',
+                            border: '2px solid #5a4025',
+                            boxShadow: '0 2px 0 #3d2814, inset 0 1px 0 rgba(255,255,255,0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            zIndex: 20,
+                            color: '#3d2814',
+                        }}
+                        title={t.back}
+                    >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                    </button>
+
+                    <div style={{ width: '100%', marginTop: '48px' }}>
                         <p style={sectionTitleStyle}>{t.roomCodeLabel}</p>
                         <div style={codeBoxStyle}>
                             <h1 className="text-5xl font-mono font-black text-white tracking-widest drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] mb-4 uppercase" style={{ textShadow: '0 0 15px rgba(255, 215, 0, 0.6)' }}>
@@ -361,13 +389,7 @@ export default function WaitingLobby({
                             </div>
                         )}
 
-                        <button
-                            onClick={() => { playClickSound(); onLeaveGame(); }}
-                            style={{ ...woodBtnStyle, marginTop: '16px' }}
-                            className="active:translate-y-1 active:border-b-0 shadow-lg"
-                        >
-                            {t.back}
-                        </button>
+
                     </div>
                 </div>
             </div>

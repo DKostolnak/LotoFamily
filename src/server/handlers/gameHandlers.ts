@@ -79,36 +79,39 @@ export function stopAutoCall(roomCode: string): void {
  * Only shuffles unmarked cells - marked chips stay in place
  */
 function shuffleCardPositions(card: LotoCard): LotoCard {
-    // Collect all unmarked cell values (the numbers that will be shuffled)
-    const unmarkedValues: (number | null)[] = [];
-    const unmarkedPositions: { row: number; col: number }[] = [];
-
-    // Find all unmarked cells and their values
-    for (let row = 0; row < card.grid.length; row++) {
-        for (let col = 0; col < card.grid[row].length; col++) {
-            const cell = card.grid[row][col];
-            if (!cell.isMarked) {
-                unmarkedValues.push(cell.value);
-                unmarkedPositions.push({ row, col });
-            }
-        }
-    }
-
-    // Fisher-Yates shuffle the unmarked values
-    for (let i = unmarkedValues.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [unmarkedValues[i], unmarkedValues[j]] = [unmarkedValues[j], unmarkedValues[i]];
-    }
-
-    // Create a deep copy of the grid
+    // Create a deep copy of the grid first
     const newGrid: LotoCardGrid = card.grid.map(row =>
         row.map(cell => ({ ...cell }))
     ) as LotoCardGrid;
 
-    // Apply shuffled values back to unmarked positions
-    unmarkedPositions.forEach((pos, index) => {
-        newGrid[pos.row][pos.col].value = unmarkedValues[index];
-    });
+    const numCols = card.grid[0].length;
+    const numRows = card.grid.length;
+
+    // Iterate column by column to preserve number ranges (1-9, 10-19, etc.)
+    for (let col = 0; col < numCols; col++) {
+        const unmarkedValues: (number | null)[] = [];
+        const unmarkedPositions: { row: number }[] = [];
+
+        // Collect unmarked cells in this column
+        for (let row = 0; row < numRows; row++) {
+            const cell = newGrid[row][col];
+            if (!cell.isMarked) {
+                unmarkedValues.push(cell.value);
+                unmarkedPositions.push({ row }); // Col is constant
+            }
+        }
+
+        // Fisher-Yates shuffle the values within this column
+        for (let i = unmarkedValues.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [unmarkedValues[i], unmarkedValues[j]] = [unmarkedValues[j], unmarkedValues[i]];
+        }
+
+        // Apply back to the positions
+        unmarkedPositions.forEach((pos, index) => {
+            newGrid[pos.row][col].value = unmarkedValues[index];
+        });
+    }
 
     return { ...card, grid: newGrid };
 }
@@ -236,17 +239,22 @@ export function handleMarkCell(
             let currentGame = store.getGame(roomCode);
             if (!currentGame || currentGame.phase !== 'playing') return;
 
-            // Shuffle all players' cards
-            const shuffledPlayers = currentGame.players.map(p => ({
-                ...p,
-                cards: p.cards.map(c => shuffleCardPositions(c))
-            }));
+            // Shuffle only the current player's cards
+            const shuffledPlayers = currentGame.players.map(p => {
+                if (p.id === socket.id) {
+                    return {
+                        ...p,
+                        cards: p.cards.map(c => shuffleCardPositions(c))
+                    };
+                }
+                return p;
+            });
 
             currentGame = { ...currentGame, players: shuffledPlayers };
             store.setGame(roomCode, currentGame);
             io.to(roomCode).emit('game:state', currentGame);
 
-            gameLog.info(`Crazy Mode shuffle triggered in ${roomCode}`);
+            gameLog.info(`Crazy Mode shuffle triggered for ${socket.id} in ${roomCode}`);
         }, 800); // 800ms delay - enough to see the chip placed, but keeps pace fast
     }
 }

@@ -130,20 +130,24 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         top: 0,
         left: 0,
         width: '100%',
-        height: '100%',
+        height: '100dvh', // Use dynamic viewport height
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        // Start alignment allows scrolling if content is too tall
         justifyContent: 'center',
         backgroundImage: 'url(/assets/wood-seamless.png)',
         backgroundSize: '256px 256px',
         backgroundRepeat: 'repeat',
-        backgroundColor: '#2d1f10', // Fallback color
+        backgroundColor: '#2d1f10',
         zIndex: 1000,
+        overflowY: 'auto', // Enable vertical scrolling
+        padding: '16px', // Safety padding
+        WebkitOverflowScrolling: 'touch', // Smooth scroll iOS
     };
 
     const overlayStyle: React.CSSProperties = {
-        position: 'absolute',
+        position: 'fixed', // Fixed to cover background even when scrolling
         top: 0,
         left: 0,
         width: '100%',
@@ -155,17 +159,18 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
     const cardStyle: React.CSSProperties = {
         position: 'relative',
         zIndex: 10,
-        width: '90%',
-        maxWidth: '480px',
-        padding: '32px',
-        backgroundColor: 'rgba(26, 17, 9, 0.95)', // Dark wood tint
+        width: '100%',
+        maxWidth: '420px', // Slightly narrower for better guaranteed fit
+        padding: '24px', // Reduced from 32px
+        backgroundColor: 'rgba(26, 17, 9, 0.95)',
         border: '4px solid #8b6b4a',
         borderRadius: '24px',
         boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 0 2px rgba(0,0,0,0.5)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '24px',
+        gap: '20px',
+        margin: 'auto', // Flexbox centering magic
     };
 
     const buttonStyle: React.CSSProperties = {
@@ -217,36 +222,35 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         <main style={mainStyle}>
             <div style={overlayStyle} />
 
-            {/* Back Button matching GameHeader style */}
-            {mode !== 'menu' && (
-                <button
-                    type="button"
-                    onClick={() => onModeChange('menu')}
-                    style={{
-                        position: 'absolute',
-                        top: '24px',
-                        left: '24px',
-                        width: '40px',
-                        height: '40px',
-                        background: 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)',
-                        borderRadius: '8px',
-                        border: '2px solid #5a4025',
-                        boxShadow: '0 2px 0 #3d2814, inset 0 1px 0 rgba(255,255,255,0.3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        zIndex: 20,
-                        color: '#3d2814',
-                    }}
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                    </svg>
-                </button>
-            )}
-
             <div style={cardStyle}>
+                {/* Back Button - Integrated into Card */}
+                {mode !== 'menu' && (
+                    <button
+                        type="button"
+                        onClick={() => onModeChange('menu')}
+                        style={{
+                            position: 'absolute',
+                            top: '20px',
+                            left: '20px',
+                            width: '40px',
+                            height: '40px',
+                            background: 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)',
+                            borderRadius: '8px',
+                            border: '2px solid #5a4025',
+                            boxShadow: '0 2px 0 #3d2814, inset 0 1px 0 rgba(255,255,255,0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            zIndex: 20,
+                            color: '#3d2814',
+                        }}
+                    >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                    </button>
+                )}
                 {/* Header */}
                 <div style={{ textAlign: 'center', width: '100%' }}>
                     <div style={{ fontSize: '4rem', marginBottom: '8px', lineHeight: 1 }}>🎱</div>

@@ -7,19 +7,15 @@ import { useGame } from '@/lib/GameContext';
 import { translations } from '@/lib/translations';
 
 // Dynamically import heavy components to reduce initial bundle
-const WaitingLobby = dynamic(() => import('@/components/WaitingLobby'), {
-  loading: () => <LoadingSpinner />,
-});
-const PlayerGameScreen = dynamic(() => import('@/components/PlayerGameScreen'), {
-  loading: () => <LoadingSpinner />,
-});
-const WinnerCelebration = dynamic(() => import('@/components/WinnerCelebration'), {
-  loading: () => <LoadingSpinner />,
-});
-const GameAudioPlayer = dynamic(() => import('@/components/GameAudioPlayer'), {
-  ssr: false, // Audio doesn't need SSR
-});
+import WaitingLobby from '@/components/WaitingLobby';
+import PlayerGameScreen from '@/components/PlayerGameScreen';
+import WinnerCelebration from '@/components/WinnerCelebration';
+import GameAudioPlayer from '@/components/GameAudioPlayer';
 
+/*
+ * LoadingSpinner removed as we are now statically importing components
+ * to avoid UI delays during critical game phase transitions.
+ */
 function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center h-screen bg-[var(--color-bg)]">
@@ -162,6 +158,7 @@ export default function Home() {
         {audioPlayer}
         <WinnerCelebration
           winner={winner}
+          players={gameState.players}
           isHost={isHost}
           onNewGame={handleNewGame}
           onBackToLobby={handleBackToLobby}
