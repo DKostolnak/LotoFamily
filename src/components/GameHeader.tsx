@@ -221,57 +221,74 @@ function GameHeader({
                 }}
             >
                 {/* Row 1: Controls & Current Number */}
+                {/* Left Controls: Back & Sound - ABSOLUTE POSITIONED */}
                 <div
-                    className="relative w-full flex items-start"
+                    className="absolute z-[100] flex items-center gap-3"
+                    style={{
+                        top: 'max(12px, env(safe-area-inset-top))',
+                        left: 'max(12px, env(safe-area-inset-left))',
+                    }}
+                >
+                    <HeaderButton onClick={handleLeaveButtonClick} ariaLabel="Leave game">
+                        <BackArrowIcon />
+                    </HeaderButton>
+
+                    <HeaderButton onClick={handleSoundToggle} ariaLabel="Toggle sound">
+                        {isSoundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
+                    </HeaderButton>
+                </div>
+
+                {/* Right Controls: Connection & Coins - ABSOLUTE POSITIONED */}
+                <div
+                    className="z-[100] flex items-center gap-3"
+                    style={{
+                        position: 'absolute',
+                        top: 'max(12px, env(safe-area-inset-top))',
+                        right: 'max(12px, env(safe-area-inset-right))',
+                    }}
+                >
+                    {/* Connection Status Indicator */}
+                    <div
+                        title={isConnected ? 'Connected' : 'Reconnecting...'}
+                        style={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: '50%',
+                            backgroundColor: isConnected ? '#4ade80' : '#ef4444',
+                            border: '1px solid rgba(0,0,0,0.2)',
+                            boxShadow: isConnected
+                                ? '0 0 10px rgba(74, 222, 128, 0.8)'
+                                : '0 0 10px rgba(239, 68, 68, 0.8)',
+                            transition: 'background-color 0.3s, box-shadow 0.3s',
+                            animation: isConnected ? undefined : 'pulse 1.5s ease-in-out infinite',
+                        }}
+                    />
+
+                    {/* Coin Badge */}
+                    <div style={{
+                        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        border: '1px solid rgba(255, 215, 0, 0.5)',
+                        height: 40,
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
+                    }}>
+                        <span style={{ fontSize: '1.2rem' }}>💰</span>
+                        <span style={{ color: '#ffd700', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '1.1rem' }}>{coins}</span>
+                    </div>
+                </div>
+
+                {/* Row 1: Spacer for Height & Current Number */}
+                <div
+                    className="relative w-full"
                     style={{
                         height: HEADER_HEIGHT,
                         borderBottom: '2px solid rgba(0,0,0,0.4)',
-                        paddingLeft: 'max(12px, env(safe-area-inset-left))',
-                        paddingTop: 'max(12px, env(safe-area-inset-top))',
                     }}
                 >
-                    {/* Left Controls: Back & Sound */}
-                    <div className="z-[100] flex items-center gap-3">
-                        <HeaderButton onClick={handleLeaveButtonClick} ariaLabel="Leave game">
-                            <BackArrowIcon />
-                        </HeaderButton>
-
-                        <HeaderButton onClick={handleSoundToggle} ariaLabel="Toggle sound">
-                            {isSoundEnabled ? <SoundOnIcon /> : <SoundOffIcon />}
-                        </HeaderButton>
-
-                        {/* Connection Status Indicator */}
-                        <div
-                            title={isConnected ? 'Connected' : 'Reconnecting...'}
-                            style={{
-                                width: 10,
-                                height: 10,
-                                borderRadius: '50%',
-                                backgroundColor: isConnected ? '#4ade80' : '#ef4444',
-                                boxShadow: isConnected
-                                    ? '0 0 8px rgba(74, 222, 128, 0.8)'
-                                    : '0 0 8px rgba(239, 68, 68, 0.8)',
-                                transition: 'background-color 0.3s, box-shadow 0.3s',
-                                animation: isConnected ? undefined : 'pulse 1.5s ease-in-out infinite',
-                            }}
-                        />
-
-                        {/* Coin Badge */}
-                        <div style={{
-                            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                            padding: '4px 8px',
-                            borderRadius: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            border: '1px solid rgba(255, 215, 0, 0.3)',
-                            height: 32,
-                        }}>
-                            <span style={{ fontSize: '1rem' }}>💰</span>
-                            <span style={{ color: '#ffd700', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '0.9rem' }}>{coins}</span>
-                        </div>
-                    </div>
-
                     {/* Center: Game Numbers Display */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
                         <GameNumbersDisplay

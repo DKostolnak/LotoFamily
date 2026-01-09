@@ -76,6 +76,7 @@ interface GameContextType {
     refreshEconomy: () => void;
     purchaseItem: (itemId: string, cost: number) => void;
     claimDailyBonus: () => void;
+    clearLatestReward: () => void;
 }
 
 interface GameProviderProps {
@@ -405,6 +406,10 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         }
     }, [socket]);
 
+    const clearLatestReward = useCallback(() => {
+        dispatch({ type: 'setLatestReward', reward: null });
+    }, []);
+
     // ========================================================================
     // CONTEXT VALUE
     // ========================================================================
@@ -444,6 +449,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             refreshEconomy,
             purchaseItem,
             claimDailyBonus,
+            clearLatestReward,
         }),
         [
             socket,
@@ -479,6 +485,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             refreshEconomy,
             purchaseItem,
             claimDailyBonus,
+            clearLatestReward,
         ],
     );
 

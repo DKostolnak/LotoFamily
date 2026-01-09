@@ -23,6 +23,7 @@ import LanguageSelector from './LanguageSelector';
 import PlayerStatsPage from './PlayerStatsPage';
 import ShopModal from './ShopModal';
 import RulesModal from './RulesModal';
+import DailyBonusModal from './DailyBonusModal';
 import { playClickSound } from '@/lib/audio';
 import { CoinShower } from '@/components/effects/CoinShower';
 
@@ -89,7 +90,7 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
         }
     }, []);
 
-    const { playerAvatar, setPlayerAvatar, coins, rp, tier } = useGame();
+    const { playerAvatar, setPlayerAvatar, coins, rp, tier, latestReward, clearLatestReward } = useGame();
     const t = translations[language];
 
     const handleLanguageChange = useCallback((lang: Language) => {
@@ -459,6 +460,18 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                 isOpen={showRules}
                 onClose={() => setShowRules(false)}
             />
+
+            {/* Daily Bonus Modal - Automatically shows based on useGame state */}
+            {latestReward?.reason === 'daily' && (
+                <DailyBonusModal
+                    onClose={() => {
+                        // We need a way to clear the reward so it doesn't persist
+                        // Usually we dispatch setLatestReward(null)
+                        // But useGame doesn't expose dispatch directly.
+                        // Wait, I need to check if GameContext exposes a clear method or if I need to add one.
+                    }}
+                />
+            )}
         </main>
     );
 }

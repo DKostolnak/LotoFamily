@@ -84,8 +84,8 @@ export const CoinShower = memo(function CoinShower() {
                 }
             `}} />
 
-            {/* Reward Text */}
-            {latestReward && (
+            {/* Reward Text (Except Daily Bonus which uses Modal) */}
+            {latestReward && latestReward.reason !== 'daily' && (
                 <div style={{
                     position: 'absolute',
                     top: '20%',
@@ -101,8 +101,7 @@ export const CoinShower = memo(function CoinShower() {
                     <div>+{latestReward.amount}</div>
                     <div style={{ fontSize: '1.5rem', color: '#fff' }}>
                         {latestReward.reason === 'win' ? 'Winner!' :
-                            latestReward.reason === 'daily' ? 'Daily Bonus!' :
-                                latestReward.reason === 'participation' ? 'Good Game!' : 'Bonus!'}
+                            latestReward.reason === 'participation' ? 'Good Game!' : 'Bonus!'}
                     </div>
                 </div>
             )}
