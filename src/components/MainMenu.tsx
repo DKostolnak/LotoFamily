@@ -40,7 +40,7 @@ interface MainMenuProps {
 // COMPONENT
 // ============================================================================
 
-import { WoodenCard, WoodenButton, WoodenInput } from '@/components/common';
+import { WoodenCard, WoodenButton, WoodenInput, CoinBadge, RankBadge } from '@/components/common';
 
 // ... (keep others)
 
@@ -207,38 +207,28 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                 )}
 
                 {/* Coin Badge (Top Right of Card) */}
-                <div style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                    padding: '4px 8px',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                }}>
-                    <span style={{ fontSize: '1.2rem' }}>💰</span>
-                    <span style={{ color: '#ffd700', fontWeight: 'bold', fontFamily: 'monospace' }}>{coins}</span>
-                </div>
+                <CoinBadge
+                    coins={coins}
+                    size="sm"
+                    className=""
+                    style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: '12px',
+                    }}
+                />
 
                 {/* Rank Badge (Top Right of Card, below coins) */}
-                <div style={{
-                    position: 'absolute',
-                    top: '52px',
-                    right: '12px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                    padding: '4px 8px',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                }}>
-                    <span style={{ fontSize: '1.0rem' }}>🏆</span>
-                    <span style={{ color: '#e8d4b8', fontWeight: 'bold', fontSize: '0.9rem' }}>{tier || 'Bronze'}</span>
-                </div>
+                <RankBadge
+                    tier={tier}
+                    size="sm"
+                    className=""
+                    style={{
+                        position: 'absolute',
+                        top: '52px',
+                        right: '12px',
+                    }}
+                />
 
                 {/* Header */}
                 <div style={{ textAlign: 'center', width: '100%' }}>

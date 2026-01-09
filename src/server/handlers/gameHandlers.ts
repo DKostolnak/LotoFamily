@@ -21,6 +21,7 @@ import * as store from '../store';
 import * as persistence from '../persistence';
 import { gameLog } from '../../lib/logger';
 import { getTier } from '../../lib/ranking';
+import { emitEconomyUpdate, emitEconomyUpdateToPlayer } from '../utils/economyEmitter';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
@@ -309,16 +310,7 @@ export function handleClaimFlat(
         // Award Flat Coins (30)
         if (player.token) {
             persistence.addCoins(player.token, 30);
-            const pData = persistence.getPlayer(player.token);
-            if (pData) {
-                const tier = getTier(pData.rp || 0);
-                socket.emit('economy:update', {
-                    coins: pData.coins,
-                    rp: pData.rp || 0,
-                    tier: tier.name,
-                    inventory: pData.inventory
-                });
-            }
+            emitEconomyUpdate(socket, player.token);
         }
         io.to(roomCode).emit('game:flatClaimed', socket.id, flatType);
     }
@@ -360,22 +352,7 @@ function awardGameRewards(io: TypedServer, game: GameState, winnerId: string) {
         }
 
         if (player.isConnected) {
-            const pData = persistence.getPlayer(player.token);
-            if (pData) {
-                // Determine Tier (Basic logic for now, import if needed, but simple map is fine or use ranking lib)
-                // Since I cannot import from src/lib/ranking.ts easily in handlers if strict boundaries exist?
-                // Actually I can import it.
-                // But for now let's just emit the RP and let client calc tier OR import the helper.
-                // I'll assume I imported getTier.
-                const tier = getTier(pData.rp || 0);
-
-                io.to(player.id).emit('economy:update', {
-                    coins: pData.coins,
-                    rp: pData.rp || 0,
-                    tier: tier.name,
-                    inventory: pData.inventory
-                });
-            }
+            emitEconomyUpdateToPlayer(io, player.id, player.token);
         }
     });
 }

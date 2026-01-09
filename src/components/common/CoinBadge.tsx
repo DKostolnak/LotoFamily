@@ -15,12 +15,14 @@ interface CoinBadgeProps {
     size?: 'sm' | 'md';
     /** Optional additional className */
     className?: string;
+    /** Optional inline styles (merged with internal styles) */
+    style?: React.CSSProperties;
 }
 
 /**
  * Displays a coin amount with icon in a styled badge
  */
-export function CoinBadge({ coins, size = 'md', className = '' }: CoinBadgeProps) {
+export function CoinBadge({ coins, size = 'md', className = '', style = {} }: CoinBadgeProps) {
     const isSmall = size === 'sm';
 
     return (
@@ -34,6 +36,7 @@ export function CoinBadge({ coins, size = 'md', className = '' }: CoinBadgeProps
                 alignItems: 'center',
                 gap: isSmall ? '4px' : '8px',
                 border: `1px solid rgba(255, 215, 0, 0.3)`,
+                ...style,
             }}
         >
             <span style={{ fontSize: isSmall ? '1rem' : '1.2rem' }}>💰</span>

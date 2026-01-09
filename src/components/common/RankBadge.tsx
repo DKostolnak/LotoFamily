@@ -14,12 +14,14 @@ interface RankBadgeProps {
     size?: 'sm' | 'md';
     /** Optional additional className */
     className?: string;
+    /** Optional inline styles (merged with internal styles) */
+    style?: React.CSSProperties;
 }
 
 /**
  * Displays rank/tier with trophy icon in a styled badge
  */
-export function RankBadge({ tier, size = 'md', className = '' }: RankBadgeProps) {
+export function RankBadge({ tier, size = 'md', className = '', style = {} }: RankBadgeProps) {
     const isSmall = size === 'sm';
 
     return (
@@ -33,6 +35,7 @@ export function RankBadge({ tier, size = 'md', className = '' }: RankBadgeProps)
                 alignItems: 'center',
                 gap: isSmall ? '4px' : '8px',
                 border: '1px solid rgba(255, 215, 0, 0.3)',
+                ...style,
             }}
         >
             <span style={{ fontSize: isSmall ? '0.9rem' : '1rem' }}>🏆</span>
