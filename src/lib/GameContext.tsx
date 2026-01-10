@@ -51,6 +51,7 @@ interface GameContextType {
     rp: number;
     tier: string;
     latestReward: { amount: number; reason: 'win' | 'flat' | 'participation' | 'daily'; timestamp: number } | null;
+    inventory: string[];
     gameState: GameState | null;
     isConnected: boolean;
     isLoading: boolean;
@@ -77,6 +78,12 @@ interface GameContextType {
     purchaseItem: (itemId: string, cost: number) => void;
     claimDailyBonus: () => void;
     clearLatestReward: () => void;
+    activeTheme: string;
+    setActiveTheme: (themeId: string) => void;
+    // Achievements
+    achievements: string[];
+    pendingAchievement: { id: string; name: string; icon: string; description: string } | null;
+    dismissAchievement: () => void;
 }
 
 interface GameProviderProps {
@@ -147,13 +154,24 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
     // ECONOMY & REWARDS
     // ========================================================================
 
-    // Initialize coins and check daily bonus
-    useEffect(() => {
-        // Load initial balance
-        const balance = economyService.getBalance();
-        dispatch({ type: 'setCoins', coins: balance });
+    // Initialize coins, inventory, and theme
+    const [activeTheme, setActiveThemeState] = useState('classic');
+    // Achievement state
+    const [achievements, setAchievements] = useState<string[]>([]);
+    const [pendingAchievement, setPendingAchievement] = useState<{
+        id: string; name: string; icon: string; description: string
+    } | null>(null);
 
-        // Check daily bonus
+    useEffect(() => {
+        // Load initial balance, inventory, and theme
+        const balance = economyService.getBalance();
+        const inventory = economyService.getInventory();
+        const savedTheme = economyService.getActiveTheme();
+
+        dispatch({ type: 'setCoins', coins: balance });
+        setActiveThemeState(savedTheme);
+
+        // Also check daily bonus
         const bonus = economyService.checkDailyBonus();
         if (bonus > 0) {
             dispatch({ type: 'setCoins', coins: economyService.getBalance() });
@@ -180,8 +198,13 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
                 type: 'setEconomy',
                 coins: data.coins,
                 rp: data.rp,
-                tier: data.tier
+                tier: data.tier,
+                inventory: data.inventory
             });
+
+            // Sync local storage with server data
+            economyService.syncWallet(data.coins, data.inventory);
+
             console.log('Economy updated:', data);
         };
 
@@ -209,10 +232,19 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         socket.on('game:winner', handleWinner);
         socket.on('game:flatClaimed', handleFlat);
 
+        // Achievement unlock handler
+        const handleAchievementUnlocked = (data: { id: string; name: string; icon: string; description: string }) => {
+            setAchievements(prev => [...prev, data.id]);
+            setPendingAchievement(data);
+            console.log('Achievement unlocked:', data.name);
+        };
+        socket.on('achievement:unlocked', handleAchievementUnlocked);
+
         return () => {
             socket.off('economy:update', handleEconomyUpdate);
             socket.off('game:winner', handleWinner);
             socket.off('game:flatClaimed', handleFlat);
+            socket.off('achievement:unlocked', handleAchievementUnlocked);
         };
     }, [socket, clientState.playerId]);
 
@@ -427,6 +459,16 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         dispatch({ type: 'setLatestReward', reward: null });
     }, []);
 
+    const setActiveTheme = useCallback((themeId: string) => {
+        if (economyService.setActiveTheme(themeId)) {
+            setActiveThemeState(economyService.getActiveTheme());
+        }
+    }, []);
+
+    const dismissAchievement = useCallback(() => {
+        setPendingAchievement(null);
+    }, []);
+
     // ========================================================================
     // CONTEXT VALUE
     // ========================================================================
@@ -441,6 +483,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             rp: clientState.rp,
             tier: clientState.tier,
             latestReward: clientState.latestReward,
+            inventory: clientState.inventory,
             gameState: clientState.gameState,
             isConnected,
             isLoading,
@@ -467,6 +510,11 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             purchaseItem,
             claimDailyBonus,
             clearLatestReward,
+            activeTheme,
+            setActiveTheme,
+            achievements,
+            pendingAchievement,
+            dismissAchievement,
         }),
         [
             socket,
@@ -477,6 +525,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             clientState.rp,
             clientState.tier,
             clientState.latestReward,
+            clientState.inventory,
             clientState.gameState,
             clientState.error,
             isConnected,
@@ -503,6 +552,11 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
             purchaseItem,
             claimDailyBonus,
             clearLatestReward,
+            activeTheme,
+            setActiveTheme,
+            achievements,
+            pendingAchievement,
+            dismissAchievement,
         ],
     );
 

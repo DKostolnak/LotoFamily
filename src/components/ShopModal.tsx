@@ -10,27 +10,63 @@ interface ShopModalProps {
     onClose: () => void;
 }
 
-export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
-    const { coins, refreshEconomy } = useGame();
-    // Force re-render on purchase
-    const [inventory, setInventory] = useState<string[]>([]);
-    const [activeCategory, setActiveCategory] = useState<'all' | 'avatar'>('all'); // Expandable for 'skin' later
+// Mini theme preview component
+function ThemePreview({ themeClass }: { themeClass: string }) {
+    return (
+        <div
+            className="loto-card"
+            data-theme={themeClass}
+            style={{
+                padding: '4px',
+                borderRadius: '6px',
+                width: '100%',
+            }}
+        >
+            <div
+                className="loto-card-grid"
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '1px',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                }}
+            >
+                {/* 3x3 mini grid preview */}
+                {[1, null, 2, null, 3, null, 4, null, 5].map((val, i) => (
+                    <div
+                        key={i}
+                        className={`loto-cell ${val === null ? 'loto-cell--empty' : ''}`}
+                        style={{
+                            aspectRatio: '1',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                        }}
+                    >
+                        {val}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
-    // Sync inventory on open/purchase
-    useEffect(() => {
-        if (isOpen) {
-            setInventory(economyService.getInventory());
-        }
-    }, [isOpen, coins]); // coins change usually implies purchase or refresh
+export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
+    const { coins, inventory, purchaseItem, activeTheme, setActiveTheme } = useGame();
+    const [activeCategory, setActiveCategory] = useState<'all' | 'avatar' | 'theme'>('all');
 
     const handlePurchase = (item: ShopItem) => {
         playClickSound();
-        const success = economyService.purchaseItem(item.id, item.price);
-        if (success) {
-            // Update local state to reflect change immediately
-            setInventory(economyService.getInventory());
-            // Refresh global coin balance
-            refreshEconomy();
+        purchaseItem(item.id, item.price);
+    };
+
+    const handleEquipTheme = (item: ShopItem) => {
+        playClickSound();
+        if (item.themeClass) {
+            setActiveTheme(item.id);
         }
     };
 
@@ -73,7 +109,7 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
 
                 {/* Categories */}
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                    {(['all', 'avatar'] as const).map((cat) => (
+                    {(['all', 'avatar', 'theme'] as const).map((cat) => (
                         <button
                             key={cat}
                             onClick={() => { playClickSound(); setActiveCategory(cat); }}
@@ -88,12 +124,12 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
                                 color: activeCategory === cat ? '#ffd700' : '#8b6b4a',
                                 fontWeight: 'bold',
                                 textTransform: 'uppercase',
-                                fontSize: '0.8rem',
+                                fontSize: '0.7rem',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s'
                             }}
                         >
-                            {cat === 'all' ? 'All' : 'Avatars'}
+                            {cat === 'all' ? 'All' : cat === 'avatar' ? 'Avatars' : 'Themes'}
                         </button>
                     ))}
                 </div>
@@ -111,29 +147,36 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
                     {SHOP_ITEMS
                         .filter(item => activeCategory === 'all' || item.category === activeCategory)
                         .map((item) => {
-                            const isOwned = inventory.includes(item.id);
+                            // Classic theme is always owned (it's free)
+                            const isOwned = inventory.includes(item.id) || item.id === 'theme_classic';
                             const canAfford = coins >= item.price;
+                            const isTheme = item.category === 'theme';
+                            const isEquipped = isTheme && activeTheme === item.themeClass;
 
                             return (
                                 <div key={item.id} style={{ position: 'relative' }}>
                                     <div style={{
                                         background: 'linear-gradient(180deg, #3d2814 0%, #2d1f10 100%)',
-                                        border: isOwned ? '2px solid #4ade80' : '2px solid #5a4025',
-                                        borderRadius: '12px',
+                                        border: isEquipped ? '2px solid #ffd700' : isOwned ? '2px solid #4ade80' : '2px solid #5a4025',
+                                        borderRadius: '4px',
                                         padding: '12px',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
                                         gap: '8px',
-                                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
+                                        boxShadow: isEquipped ? '0 0 15px rgba(255, 215, 0, 0.3)' : 'inset 0 2px 4px rgba(0,0,0,0.5)',
                                         opacity: (!isOwned && !canAfford) ? 0.7 : 1,
                                         transition: 'transform 0.2s',
                                         color: '#e2d0b5'
                                     }}>
-                                        {/* Icon */}
-                                        <div style={{ fontSize: '2.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.5)', marginBottom: '8px' }}>
-                                            {item.icon}
-                                        </div>
+                                        {/* Icon or Theme Preview */}
+                                        {isTheme && item.themeClass ? (
+                                            <ThemePreview themeClass={item.themeClass} />
+                                        ) : (
+                                            <div style={{ fontSize: '2.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.5)', marginBottom: '8px' }}>
+                                                {item.icon}
+                                            </div>
+                                        )}
 
                                         {/* Name */}
                                         <div style={{ fontWeight: 'bold', fontSize: '0.9rem', textAlign: 'center', lineHeight: 1 }}>
@@ -141,7 +184,14 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
                                         </div>
 
                                         {/* Price / Status */}
-                                        {isOwned ? (
+                                        {isEquipped ? (
+                                            <div style={{
+                                                color: '#ffd700', fontSize: '0.75rem', fontWeight: 'bold',
+                                                backgroundColor: 'rgba(113, 63, 18, 0.3)', padding: '4px 8px', borderRadius: '4px'
+                                            }}>
+                                                ✓ EQUIPPED
+                                            </div>
+                                        ) : isOwned ? (
                                             <div style={{
                                                 color: '#4ade80', fontSize: '0.75rem', fontWeight: 'bold',
                                                 backgroundColor: 'rgba(22, 101, 52, 0.3)', padding: '4px 8px', borderRadius: '4px'
@@ -160,7 +210,7 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
                                             </div>
                                         )}
 
-                                        {/* Buy Button */}
+                                        {/* Buy or Equip Button */}
                                         {!isOwned && (
                                             <button
                                                 type="button"
@@ -179,6 +229,25 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
                                                 className={canAfford ? 'active:scale-95 transition-transform' : ''}
                                             >
                                                 Buy
+                                            </button>
+                                        )}
+
+                                        {/* Equip Button for owned themes */}
+                                        {isOwned && isTheme && !isEquipped && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleEquipTheme(item)}
+                                                style={{
+                                                    marginTop: '4px', width: '100%', padding: '6px', borderRadius: '4px',
+                                                    fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em',
+                                                    border: 'none', cursor: 'pointer',
+                                                    background: 'linear-gradient(180deg, #ffd700 0%, #b8860b 100%)',
+                                                    color: '#1a0a00',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                                                }}
+                                                className="active:scale-95 transition-transform"
+                                            >
+                                                Equip
                                             </button>
                                         )}
                                     </div>

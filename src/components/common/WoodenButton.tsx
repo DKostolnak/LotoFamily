@@ -47,22 +47,22 @@ const SIZE_STYLES: Record<WoodenButtonSize, {
     iconSize: string;
 }> = {
     sm: {
-        padding: '8px 12px',
+        padding: '0 12px',
         fontSize: '0.875rem',
         height: '36px',
         iconSize: '16px',
     },
     md: {
-        padding: '12px 18px',
+        padding: '0 20px',
         fontSize: '1rem',
-        height: '44px',
+        height: '48px',
         iconSize: '20px',
     },
     lg: {
-        padding: '16px 24px',
-        fontSize: '1.125rem',
-        height: '52px',
-        iconSize: '24px',
+        padding: '0 32px',
+        fontSize: '1.25rem',
+        height: '60px', // Taller for more substantial feel
+        iconSize: '28px',
     },
 };
 
@@ -74,30 +74,31 @@ const VARIANT_STYLES: Record<WoodenButtonVariant, {
     hasTextShadow: boolean;
 }> = {
     primary: {
-        background: 'linear-gradient(145deg, #c9a66b 0%, #a07d4a 100%)',
-        border: '2px solid #5a4025',
-        shadow: '0 3px 0 #3d2814',
+        // Richer gradient
+        background: 'linear-gradient(180deg, #d4b075 0%, #a6814c 40%, #8c6a3d 100%)',
+        border: 'none', // Border is handled by shadow/inset
+        shadow: '0 6px 0 #5a4025, 0 12px 12px rgba(0,0,0,0.3)',
         textColor: '#3d2814',
         hasTextShadow: false,
     },
     secondary: {
-        background: 'linear-gradient(145deg, #8b7355 0%, #6b5640 100%)',
-        border: '2px solid #4a3828',
-        shadow: '0 3px 0 #2d1f10',
+        background: 'linear-gradient(180deg, #8b7355 0%, #6b5336 100%)',
+        border: 'none',
+        shadow: '0 6px 0 #3d2814, 0 12px 12px rgba(0,0,0,0.3)',
         textColor: '#f5e6c8',
         hasTextShadow: true,
     },
     danger: {
-        background: 'linear-gradient(145deg, #e85d5d 0%, #c23a3a 100%)',
-        border: '2px solid #8b2020',
-        shadow: '0 3px 0 #6b1515',
+        background: 'linear-gradient(180deg, #ef5350 0%, #c62828 100%)',
+        border: 'none',
+        shadow: '0 6px 0 #8b0000, 0 12px 12px rgba(0,0,0,0.3)',
         textColor: '#fff',
         hasTextShadow: true,
     },
     gold: {
-        background: 'linear-gradient(145deg, #ffd700 0%, #daa520 100%)',
-        border: '2px solid #b8860b',
-        shadow: '0 3px 0 #8b6914',
+        background: 'linear-gradient(180deg, #ffd700 0%, #ffc107 40%, #ffb300 100%)',
+        border: 'none',
+        shadow: '0 6px 0 #b8860b, 0 12px 12px rgba(0,0,0,0.3), 0 0 15px rgba(255, 215, 0, 0.4)',
         textColor: '#3d2814',
         hasTextShadow: false,
     },
@@ -136,16 +137,19 @@ export const WoodenButton = forwardRef<HTMLButtonElement, WoodenButtonProps>(
             color: variantStyle.textColor,
             background: disabled ? '#888' : variantStyle.background,
             borderRadius: '12px',
-            border: variantStyle.border,
-            boxShadow: disabled ? 'none' : `${variantStyle.shadow}, inset 0 1px 0 rgba(255,255,255,0.3)`,
+            border: 'none',
+            boxShadow: disabled ? 'none' : variantStyle.shadow,
             cursor: disabled ? 'not-allowed' : 'pointer',
             opacity: disabled ? 0.6 : 1,
-            transition: 'transform 0.1s ease, box-shadow 0.1s ease',
+            // Smooth transitions for everything except the press
+            transition: 'all 0.1s ease',
             width: fullWidth ? '100%' : 'auto',
             minHeight: sizeStyle.height,
             textShadow: variantStyle.hasTextShadow ? '0 1px 2px rgba(0,0,0,0.3)' : 'none',
             WebkitTapHighlightColor: 'transparent',
             userSelect: 'none',
+            position: 'relative',
+            transform: 'translateY(0)',
             ...style,
         };
 
@@ -155,9 +159,47 @@ export const WoodenButton = forwardRef<HTMLButtonElement, WoodenButtonProps>(
                 type="button"
                 disabled={disabled}
                 style={buttonStyles}
-                className="active:scale-95 active:shadow-none"
+                className="wooden-button"
+                onMouseDown={(e) => {
+                    if (disabled) return;
+                    e.currentTarget.style.transform = 'translateY(4px)';
+                    // Squash the shadow to look like it's pressed into the table
+                    e.currentTarget.style.boxShadow = `0 0 0 ${variantStyle.shadow.split(' ')[3] || 'transparent'}, 0 0 0 rgba(0,0,0,0)`;
+                }}
+                onMouseUp={(e) => {
+                    if (disabled) return;
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = variantStyle.shadow;
+                }}
+                onMouseLeave={(e) => {
+                    if (disabled) return;
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = variantStyle.shadow;
+                }}
+                onTouchStart={(e) => {
+                    if (disabled) return;
+                    e.currentTarget.style.transform = 'translateY(4px)';
+                    e.currentTarget.style.boxShadow = `0 0 0 ${variantStyle.shadow.split(' ')[3] || 'transparent'}, 0 0 0 rgba(0,0,0,0)`;
+                }}
+                onTouchEnd={(e) => {
+                    if (disabled) return;
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = variantStyle.shadow;
+                }}
                 {...buttonProps}
             >
+                {/* Top Bevel Highlight (Glass Edge) */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '50%',
+                    borderRadius: '12px 12px 0 0',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%)',
+                    pointerEvents: 'none',
+                }} />
+
                 {icon && (
                     <span
                         style={{
@@ -171,7 +213,7 @@ export const WoodenButton = forwardRef<HTMLButtonElement, WoodenButtonProps>(
                         {icon}
                     </span>
                 )}
-                {children}
+                <span style={{ position: 'relative', zIndex: 1 }}>{children}</span>
             </button>
         );
     }

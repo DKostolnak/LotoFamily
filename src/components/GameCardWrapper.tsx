@@ -13,6 +13,7 @@ interface GameCardWrapperProps {
     gameState: GameState;
     playerId: string;
     calledNumberValues: number[];
+    theme?: string;
     onMarkCell: (id: string, r: number, c: number) => void;
     onClaimWin: (id: string) => void;
     onClaimFlat: (type: number) => void;
@@ -24,6 +25,7 @@ const GameCardWrapper = memo(function GameCardWrapper({
     gameState,
     playerId,
     calledNumberValues,
+    theme = 'classic',
     onMarkCell,
     onClaimWin,
     onClaimFlat,
@@ -96,6 +98,7 @@ const GameCardWrapper = memo(function GameCardWrapper({
                         card={card}
                         onCellClick={onCellClick}
                         calledNumbers={calledNumberValues}
+                        theme={theme}
                         compact={true}
                         t={t}
                     />

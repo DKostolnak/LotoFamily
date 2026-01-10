@@ -5,15 +5,32 @@
  * ============================================================================ */
 
 :root {
-  /* Theme Colors */
+  /* Theme Colors - PREMIUM WOOD & GOLD */
   --background: #1a1109;
   --foreground: #f5e6c8;
+
+  /* Wood Tones */
+  --color-wood-darkest: #1a1109;
+  --color-wood-dark: #2d1f10;
+  --color-wood-medium: #5a4025;
+  --color-wood-light: #8b6b4a;
+
+  /* Accents */
   --color-gold: #ffd700;
   --color-gold-light: #ffe44d;
+  --color-gold-text: #ffd700;
+  --color-gold-gradient: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
+
   --color-red: #ef4444;
   --color-card-bg: rgba(26, 17, 9, 0.95);
   --color-cell-number: #f5f0e8;
   --color-cell-empty: #d4c8b8;
+
+  /* Shadows - TACTILE DEPTH */
+  --shadow-depth: 0 8px 16px rgba(0, 0, 0, 0.4);
+  --shadow-pop: 0 6px 0 #2d1f10, 0 8px 10px rgba(0, 0, 0, 0.3);
+  --shadow-indent: inset 0 3px 6px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 15px rgba(255, 215, 0, 0.3);
 
   /* Spacing */
   --space-xs: 4px;
@@ -37,6 +54,27 @@
   /* Animation Control - respect user preferences */
   --animation-duration: 0.3s;
   --animation-timing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Floating Particles Animation */
+@keyframes float-particle {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 0.5;
+  }
+
+  80% {
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: translateY(-100vh) translateX(20px);
+    opacity: 0;
+  }
 }
 
 /* Reduce animations for users who prefer reduced motion */

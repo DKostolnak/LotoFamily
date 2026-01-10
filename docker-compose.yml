@@ -1,0 +1,12 @@
+services:
+  loto-game:
+    build: .
+    image: loto-game:latest
+    container_name: loto-host
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    network_mode: host # Critical for LAN discovery!

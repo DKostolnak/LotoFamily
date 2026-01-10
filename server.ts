@@ -77,7 +77,16 @@ store.startCleanupInterval();
 persistence.initPersistence();
 
 app.prepare().then(() => {
-    const httpServer = createServer(handler);
+    const httpServer = createServer((req, res) => {
+        // Custom API route to get LAN info
+        if (req.url === '/api/lan-info') {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ ip: localIp, port, url: serverUrl }));
+            return;
+        }
+        // Default Next.js handling
+        handler(req, res);
+    });
     const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer);
 
     // Helper to find room code from socket
@@ -229,3 +238,48 @@ function handleDisconnect(io: Server, socketId: string): void {
         break;
     }
 }
+
+// ============================================================================
+// GRACEFUL SHUTDOWN
+// ============================================================================
+
+function gracefulShutdown(signal: string): void {
+    serverLog.info(`Received ${signal}. Starting graceful shutdown...`);
+
+    // Save player data
+    try {
+        persistence.savePersistence();
+        serverLog.info('Player data saved successfully.');
+    } catch (error) {
+        serverLog.error('Failed to save player data during shutdown', error);
+    }
+
+    // Clear all auto-call intervals
+    const games = store.getAllGames();
+    for (const [code] of games.entries()) {
+        store.deleteInterval(code);
+    }
+    serverLog.info(`Cleared ${games.size} game intervals.`);
+
+    // Exit cleanly
+    serverLog.info('Shutdown complete. Exiting...');
+    process.exit(0);
+}
+
+// Register shutdown handlers
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    serverLog.error('Uncaught exception:', error);
+    persistence.savePersistence(); // Attempt emergency save
+    process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    serverLog.error('Unhandled rejection at:', promise);
+    serverLog.error('Reason:', reason);
+    // Don't exit, just log - let the server continue
+});

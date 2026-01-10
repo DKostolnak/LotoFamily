@@ -179,7 +179,6 @@ export function removePlayer(state: GameState, playerId: string): GameState {
 // ============================================================================
 // GAME FLOW FUNCTIONS
 // ============================================================================
-
 /**
  * Start the game (transition from lobby to playing)
  */
@@ -189,6 +188,7 @@ export function startGame(state: GameState): GameState {
     return {
         ...state,
         phase: 'playing',
+        startedAt: Date.now(), // Track game start time for achievements
         remainingNumbers: initializeNumberPool(),
         calledNumbers: [],
         currentNumber: null,

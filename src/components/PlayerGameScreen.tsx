@@ -51,7 +51,7 @@ function PlayerGameScreen({
     onLeaveGame
 }: PlayerGameScreenProps) {
     // Get connection status from context
-    const { isConnected, coins } = useGame();
+    const { isConnected, coins, activeTheme } = useGame();
 
     // Memoize derived data
     const calledNumberValues = useMemo(
@@ -178,6 +178,7 @@ function PlayerGameScreen({
                             gameState={gameState}
                             playerId={playerId}
                             calledNumberValues={calledNumberValues}
+                            theme={activeTheme}
                             onMarkCell={onMarkCell}
                             onClaimWin={onClaimWin}
                             onClaimFlat={onClaimFlat}

@@ -22,6 +22,7 @@ import * as persistence from '../persistence';
 import { gameLog } from '../../lib/logger';
 import { getTier } from '../../lib/ranking';
 import { emitEconomyUpdate, emitEconomyUpdateToPlayer } from '../utils/economyEmitter';
+import { checkNewAchievements, type PlayerAchievementStats } from '../../lib/achievements';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
@@ -334,21 +335,60 @@ export function handlePause(
 
 /**
  * Helper to award coins to winner and participants
+ * Also checks for newly unlocked achievements
  */
 function awardGameRewards(io: TypedServer, game: GameState, winnerId: string) {
+    // Calculate game duration for speed achievements
+    const gameDurationMs = game.startedAt ? Date.now() - game.startedAt : 0;
+
     game.players.forEach(player => {
         if (!player.token) return;
 
+        const isWinner = player.id === winnerId;
         let rpGained = 0;
 
-        if (player.id === winnerId) {
+        if (isWinner) {
             // Winner gets 100 coins + 25 RP
             persistence.addCoins(player.token, 100);
             rpGained = persistence.addRp(player.token, 25);
+            // Record the win with duration
+            persistence.recordWin(player.token, gameDurationMs);
         } else {
             // Participants get 10 coins + 5 RP
             persistence.addCoins(player.token, 10);
             rpGained = persistence.addRp(player.token, 5);
+        }
+
+        // Record that this player participated in a game
+        persistence.recordGamePlayed(player.token, isWinner);
+
+        // Check for newly unlocked achievements
+        const stats = persistence.getAchievementStats(player.token);
+        const playerData = persistence.getPlayer(player.token);
+
+        if (stats && playerData) {
+            const newAchievements = checkNewAchievements(
+                stats as PlayerAchievementStats,
+                playerData.achievements || []
+            );
+
+            // Unlock each new achievement
+            newAchievements.forEach(achievement => {
+                persistence.unlockAchievement(player.token!, achievement.id);
+
+                // Notify the player
+                if (player.isConnected) {
+                    const playerSocket = io.sockets.sockets.get(player.id);
+                    if (playerSocket) {
+                        playerSocket.emit('achievement:unlocked', {
+                            id: achievement.id,
+                            name: achievement.name,
+                            icon: achievement.icon,
+                            description: achievement.description,
+                        });
+                    }
+                }
+            });
         }
 
         if (player.isConnected) {

@@ -49,7 +49,10 @@ export interface GameClientState {
     /** Current player's Tier Name */
     tier: string;
     /** Latest reward received (for animation) */
+    /** Latest reward received (for animation) */
     latestReward: { amount: number; reason: 'win' | 'flat' | 'participation' | 'daily'; timestamp: number } | null;
+    /** Current player's inventory (unlocked items) */
+    inventory: string[];
 }
 
 /**
@@ -62,7 +65,7 @@ export type GameClientAction =
     | { type: 'setPlayerName'; playerName: string | null }
     | { type: 'setPlayerAvatar'; playerAvatar: string }
     | { type: 'setCoins'; coins: number }
-    | { type: 'setEconomy'; coins: number; rp: number; tier: string }
+    | { type: 'setEconomy'; coins: number; rp: number; tier: string; inventory: string[] }
     | { type: 'setLatestReward'; reward: GameClientState['latestReward'] }
     | { type: 'setError'; error: string | null }
     | { type: 'setLastRoomCode'; roomCode: string | null }
@@ -102,6 +105,7 @@ export const initialGameClientState: GameClientState = {
     rp: 0,
     tier: 'Bronze',
     latestReward: null,
+    inventory: [],
 };
 
 // ============================================================================
@@ -136,7 +140,7 @@ export function gameClientReducer(
             return { ...state, coins: action.coins };
 
         case 'setEconomy':
-            return { ...state, coins: action.coins, rp: action.rp, tier: action.tier };
+            return { ...state, coins: action.coins, rp: action.rp, tier: action.tier, inventory: action.inventory };
 
         case 'setLatestReward':
             return { ...state, latestReward: action.reward };

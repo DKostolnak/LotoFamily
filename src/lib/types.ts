@@ -172,6 +172,8 @@ export interface GameState {
   hostId: string;
   /** Room creation timestamp */
   createdAt: number;
+  /** Game start timestamp (for duration tracking) */
+  startedAt?: number;
   /** Flat bonus winners */
   flatWinners: FlatWinners;
   /** Server URL for reconnection */
@@ -212,6 +214,8 @@ export type ServerToClientEvents = {
   'server:info': (url: string) => void;
   /** Economy Update (coins, inventory) */
   'economy:update': (data: { coins: number; rp: number; tier: string; inventory: string[] }) => void;
+  /** Achievement unlocked notification */
+  'achievement:unlocked': (data: { id: string; name: string; icon: string; description: string }) => void;
   /** Generic Error */
   'error': (error: { message: string }) => void;
 };

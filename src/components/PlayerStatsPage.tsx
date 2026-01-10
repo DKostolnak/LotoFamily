@@ -19,6 +19,7 @@ import {
     type MatchRecord
 } from '@/lib/stats';
 import { playClickSound } from '@/lib/audio';
+import { ACHIEVEMENTS, type Achievement } from '@/lib/achievements';
 import type { TranslationDictionary } from '@/lib/translations';
 
 interface PlayerStatsPageProps {
@@ -27,7 +28,7 @@ interface PlayerStatsPageProps {
 }
 
 export default function PlayerStatsPage({ onClose, t }: PlayerStatsPageProps) {
-    const { rp, tier } = useGame();
+    const { rp, tier, achievements } = useGame();
     // ...
     // Main Stats Grid
     // ...
@@ -219,6 +220,65 @@ export default function PlayerStatsPage({ onClose, t }: PlayerStatsPageProps) {
                     </div>
                 </div>
 
+                {/* Achievements Section */}
+                <div style={{ marginBottom: '24px' }}>
+                    <h3 style={{
+                        color: '#8b6b4a',
+                        fontSize: '0.9rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        marginBottom: '12px'
+                    }}>
+                        🏆 Achievements ({achievements.length}/{ACHIEVEMENTS.length})
+                    </h3>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(4, 1fr)',
+                        gap: '8px',
+                    }}>
+                        {ACHIEVEMENTS.map((achievement) => {
+                            const isUnlocked = achievements.includes(achievement.id);
+                            return (
+                                <div
+                                    key={achievement.id}
+                                    title={`${achievement.name}: ${achievement.description}`}
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        padding: '8px 4px',
+                                        borderRadius: '8px',
+                                        background: isUnlocked
+                                            ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(139, 107, 74, 0.2) 100%)'
+                                            : 'rgba(0, 0, 0, 0.2)',
+                                        border: isUnlocked
+                                            ? '1px solid rgba(255, 215, 0, 0.4)'
+                                            : '1px solid rgba(90, 64, 37, 0.3)',
+                                        opacity: isUnlocked ? 1 : 0.5,
+                                        filter: isUnlocked ? 'none' : 'grayscale(0.8)',
+                                        transition: 'all 0.2s',
+                                    }}
+                                >
+                                    <div style={{ fontSize: '24px', marginBottom: '4px' }}>
+                                        {achievement.icon}
+                                    </div>
+                                    <div style={{
+                                        fontSize: '10px',
+                                        fontWeight: 600,
+                                        color: isUnlocked ? '#ffd700' : '#5a4025',
+                                        textAlign: 'center',
+                                        lineHeight: 1.2,
+                                    }}>
+                                        {achievement.name}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 {/* Match History */}
                 <div>
                     <h3 style={{
@@ -242,7 +302,14 @@ export default function PlayerStatsPage({ onClose, t }: PlayerStatsPageProps) {
                             No games played yet
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            paddingRight: '4px' // Space for scrollbar
+                        }}>
                             {history.slice(0, 10).map((match) => (
                                 <MatchHistoryItem key={match.id} match={match} />
                             ))}

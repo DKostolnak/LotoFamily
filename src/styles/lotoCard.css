@@ -78,12 +78,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Improved typography */
     font-size: clamp(16px, 5vw, 32px);
+    font-family: 'Outfit', sans-serif;
+    /* Explicitly use rounder font if available */
     font-weight: 800;
-    background: #f5f0e8;
-    color: #2c2419;
+
+    /* Carved Indent Look */
+    background: #e6ddd0;
+    color: #3d2814;
+    box-shadow:
+        inset 0 3px 6px rgba(0, 0, 0, 0.2),
+        inset 0 1px 2px rgba(0, 0, 0, 0.3),
+        0 1px 0 rgba(255, 255, 255, 0.5);
+    /* Bottom rim highlight */
+
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -91,11 +102,12 @@
     min-width: 0;
     min-height: 0;
     box-sizing: border-box;
-    /* Ensure cell never shrinks below grid allocation */
     flex-shrink: 0;
-    /* GPU acceleration for smooth animations */
     transform: translateZ(0);
     backface-visibility: hidden;
+
+    /* Smooth edges */
+    border-radius: 4px;
 }
 
 .loto-cell:active {
@@ -104,15 +116,12 @@
 }
 
 /* Empty cells - subtle cream/beige parchment look */
+/* Empty cells - Match indentation but lighter */
 .loto-cell--empty {
-    /* Warm cream/beige background to match wooden theme */
-    background: linear-gradient(135deg,
-            #e8e0d5 0%,
-            #d9d0c4 50%,
-            #e0d8cc 100%);
+    background: #dcd3c5;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.05) 100%);
     cursor: default;
-    /* Subtle inner shadow for depth */
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .loto-cell--empty:active {
@@ -173,13 +182,24 @@
     height: 85%;
 
     /* Wooden Chip Style (matching preview numbers) */
+    /* Wooden Chip Style (matching preview numbers) */
     background-image: url('/assets/wooden-medallion.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
 
-    /* Simple shadow to lift it off the card */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    /* 3D Token Effect */
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.4),
+        /* Drop shadow */
+        inset 0 2px 4px rgba(255, 255, 255, 0.4),
+        /* Top gloss */
+        inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+    /* Bottom shade */
+
+    border-radius: 50%;
+    border: 2px solid #5a4025;
+    /* Dark rim */
 
     /* On top of number to cover it completely */
     z-index: 10;
@@ -666,4 +686,177 @@
     .loto-cell {
         font-size: clamp(22px, 2vw, 36px);
     }
+}
+
+/* ============================================================================
+ * CARD THEMES - Unlockable Skins
+ * ============================================================================ */
+
+/* OCEAN BLUE THEME 🌊 */
+.loto-card[data-theme="ocean"] {
+    background: linear-gradient(180deg, #1a3a5c 0%, #0d2137 100%);
+    border-color: #2d5a8a;
+}
+
+.loto-card[data-theme="ocean"] .loto-card-grid {
+    background: #1a4a6e;
+    border-color: #1a4a6e;
+}
+
+.loto-card[data-theme="ocean"] .loto-cell {
+    background: linear-gradient(180deg, #e8f4fc 0%, #c5dff0 100%);
+    color: #0d2137;
+    box-shadow:
+        inset 0 3px 6px rgba(0, 50, 100, 0.2),
+        inset 0 1px 2px rgba(0, 50, 100, 0.3),
+        0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.loto-card[data-theme="ocean"] .loto-cell--empty {
+    background: linear-gradient(180deg, #b8d4e8 0%, #9ec4db 100%);
+}
+
+.loto-card[data-theme="ocean"] .loto-card-progress {
+    background: linear-gradient(180deg, #1a4a6e 0%, #0d2137 100%);
+    border-color: #0a1a2a;
+}
+
+.loto-card[data-theme="ocean"] .loto-card-progress-bar {
+    background: linear-gradient(90deg, #00bcd4 0%, #4dd0e1 100%);
+}
+
+.loto-card[data-theme="ocean"] .loto-cell--correct::after {
+    background: linear-gradient(145deg, #00bcd4 0%, #0097a7 100%);
+    border: 2px solid #00838f;
+    background-image: none;
+}
+
+/* ROYAL PURPLE THEME 👑 */
+.loto-card[data-theme="royal"] {
+    background: linear-gradient(180deg, #4a1a6e 0%, #2d0a47 100%);
+    border-color: #7b4a9e;
+}
+
+.loto-card[data-theme="royal"] .loto-card-grid {
+    background: #5a2a7e;
+    border-color: #5a2a7e;
+}
+
+.loto-card[data-theme="royal"] .loto-cell {
+    background: linear-gradient(180deg, #f8f0ff 0%, #e8d0f8 100%);
+    color: #2d0a47;
+    box-shadow:
+        inset 0 3px 6px rgba(100, 0, 150, 0.15),
+        inset 0 1px 2px rgba(100, 0, 150, 0.2),
+        0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.loto-card[data-theme="royal"] .loto-cell--empty {
+    background: linear-gradient(180deg, #dcc0f0 0%, #c9a8e8 100%);
+}
+
+.loto-card[data-theme="royal"] .loto-card-progress {
+    background: linear-gradient(180deg, #5a2a7e 0%, #2d0a47 100%);
+    border-color: #1a0530;
+}
+
+.loto-card[data-theme="royal"] .loto-card-progress-bar {
+    background: linear-gradient(90deg, #ffd700 0%, #ffeb3b 100%);
+}
+
+.loto-card[data-theme="royal"] .loto-cell--correct::after {
+    background: linear-gradient(145deg, #ffd700 0%, #c9a600 100%);
+    border: 2px solid #b8960b;
+    background-image: none;
+}
+
+/* NEON NIGHTS THEME 💜 */
+.loto-card[data-theme="neon"] {
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+    border: 2px solid #ff00ff;
+    box-shadow:
+        0 0 20px rgba(255, 0, 255, 0.3),
+        0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+.loto-card[data-theme="neon"] .loto-card-grid {
+    background: #16162b;
+    border-color: #00ffff;
+    box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.2);
+}
+
+.loto-card[data-theme="neon"] .loto-cell {
+    background: linear-gradient(180deg, #2a2a4a 0%, #1a1a30 100%);
+    color: #00ffff;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
+    box-shadow:
+        inset 0 1px 2px rgba(0, 255, 255, 0.2),
+        0 0 5px rgba(255, 0, 255, 0.3);
+    border: 1px solid rgba(255, 0, 255, 0.3);
+}
+
+.loto-card[data-theme="neon"] .loto-cell--empty {
+    background: linear-gradient(180deg, #1a1a30 0%, #0f0f20 100%);
+    border-color: rgba(0, 255, 255, 0.2);
+}
+
+.loto-card[data-theme="neon"] .loto-card-progress {
+    background: linear-gradient(180deg, #1a1a30 0%, #0f0f1a 100%);
+    border: 1px solid #ff00ff;
+}
+
+.loto-card[data-theme="neon"] .loto-card-progress-bar {
+    background: linear-gradient(90deg, #ff00ff 0%, #00ffff 100%);
+    box-shadow: 0 0 15px rgba(255, 0, 255, 0.6);
+}
+
+.loto-card[data-theme="neon"] .loto-card-progress-text {
+    color: #00ffff;
+    text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+}
+
+.loto-card[data-theme="neon"] .loto-cell--correct::after {
+    background: linear-gradient(145deg, #ff00ff 0%, #cc00cc 100%);
+    border: 2px solid #00ffff;
+    box-shadow: 0 0 15px rgba(255, 0, 255, 0.8);
+    background-image: none;
+}
+
+/* FOREST GREEN THEME 🌿 */
+.loto-card[data-theme="nature"] {
+    background: linear-gradient(180deg, #2d4a2d 0%, #1a301a 100%);
+    border-color: #4a7a4a;
+}
+
+.loto-card[data-theme="nature"] .loto-card-grid {
+    background: #3a5a3a;
+    border-color: #3a5a3a;
+}
+
+.loto-card[data-theme="nature"] .loto-cell {
+    background: linear-gradient(180deg, #f0f8e8 0%, #d8ecc8 100%);
+    color: #1a301a;
+    box-shadow:
+        inset 0 3px 6px rgba(0, 80, 0, 0.15),
+        inset 0 1px 2px rgba(0, 80, 0, 0.2),
+        0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.loto-card[data-theme="nature"] .loto-cell--empty {
+    background: linear-gradient(180deg, #c8e0b8 0%, #b0d0a0 100%);
+}
+
+.loto-card[data-theme="nature"] .loto-card-progress {
+    background: linear-gradient(180deg, #3a5a3a 0%, #1a301a 100%);
+    border-color: #0a1a0a;
+}
+
+.loto-card[data-theme="nature"] .loto-card-progress-bar {
+    background: linear-gradient(90deg, #8bc34a 0%, #aed581 100%);
+}
+
+.loto-card[data-theme="nature"] .loto-cell--correct::after {
+    background: linear-gradient(145deg, #8d6e4a 0%, #6d4e2a 100%);
+    border: 2px solid #5d3e1a;
+    background-image: none;
 }

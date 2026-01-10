@@ -8,6 +8,7 @@ import type { GameState, GameSettings, ServerToClientEvents, ClientToServerEvent
 import { createGame, addPlayer, removePlayer } from '../../engine/gameEngine';
 import * as store from '../store';
 import { roomLog } from '../../lib/logger';
+import { sanitizeName, sanitizeAvatarUrl, sanitizeRoomCode } from '../utils/sanitize';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
@@ -46,11 +47,15 @@ export function handleRoomCreate(
     settings: Partial<GameSettings>,
     token?: string
 ): void {
+    // Sanitize inputs
+    const cleanName = sanitizeName(playerName);
+    const cleanAvatar = sanitizeAvatarUrl(avatarUrl);
+
     let roomCode: string;
 
     // Handle custom room code
     if (settings.customRoomCode && typeof settings.customRoomCode === 'string') {
-        const requestedCode = settings.customRoomCode.trim().toUpperCase();
+        const requestedCode = sanitizeRoomCode(settings.customRoomCode);
 
         if (!isValidRoomCode(requestedCode)) {
             socket.emit('game:error', 'Invalid Room Code. Use 3-10 letters/numbers.');
@@ -78,7 +83,7 @@ export function handleRoomCreate(
         crazyMode: settings.crazyMode || false,
     };
 
-    const newGame = createGame(playerId, playerName, avatarUrl, gameSettings, token);
+    const newGame = createGame(playerId, cleanName, cleanAvatar, gameSettings, token);
     newGame.roomId = roomCode;
     newGame.roomCode = roomCode;
     newGame.serverUrl = serverUrl;
@@ -88,7 +93,7 @@ export function handleRoomCreate(
 
     socket.emit('room:created', roomCode);
     socket.emit('game:state', newGame);
-    roomLog.info(`Created: ${roomCode} by ${playerName} (${playerId})`);
+    roomLog.info(`Created: ${roomCode} by ${cleanName} (${playerId})`);
 }
 
 /**
@@ -101,8 +106,12 @@ export function handleRoomJoin(
     avatarUrl: string,
     token?: string
 ): void {
-    const upperRoomCode = roomCode.toUpperCase();
-    const game = store.getGame(upperRoomCode);
+    // Sanitize inputs
+    const cleanName = sanitizeName(playerName);
+    const cleanAvatar = sanitizeAvatarUrl(avatarUrl);
+    const cleanRoomCode = sanitizeRoomCode(roomCode);
+
+    const game = store.getGame(cleanRoomCode);
 
     if (!game) {
         socket.emit('game:error', 'Room not found');
@@ -113,7 +122,7 @@ export function handleRoomJoin(
     const existingPlayerIndex = game.players.findIndex(p => p.token && p.token === token);
 
     if (existingPlayerIndex !== -1) {
-        handleReconnection(io, socket, game, existingPlayerIndex, upperRoomCode, serverUrl);
+        handleReconnection(io, socket, game, existingPlayerIndex, cleanRoomCode, serverUrl);
         return;
     }
 
@@ -122,17 +131,17 @@ export function handleRoomJoin(
         return;
     }
 
-    const updatedGame = addPlayer(game, socket.id, playerName, avatarUrl, token);
+    const updatedGame = addPlayer(game, socket.id, cleanName, cleanAvatar, token);
     if (!updatedGame) {
         socket.emit('game:error', 'Could not join room (full or error)');
         return;
     }
 
-    store.setGame(upperRoomCode, updatedGame);
-    socket.join(upperRoomCode);
+    store.setGame(cleanRoomCode, updatedGame);
+    socket.join(cleanRoomCode);
 
-    io.to(upperRoomCode).emit('game:state', updatedGame);
-    roomLog.info(`Player joined: ${playerName} (${socket.id}) to ${upperRoomCode}`);
+    io.to(cleanRoomCode).emit('game:state', updatedGame);
+    roomLog.info(`Player joined: ${cleanName} (${socket.id}) to ${cleanRoomCode}`);
 }
 
 /**

@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { useGame, DEFAULT_AVATARS } from '@/lib/GameContext';
 import { playClickSound } from '@/lib/audio';
-import { economyService } from '@/lib/services/economy';
 import { SHOP_ITEMS } from '@/lib/shopData';
-import { DEFAULT_AVATARS } from '@/lib/state/gameReducer';
 
 interface AvatarPickerProps {
     currentAvatar: string;
@@ -12,24 +11,19 @@ interface AvatarPickerProps {
     label?: string;
 }
 
-/**
- * AvatarPicker Component
- * Renders a grid of emoji avatars.
- * Styled with Royal Wooden theme (Dark wood inactive, Gold active).
- */
 export default function AvatarPicker({ currentAvatar, onSelect, label }: AvatarPickerProps) {
+    const { inventory } = useGame();
     const [isExpanded, setIsExpanded] = React.useState(false);
 
     const allAvatars = useMemo(() => {
-        // Get unlocked items
-        const inventory = economyService.getInventory();
+        // Get unlocked items from context
         const unlockedAvatars = SHOP_ITEMS
             .filter(item => item.category === 'avatar' && inventory.includes(item.id))
             .map(item => item.icon);
 
         // Combine default + unlocked
         return [...DEFAULT_AVATARS, ...unlockedAvatars];
-    }, []);
+    }, [inventory]);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '12px' }}>

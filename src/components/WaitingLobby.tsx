@@ -51,13 +51,33 @@ const WaitingLobby = memo(function WaitingLobby({
 
     // ... (keep logic: joinUrl, handleCopyCode, handleShare, handleUpdateProfile, handleKick)
 
-    const joinUrl = gameState.serverUrl
-        ? `${gameState.serverUrl}?room=${gameState.roomCode}`
-        : `${typeof window !== 'undefined' ? window.location.origin : ''}?room=${gameState.roomCode}`;
+    const [hostUrl, setHostUrl] = useState<string | null>(null);
+
+    // Fetch LAN info on mount
+    React.useEffect(() => {
+        if (!isHost) return;
+        fetch('/api/lan-info')
+            .then(res => res.json())
+            .then(data => {
+                if (data.ip) {
+                    setHostUrl(`http://${data.ip}:${data.port}`);
+                }
+            })
+            .catch(err => console.error('Failed to fetch LAN info:', err));
+    }, [isHost]);
+
+    // Determine the best Join URL
+    const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+
+    // If on HTTPS (Render/Cloud), use the current domain.
+    // If on HTTP (Local), prefer the detected LAN IP so mobiles can connect.
+    const joinUrl = (isSecure || !hostUrl)
+        ? `${typeof window !== 'undefined' ? window.location.origin : ''}?room=${gameState.roomCode}`
+        : `${hostUrl}?room=${gameState.roomCode}`;
 
     const handleCopyCode = async () => {
         try {
-            await navigator.clipboard.writeText(gameState.roomCode);
+            await navigator.clipboard.writeText(joinUrl); // Copy full URL instead of just code
             showToast(t.copied, 'success', '📋');
         } catch {
             showToast(t.copiedError, 'error');
@@ -168,8 +188,14 @@ const WaitingLobby = memo(function WaitingLobby({
                             </h1>
 
                             {isHost && (
-                                <div className="bg-white p-3 rounded-xl shadow-lg mb-4">
-                                    <QRCodeSVG value={joinUrl} size={140} level="M" />
+                                <div className="bg-white p-3 rounded-xl shadow-lg mb-4 flex flex-col items-center">
+                                    <QRCodeSVG value={joinUrl} size={160} level="M" />
+                                    {hostUrl && (
+                                        <div className="mt-2 text-xs font-mono text-gray-500 text-center uppercase tracking-wider font-bold">
+                                            Connect to WiFi<br />
+                                            Scan to Join
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -269,56 +295,74 @@ const WaitingLobby = memo(function WaitingLobby({
                                 </div>
                             </div>
                         ) : isHost ? (
-                            <div className="flex flex-col gap-4">
-                                {/* Debug: Add Bots for Testing */}
-                                {process.env.NODE_ENV === 'development' && (
-                                    <WoodenButton
-                                        onClick={() => { playClickSound(); addDebugPlayers(); }}
-                                        variant="secondary"
-                                        size="sm"
-                                        style={{ marginBottom: '8px', opacity: 0.7 }}
-                                    >
-                                        🤖 Add Bots (Debug)
-                                    </WoodenButton>
-                                )}
-
+                            <div className="flex flex-col gap-8">
                                 {/* Speed Control */}
                                 <div>
-                                    <p style={sectionTitleStyle}>{t.gameSpeed}</p>
-                                    <div className="flex gap-2 justify-center">
-                                        {(['slow', 'normal', 'fast'] as const).map((s) => (
-                                            <WoodenButton
-                                                key={s}
-                                                onClick={() => { playClickSound(); setSelectedSpeed(s); }}
-                                                variant={selectedSpeed === s ? 'gold' : 'secondary'}
-                                                style={{
-                                                    flex: 1,
-                                                    height: '56px',
-                                                    fontSize: '1.75rem',
-                                                    opacity: selectedSpeed === s ? 1 : 0.7,
-                                                    filter: selectedSpeed === s ? 'brightness(1.1)' : 'grayscale(0.5)'
-                                                }}
-                                                title={t[s]}
-                                            >
-                                                {s === 'slow' ? '🐢' : s === 'normal' ? '🚶' : '🐇'}
-                                            </WoodenButton>
-                                        ))}
+                                    <p style={{ ...sectionTitleStyle, marginBottom: '12px' }}>{t.gameSpeed}</p>
+                                    <div style={{
+                                        background: '#1a1109',
+                                        border: '2px solid #3d2814',
+                                        borderRadius: '16px',
+                                        padding: '8px',
+                                        display: 'flex',
+                                        position: 'relative',
+                                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
+                                        gap: '12px'
+                                    }}>
+                                        {(['slow', 'normal', 'fast'] as const).map((s) => {
+                                            const isSelected = selectedSpeed === s;
+                                            return (
+                                                <button
+                                                    key={s}
+                                                    type="button"
+                                                    onClick={() => { playClickSound(); setSelectedSpeed(s); }}
+                                                    style={{
+                                                        flex: 1,
+                                                        position: 'relative',
+                                                        zIndex: 1,
+                                                        border: 'none',
+                                                        background: isSelected ? 'linear-gradient(180deg, #ffd700 0%, #ffc107 100%)' : 'rgba(61, 40, 20, 0.4)',
+                                                        color: isSelected ? '#3d2814' : '#8b6b4a',
+                                                        padding: '12px 8px',
+                                                        borderRadius: '10px',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '0.9rem',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '8px',
+                                                        boxShadow: isSelected ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.05em'
+                                                    }}
+                                                >
+                                                    <span style={{ fontSize: '1.2rem', filter: isSelected ? 'none' : 'grayscale(1)' }}>
+                                                        {s === 'slow' ? '🐢' : s === 'normal' ? '🚶' : '🐇'}
+                                                    </span>
+                                                    <span style={{ opacity: isSelected ? 1 : 0.6 }}>{t[s]}</span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
-                                <WoodenButton
-                                    onClick={() => {
-                                        playClickSound();
-                                        const intervals = { slow: 7000, normal: 5000, fast: 3000 };
-                                        onStartGame({ autoCallIntervalMs: intervals[selectedSpeed] });
-                                    }}
-                                    disabled={!canStart}
-                                    variant="gold"
-                                    size="lg"
-                                    fullWidth
-                                >
-                                    <span style={{ fontSize: '1.5rem' }}>🎲</span> {t.startGame}
-                                </WoodenButton>
+                                <div className="mt-12">
+                                    <WoodenButton
+                                        onClick={() => {
+                                            playClickSound();
+                                            const intervals = { slow: 7000, normal: 5000, fast: 3000 };
+                                            onStartGame({ autoCallIntervalMs: intervals[selectedSpeed] });
+                                        }}
+                                        disabled={!canStart}
+                                        variant="gold"
+                                        size="lg"
+                                        fullWidth
+                                    >
+                                        <span style={{ fontSize: '1.5rem' }}>🎲</span> {t.startGame}
+                                    </WoodenButton>
+                                </div>
                             </div>
                         ) : (
                             <div className="p-4 bg-[#1a1109]/50 rounded-xl border border-[#3d2814] text-center animate-pulse">

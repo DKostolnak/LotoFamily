@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { ServerToClientEvents, ClientToServerEvents } from '../../lib/types';
 import * as persistence from '../persistence';
 import { getTier } from '../../lib/ranking';
+import { SHOP_ITEMS } from '../../lib/shopData';
 
 type Context = {
     io: Server<ClientToServerEvents, ServerToClientEvents>;
@@ -12,23 +13,47 @@ export function handlePurchaseItem(
     { io, socket }: Context,
     token: string,
     itemId: string,
-    cost: number
+    clientCost: number // We receive this but validate against server data
 ) {
-    // Validate cost on server-side using shopData? 
-    // Ideally we should import SHOP_ITEMS, but for now we trust the client logic OR check a hardcoded list.
-    // To be safe, let's just trust the persistent balance check.
+    // Validate token exists
+    if (!token || typeof token !== 'string') {
+        socket.emit('error', { message: 'Invalid token' });
+        return;
+    }
 
-    const success = persistence.spendCoins(token, cost);
+    // Find item in server-side shop data (source of truth)
+    const shopItem = SHOP_ITEMS.find(item => item.id === itemId);
+    if (!shopItem) {
+        socket.emit('error', { message: 'Item not found' });
+        return;
+    }
+
+    // Check if already owned
+    const player = persistence.getPlayer(token);
+    if (!player) {
+        socket.emit('error', { message: 'Player not found' });
+        return;
+    }
+
+    if (player.inventory.includes(itemId)) {
+        socket.emit('error', { message: 'Item already owned' });
+        return;
+    }
+
+    // Use SERVER price, not client price (security fix)
+    const actualCost = shopItem.price;
+
+    const success = persistence.spendCoins(token, actualCost);
     if (success) {
         persistence.addInventoryItem(token, itemId);
-        const player = persistence.getPlayer(token);
-        if (player) {
-            const tier = getTier(player.rp || 0);
+        const updatedPlayer = persistence.getPlayer(token);
+        if (updatedPlayer) {
+            const tier = getTier(updatedPlayer.rp || 0);
             socket.emit('economy:update', {
-                coins: player.coins,
-                rp: player.rp || 0,
+                coins: updatedPlayer.coins,
+                rp: updatedPlayer.rp || 0,
                 tier: tier.name,
-                inventory: player.inventory
+                inventory: updatedPlayer.inventory
             });
         }
     } else {
@@ -60,28 +85,28 @@ export function handleSyncEconomy({ socket }: Context, token: string) {
 }
 
 export function handleDailyBonus({ socket }: Context, token: string) {
-    // Check last login date in persistence vs now
+    // Validate token
+    if (!token || typeof token !== 'string') {
+        socket.emit('error', { message: 'Invalid token' });
+        return;
+    }
+
+    // Server-side validation of 24h timer
+    const bonusAmount = persistence.claimDailyBonus(token);
+
+    if (bonusAmount === 0) {
+        socket.emit('error', { message: 'Daily bonus already claimed. Try again in 24 hours.' });
+        return;
+    }
+
     const player = persistence.getPlayer(token);
-    if (!player) return;
-
-    const now = Date.now();
-    const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-    // Simple check: if lastLogin was > 24h ago? 
-    // Actually `createOrUpdatePlayer` updates lastLogin, so we need a separate `lastBonusClaim`.
-    // For now, let's just add coins command.
-
-    // In a real implementation we'd check `lastBonusClaim` timestamp.
-    // For this prototype, the client validates the 24h timer, and requests the bonus.
-    persistence.addCoins(token, 50);
-    const updated = persistence.getPlayer(token);
-    if (updated) {
-        const tier = getTier(updated.rp || 0);
+    if (player) {
+        const tier = getTier(player.rp || 0);
         socket.emit('economy:update', {
-            coins: updated.coins,
-            rp: updated.rp || 0,
+            coins: player.coins,
+            rp: player.rp || 0,
             tier: tier.name,
-            inventory: updated.inventory
+            inventory: player.inventory
         });
     }
 }

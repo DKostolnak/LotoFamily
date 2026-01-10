@@ -198,7 +198,7 @@ export default function LeaderboardModal({
                         flexDirection: 'column',
                         gap: '8px',
                         padding: '16px',
-                        maxHeight: '60vh',
+                        maxHeight: '40vh',
                         overflowY: 'auto',
                     }}
                 >

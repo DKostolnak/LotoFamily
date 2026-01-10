@@ -24,6 +24,7 @@ import PlayerStatsPage from './PlayerStatsPage';
 import ShopModal from './ShopModal';
 import RulesModal from './RulesModal';
 import DailyBonusModal from './DailyBonusModal';
+import LocalGameModal from './LocalGameModal';
 import { playClickSound } from '@/lib/audio';
 import { CoinShower } from '@/components/effects/CoinShower';
 
@@ -34,6 +35,7 @@ import { CoinShower } from '@/components/effects/CoinShower';
 interface MainMenuProps {
     onCreateGame: (playerName: string, settings?: Partial<GameSettings>) => void;
     onJoinGame: (roomCode: string, playerName: string) => void;
+    onStartLocalGame?: (roomCode: string) => void; // For P2P mode
 }
 
 // ============================================================================
@@ -44,7 +46,7 @@ import { WoodenCard, WoodenButton, WoodenInput, CoinBadge, RankBadge } from '@/c
 
 // ... (keep others)
 
-export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
+export default function MainMenu({ onCreateGame, onJoinGame, onStartLocalGame }: MainMenuProps) {
     const [mode, setMode] = useState<'menu' | 'create' | 'join'>('menu');
     const [playerName, setPlayerName] = useState('');
     const [roomCode, setRoomCode] = useState('');
@@ -54,6 +56,24 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
     const [showStats, setShowStats] = useState(false);
     const [showShop, setShowShop] = useState(false);
     const [showRules, setShowRules] = useState(false);
+    const [showLocalGame, setShowLocalGame] = useState(false);
+    const [particles, setParticles] = useState<Array<React.CSSProperties>>([]);
+
+    useEffect(() => {
+        // Generate random particles only on the client to avoid hydration mismatch
+        const newParticles = Array.from({ length: 20 }).map(() => ({
+            position: 'absolute',
+            width: Math.random() * 4 + 2 + 'px',
+            height: Math.random() * 4 + 2 + 'px',
+            background: 'radial-gradient(circle, rgba(255, 215, 0, 0.6) 0%, rgba(255, 215, 0, 0) 70%)',
+            left: Math.random() * 100 + '%',
+            top: Math.random() * 100 + '%',
+            opacity: 0,
+            animation: `float-particle ${Math.random() * 10 + 10}s linear infinite`,
+            animationDelay: `-${Math.random() * 20}s`,
+        } as React.CSSProperties));
+        setParticles(newParticles);
+    }, []);
 
     useEffect(() => {
         // Recover Language
@@ -170,6 +190,13 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
 
     return (
         <main style={mainStyle}>
+            {/* Ambient Background Particles */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+                {particles.map((style, i) => (
+                    <div key={i} style={style} />
+                ))}
+            </div>
+
             <CoinShower />
             <div style={overlayStyle} />
 
@@ -239,8 +266,10 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                         color: '#ffd700',
                         textTransform: 'uppercase',
                         margin: 0,
-                        textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                        // Deep, layered shadow for 3D lettering effect
+                        textShadow: '0 2px 0 #b8860b, 0 4px 4px rgba(0,0,0,0.6), 0 0 20px rgba(255, 215, 0, 0.4)',
                         lineHeight: 1.2,
+                        letterSpacing: '0.05em',
                     }}>
                         {mode === 'menu' ? t.title : (mode === 'create' ? t.createGame : t.joinGame)}
                     </h1>
@@ -250,7 +279,7 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                 </div>
 
                 {mode === 'menu' ? (
-                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'clamp(16px, 3vh, 32px)' }}>
                         <WoodenButton
                             onClick={() => onModeChange('create')}
                             variant="gold"
@@ -258,22 +287,25 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
                             fullWidth
                             style={{ fontSize: 'clamp(1rem, 3vw, 1.25rem)' }}
                         >
-                            <span style={{ fontSize: '1.5rem' }}>👑</span> {t.createGame}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
+                                <div><span style={{ fontSize: '1.5rem' }}>👑</span> {t.createGame}</div>
+                                <div style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: 'normal' }}>Online & LAN Party</div>
+                            </div>
                         </WoodenButton>
 
                         <WoodenButton
                             onClick={() => onModeChange('join')}
-                            variant="secondary"
+                            variant="primary"
                             size="lg"
                             fullWidth
                             style={{
                                 fontSize: 'clamp(1rem, 3vw, 1.25rem)',
-                                background: 'linear-gradient(180deg, #5a4025 0%, #3d2814 100%)',
-                                borderColor: '#2d1f10'
                             }}
                         >
                             <span style={{ fontSize: '1.5rem' }}>🎮</span> {t.joinGame}
                         </WoodenButton>
+
+
 
                         {/* Stats & Shop Buttons Row */}
                         <div style={{ display: 'flex', gap: '16px' }}>
@@ -348,7 +380,7 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
 
                         {/* Mode Specific Inputs */}
                         {mode === 'create' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(24px, 4vh, 32px)' }}>
                                 <div>
                                     <WoodenInput
                                         label={`${t.roomCode} (${t.optionalLabel})`}
@@ -455,13 +487,73 @@ export default function MainMenu({ onCreateGame, onJoinGame }: MainMenuProps) {
             {latestReward?.reason === 'daily' && (
                 <DailyBonusModal
                     onClose={() => {
-                        // We need a way to clear the reward so it doesn't persist
-                        // Usually we dispatch setLatestReward(null)
-                        // But useGame doesn't expose dispatch directly.
-                        // Wait, I need to check if GameContext exposes a clear method or if I need to add one.
+                        clearLatestReward();
                     }}
                 />
             )}
+
+            {/* Local Game Modal (P2P) */}
+            <LocalGameModal
+                isOpen={showLocalGame}
+                onClose={() => setShowLocalGame(false)}
+                onCreateRoom={async (name) => {
+                    // Import P2P connection dynamically to avoid SSR issues
+                    const { p2pConnection } = await import('@/lib/p2p/peerConnection');
+                    const { p2pGameEngine } = await import('@/lib/p2p/p2pGameEngine');
+
+                    const player = { id: 'host-' + Date.now(), name, avatarUrl: playerAvatar };
+
+                    // Set up state change handler
+                    p2pGameEngine.setOnStateChange((newState) => {
+                        p2pConnection.send({
+                            type: 'game:state',
+                            payload: newState,
+                            senderId: player.id,
+                            timestamp: Date.now(),
+                        });
+                    });
+
+                    p2pGameEngine.setOnBroadcast((msg) => {
+                        p2pConnection.send(msg);
+                    });
+
+                    // Set up connection handlers
+                    p2pConnection.setHandlers({
+                        onPlayerConnect: (peerId, peerPlayer) => {
+                            if (peerPlayer) {
+                                p2pGameEngine.addPlayer(peerPlayer);
+                            }
+                        },
+                        onPlayerDisconnect: (peerId) => {
+                            p2pGameEngine.removePlayer(peerId);
+                        },
+                        onMessage: (msg) => {
+                            p2pGameEngine.handleMessage(msg);
+                        },
+                    });
+
+                    const code = await p2pConnection.createRoom(player);
+                    p2pGameEngine.createGame(player, code);
+
+                    if (onStartLocalGame) {
+                        onStartLocalGame(code);
+                    }
+
+                    return code;
+                }}
+                onJoinRoom={async (code, name) => {
+                    const { p2pConnection } = await import('@/lib/p2p/peerConnection');
+
+                    const player = { id: 'player-' + Date.now(), name, avatarUrl: playerAvatar };
+
+                    await p2pConnection.joinRoom(player, code);
+
+                    if (onStartLocalGame) {
+                        onStartLocalGame(code);
+                    }
+                }}
+                initialPlayerName={playerName}
+            />
         </main>
     );
 }

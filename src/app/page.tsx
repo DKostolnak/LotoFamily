@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic'
 import MainMenu from '@/components/MainMenu';
 import { useGame } from '@/lib/GameContext';
+import { useP2PGame } from '@/lib/p2p/P2PContext';
 import { translations } from '@/lib/translations';
 import { recordGameResult } from '@/lib/stats';
 
@@ -12,6 +13,7 @@ import WaitingLobby from '@/components/WaitingLobby';
 import PlayerGameScreen from '@/components/PlayerGameScreen';
 import WinnerCelebration from '@/components/WinnerCelebration';
 import GameAudioPlayer from '@/components/GameAudioPlayer';
+import P2PGameContainer from '@/components/P2PGameContainer';
 
 /*
  * LoadingSpinner kept for potential future use
@@ -63,6 +65,9 @@ export default function Home() {
     claimFlat,
 
   } = useGame();
+
+  // P2P Context
+  const { isConnected: isP2PConnected, gameState: p2pGameState } = useP2PGame();
 
   // Prefetch components for faster transitions
   usePrefetchComponents(gameState?.phase);
@@ -193,6 +198,15 @@ export default function Home() {
   const audioPlayer = <GameAudioPlayer gameState={gameState} />;
 
   // Render based on game state
+
+  // Render based on game state
+
+  // 1. Check for P2P Game First
+  if (isP2PConnected && p2pGameState) {
+    return <P2PGameContainer />;
+  }
+
+  // 2. Regular Server Game
   if (!gameState) {
     return (
       <>

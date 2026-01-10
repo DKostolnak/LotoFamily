@@ -95,6 +95,15 @@ export default function RulesModal({ isOpen, onClose }: RulesModalProps) {
                                     <li><strong>Remove</strong>: Tap again to unmark if you made a mistake.</li>
                                 </ul>
                             </Section>
+
+                            <Section title="Offline / Local Play">
+                                <p style={{ marginBottom: '8px' }}>Play with family in the same room without internet!</p>
+                                <ul style={{ paddingLeft: '20px', margin: 0, listStyle: 'disc' }}>
+                                    <li><strong>Host</strong>: Use one device to "Host Game". Share the 4-letter code.</li>
+                                    <li><strong>Join</strong>: Other players "Join Game" and enter the code.</li>
+                                    <li><strong>WiFi</strong>: All devices must be on the same WiFi (or Hotspot).</li>
+                                </ul>
+                            </Section>
                         </div>
                     ) : (
                         <div className="space-y-4">

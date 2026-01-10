@@ -7,12 +7,14 @@ interface Wallet {
     coins: number;
     inventory: string[];
     lastDailyBonus: number; // Timestamp
+    activeTheme: string; // Currently equipped card theme
 }
 
 const DEFAULT_WALLET: Wallet = {
     coins: 0,
     inventory: [],
     lastDailyBonus: 0,
+    activeTheme: 'classic', // Default theme (always available)
 };
 
 const DAILY_BONUS_AMOUNT = 50;
@@ -150,6 +152,48 @@ class EconomyService {
 
         if (this.spendCoins(cost)) {
             this.unlockItem(itemId);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Sync local wallet with server data
+     * This ensures localStorage is up to date with the server's source of truth
+     */
+    public syncWallet(coins: number, inventory: string[]): void {
+        this.wallet.coins = coins;
+        // Merge inventory to avoid losing local unlocks if any (though server should be source of truth)
+        // For now, let's trust server completely for consistency
+        this.wallet.inventory = [...inventory];
+        this.saveWallet();
+    }
+
+    /**
+     * Get the currently active card theme
+     */
+    public getActiveTheme(): string {
+        return this.wallet.activeTheme || 'classic';
+    }
+
+    /**
+     * Set the active card theme
+     * @param themeId Theme ID to equip (must be owned or 'classic')
+     */
+    public setActiveTheme(themeId: string): boolean {
+        // Classic is always available
+        if (themeId === 'classic' || themeId === 'theme_classic') {
+            this.wallet.activeTheme = 'classic';
+            this.saveWallet();
+            return true;
+        }
+
+        // Check if theme is owned
+        if (this.hasItem(themeId)) {
+            // Extract the class name (e.g., 'theme_ocean' -> 'ocean')
+            this.wallet.activeTheme = themeId.replace('theme_', '');
+            this.saveWallet();
             return true;
         }
 

@@ -38,6 +38,7 @@ interface LotoCardProps {
     showHeader?: boolean;
     playerName?: string;
     calledNumbers?: number[];
+    theme?: string; // Card theme CSS class
     t: TranslationDictionary;
 }
 
@@ -130,6 +131,7 @@ function LotoCard({
     showHeader = false,
     playerName,
     calledNumbers = [],
+    theme = 'classic',
     t,
 }: LotoCardProps) {
     const [tappedCell, setTappedCell] = useState<string | null>(null);
@@ -200,7 +202,10 @@ function LotoCard({
     }, [card.grid, onCellClick, calledNumbers, callsCount]);
 
     return (
-        <div className={`loto-card ${compact ? 'loto-card--compact' : ''} relative`}>
+        <div
+            className={`loto-card ${compact ? 'loto-card--compact' : ''} relative`}
+            data-theme={theme}
+        >
             {showHeader && playerName && (
                 <div className="loto-card-header">
                     <div className="loto-card-player">

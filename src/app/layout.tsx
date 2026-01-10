@@ -2,10 +2,12 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "@/styles/globals.css";
 import { GameProvider } from "@/lib/GameContext";
+import { P2PProvider } from "@/lib/p2p/P2PContext";
 import { ToastProvider } from "@/components/ToastProvider";
 import ScreenShakeProvider from "@/components/ScreenShakeProvider";
 import { GameStatusListener } from "@/components/GameStatusListener";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import AchievementToastContainer from "@/components/AchievementToastContainer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -41,17 +43,19 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} wood-bg`} suppressHydrationWarning>
         <ErrorBoundary>
-          <GameProvider>
-            <ToastProvider>
-              <ScreenShakeProvider>
-                <GameStatusListener />
-                {children}
-              </ScreenShakeProvider>
-            </ToastProvider>
-          </GameProvider>
+          <P2PProvider>
+            <GameProvider>
+              <ToastProvider>
+                <ScreenShakeProvider>
+                  <GameStatusListener />
+                  <AchievementToastContainer />
+                  {children}
+                </ScreenShakeProvider>
+              </ToastProvider>
+            </GameProvider>
+          </P2PProvider>
         </ErrorBoundary>
       </body>
     </html>
   );
 }
-
