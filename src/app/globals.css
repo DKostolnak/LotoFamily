@@ -215,6 +215,46 @@ textarea,
   animation: spin 1s linear infinite;
 }
 
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}
+
+@keyframes zoomIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-in {
+  /* Utility class to be combined with specific animations if using tailwindcss-animate, 
+     but here we define specific helpers for manual usage if plugin missing */
+}
+
+/* Fallback/Manual classes for animations used in Victory Screen */
+.zoom-in-95 {
+  animation: zoomIn 0.5s ease-out forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-spin {
     animation: none;

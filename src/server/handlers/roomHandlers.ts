@@ -9,6 +9,8 @@ import { createGame, addPlayer, removePlayer } from '../../engine/gameEngine';
 import * as store from '../store';
 import { roomLog } from '../../lib/logger';
 import { sanitizeName, sanitizeAvatarUrl, sanitizeRoomCode } from '../utils/sanitize';
+import { isRateLimited } from '../utils/rateLimit';
+import { RoomCreatePayloadSchema, RoomJoinPayloadSchema, validatePayload } from '../utils/messageSchemas';
 
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;

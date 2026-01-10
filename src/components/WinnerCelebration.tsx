@@ -4,9 +4,16 @@ import React, { useEffect, useMemo } from 'react';
 import { Player, LotoCard as LotoCardType } from '@/lib/types';
 import LotoCard from './LotoCard';
 import ConfettiCanvas from './ConfettiCanvas';
+import { WoodenCard } from './common/WoodenCard';
 import { playWinSound, playLossSound, playClickSound } from '@/lib/audio';
 import Image from 'next/image';
 import type { TranslationDictionary } from '@/lib/translations';
+
+const BackArrowIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+);
 
 interface WinnerCelebrationProps {
     winner: Player;
@@ -125,19 +132,33 @@ export default function WinnerCelebration({
     };
 
     return (
-        <div style={mainStyle}>
-            {/* Confetti Background */}
-            <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden p-4">
+            {/* Dark Backdrop with Blur */}
+            <div className="absolute inset-0 bg-black/85 backdrop-blur-sm transition-opacity duration-1000 animate-in fade-in fill-mode-forwards"></div>
+
+            {/* Confetti (Behind everything) */}
+            <div className="absolute inset-0 pointer-events-none z-0">
                 <ConfettiCanvas />
             </div>
 
-            <div className="fixed inset-0 bg-black/40 pointer-events-none z-0" />
+            {/* Floating Wooden Board */}
+            <WoodenCard
+                className="animate-in zoom-in-95 duration-500"
+                maxWidth="480px"
+                style={{ overflow: 'visible', margin: 'auto' }}
+            >
+                {/* 1. HERO SECTION: Crown, Avatar & Title */}
+                <div className="relative flex flex-col items-center justify-center -mt-8 mb-4">
+                    {/* Rotating Rays Behind (Centered behind avatar) */}
+                    <div className="absolute top-[55%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-gradient-to-r from-transparent via-yellow-500/10 to-transparent rotate-45 animate-spin-slow pointer-events-none rounded-full blur-3xl z-0"></div>
 
-            <div style={cardStyle}>
-                {/* Header / Avatar */}
-                <div className="relative mb-2">
-                    <div className="absolute inset-0 bg-yellow-500 rounded-full blur-2xl opacity-40 animate-pulse"></div>
-                    <div className="w-32 h-32 rounded-full border-4 border-[#ffd700] shadow-lg bg-[#f5f0e8] z-10 relative flex items-center justify-center text-5xl overflow-hidden">
+                    {/* Crown Icon */}
+                    <div className="text-6xl mb-2 animate-bounce drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] z-20">
+                        👑
+                    </div>
+
+                    {/* Big Avatar */}
+                    <div className="relative w-40 h-40 rounded-full border-4 border-[#ffd700] shadow-[0_0_30px_rgba(255,215,0,0.4)] bg-[#1a1109] z-10 flex items-center justify-center overflow-hidden">
                         {winner.avatarUrl && (winner.avatarUrl.startsWith('http') || winner.avatarUrl.startsWith('data:')) ? (
                             <Image
                                 src={winner.avatarUrl}
@@ -146,169 +167,78 @@ export default function WinnerCelebration({
                                 className="object-cover"
                             />
                         ) : (
-                            <span>{winner.avatarUrl || '👤'}</span>
+                            <span className="text-7xl">{winner.avatarUrl || '👤'}</span>
                         )}
                     </div>
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-7xl drop-shadow-xl animate-bounce z-20">
-                        👑
+
+                    {/* Text Group */}
+                    <div className="text-center mt-4 z-20">
+                        <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-[#ffd700] to-[#b8860b] drop-shadow-sm uppercase tracking-wide leading-tight">
+                            {isMe ? t.victory : t.gameOver}
+                        </h1>
+                        <p className="text-lg font-bold text-[#f5e6c8] mt-1 opacity-90">
+                            {isMe ? t.youWon : `${winner.name} ${t.playerWins}`}
+                        </p>
+                        <div className="text-3xl font-black text-[#ffd700] mt-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                            {winner.score} PTS
+                        </div>
                     </div>
                 </div>
 
-                {/* Winner Title */}
-                <div style={{ textAlign: 'center' }}>
-                    <h1 style={{
-                        fontSize: '2.5rem',
-                        fontWeight: 900,
-                        color: '#ffd700',
-                        textTransform: 'uppercase',
-                        margin: 0,
-                        textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 0 20px rgba(255, 215, 0, 0.4)',
-                        lineHeight: 1.1,
-                    }}>
-                        {isMe ? t.victory : t.gameOver}
-                    </h1>
-                    <p style={{
-                        color: '#e8d4b8',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                        marginTop: '8px'
-                    }}>
-                        {isMe ? t.youWon : `${winner.name} ${t.playerWins}`}
-                    </p>
-                </div>
-
-                {/* Winning Card Showcase */}
+                {/* 2. WINNING CARD (Compact) */}
                 {winningCard && (
-                    <div className="relative w-full transform scale-90 sm:scale-100 transition-transform">
-                        <div className="absolute -inset-2 bg-gradient-to-r from-yellow-600 via-yellow-300 to-yellow-600 rounded-lg blur opacity-75 animate-pulse"></div>
-                        <div className="relative border-2 border-yellow-400 rounded-lg overflow-hidden shadow-2xl">
+                    <div className="relative w-full transform scale-95 hover:scale-100 transition-transform duration-300">
+                        <div className="relative border-2 border-[#8b6b4a] rounded-xl overflow-hidden shadow-inner bg-[#2d1f10]/50">
                             <LotoCard
                                 card={winningCard}
                                 t={t}
                                 compact={true}
                                 theme="classic"
                             />
-                            {/* "WINNER" Stamp Overlay */}
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="border-4 border-red-600 text-red-600 font-black text-4xl uppercase tracking-widest p-2 rotate-[-15deg] opacity-80 mix-blend-multiply" style={{ textShadow: '0 0 10px rgba(255,255,255,0.5)' }}>
-                                    WINNER
+                            {/* Pro Stamp */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                                <div className="border-4 border-red-500/80 rounded-lg px-6 py-2 rotate-[-12deg] bg-red-900/40 backdrop-blur-sm shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                                    <span className="text-2xl font-black text-red-500 uppercase tracking-[0.2em] drop-shadow-md">
+                                        WINNER
+                                    </span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Winner Score Box */}
-                <div style={{
-                    background: 'linear-gradient(135deg, #ffd700 0%, #daa520 100%)',
-                    borderRadius: '16px',
-                    padding: '16px',
-                    width: '100%',
-                    textAlign: 'center',
-                    border: '2px solid #b8860b',
-                    boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)',
-                    color: '#3d2814'
-                }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.8 }}>
-                        {t.winningScore || 'Winning Score'}
-                    </div>
-                    <div style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: 1 }}>
-                        {winner.score} PTS
-                    </div>
-                </div>
-
-                {/* Personal Best Badge */}
-                {isPersonalBest && isMe && (
-                    <div style={{
-                        background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
-                        borderRadius: '12px',
-                        padding: '12px 20px',
-                        textAlign: 'center',
-                        border: '2px solid #c0392b',
-                        boxShadow: '0 4px 15px rgba(238, 90, 36, 0.4)',
-                        color: 'white',
-                        animation: 'pulse 1.5s ease-in-out infinite',
-                    }}>
-                        <span style={{ fontSize: '1.5rem', marginRight: '8px' }}>🏆</span>
-                        <span style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                            Personal Best!
-                        </span>
-                    </div>
-                )}
-
-                {/* Other Players Leaderboard */}
+                {/* 3. LEADERBOARD (Mini) */}
                 {sortedOthers.length > 0 && (
-                    <div style={{ width: '100%' }}>
-                        <p style={{
-                            color: '#8b6b4a',
-                            fontSize: '0.9rem',
-                            fontWeight: 'bold',
-                            textTransform: 'uppercase',
-                            marginBottom: '12px',
-                            textAlign: 'center',
-                            letterSpacing: '0.1em'
-                        }}>
-                            {t.leaderboard || 'Leaderboard'}
-                        </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {sortedOthers.map((player, index) => {
-                                const isUser = player.id === currentUserId;
-                                return (
-                                    <div key={player.id} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        padding: '12px',
-                                        background: isUser ? 'rgba(61, 40, 20, 0.6)' : 'rgba(26, 17, 9, 0.6)',
-                                        borderRadius: '12px',
-                                        border: isUser ? '1px solid #ccafa5' : '1px solid #5a4025',
-                                    }}>
-                                        <div style={{
-                                            width: '32px', height: '32px',
-                                            borderRadius: '8px',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: '1.2rem',
-                                            background: '#3d2814',
-                                            marginRight: '12px',
-                                            border: '1px solid #5a4025',
-                                            overflow: 'hidden',
-                                            position: 'relative'
-                                        }}>
-                                            {player.avatarUrl && (player.avatarUrl.startsWith('http') || player.avatarUrl.startsWith('data:')) ? (
-                                                <Image
-                                                    src={player.avatarUrl}
-                                                    alt={player.name}
-                                                    fill
-                                                    className="object-cover"
-                                                />
-                                            ) : (
-                                                <span>{player.avatarUrl || '👤'}</span>
-                                            )}
-                                        </div>
-                                        <div style={{ flex: 1, fontWeight: 'bold', color: isUser ? '#ffd700' : '#e8d4b8' }}>
-                                            {player.name} {isUser && '(You)'}
-                                        </div>
-                                        <div style={{ fontWeight: 'bold', color: '#f5e6c8' }}>
-                                            {player.score}
-                                        </div>
+                    <div className="w-full bg-[#1a1109]/50 rounded-xl p-3 border border-[#3d2814]">
+                        <p className="text-[#8b6b4a] text-xs font-bold uppercase tracking-widest text-center mb-2">Leaderboard</p>
+                        <div className="flex flex-col gap-2">
+                            {sortedOthers.slice(0, 3).map((player) => (
+                                <div key={player.id} className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg">{player.avatarUrl || '👤'}</span>
+                                        <span className={`font-bold ${player.id === currentUserId ? 'text-[#ffd700]' : 'text-[#e8d4b8]'}`}>
+                                            {player.name}
+                                        </span>
                                     </div>
-                                );
-                            })}
+                                    <span className="font-mono text-[#f5e6c8]">{player.score}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}
 
-                {/* Actions */}
-                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                {/* 4. ACTIONS */}
+                <div className="w-full flex flex-col gap-3 mt-2">
                     {isHost ? (
                         <button
                             onClick={() => { playClickSound(); onNewGame(); }}
                             style={goldBtnStyle}
-                            className="active:translate-y-1"
+                            className="active:scale-95 transition-transform animate-pulse shadow-[0_0_20px_rgba(255,215,0,0.3)]"
                         >
-                            🔄 {t.playAgain}
+                            <span className="text-xl">🔄</span> {t.playAgain}
                         </button>
                     ) : (
-                        <div className="text-center p-3 text-[#8b6b4a] italic bg-[#1a1109]/50 rounded-lg border border-[#3d2814]">
+                        <div className="text-center p-3 text-sm text-[#8b6b4a] italic bg-[#0f0905]/50 rounded-lg border border-[#3d2814]">
                             {t.waitingHostRestart}
                         </div>
                     )}
@@ -316,12 +246,13 @@ export default function WinnerCelebration({
                     <button
                         onClick={() => { playClickSound(); onBackToLobby(); }}
                         style={woodBtnStyle}
-                        className="active:translate-y-1"
+                        className="active:scale-95 transition-transform flex items-center justify-center gap-2"
                     >
-                        ⬅️ {t.leaveRoom}
+                        <BackArrowIcon />
+                        {t.leaveRoom}
                     </button>
                 </div>
-            </div>
+            </WoodenCard>
         </div>
     );
 }

@@ -49,9 +49,22 @@ export function initPersistence() {
 export function savePersistence() {
     try {
         const obj = Object.fromEntries(players);
-        fs.writeFileSync(PLAYERS_FILE, JSON.stringify(obj, null, 2));
+        const tempPath = PLAYERS_FILE + '.tmp';
+
+        // Write to temp file first
+        fs.writeFileSync(tempPath, JSON.stringify(obj, null, 2));
+
+        // Atomic rename (safe on POSIX systems)
+        fs.renameSync(tempPath, PLAYERS_FILE);
     } catch (e) {
         console.error('[Persistence] Error saving players:', e);
+        // Clean up temp file if it exists
+        try {
+            const tempPath = PLAYERS_FILE + '.tmp';
+            if (fs.existsSync(tempPath)) {
+                fs.unlinkSync(tempPath);
+            }
+        } catch { /* ignore cleanup errors */ }
     }
 }
 
