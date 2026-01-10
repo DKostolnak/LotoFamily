@@ -78,6 +78,29 @@ export function P2PProvider({ children }: P2PProviderProps) {
     const connectionRef = useRef(p2pConnection);
     const engineRef = useRef(p2pGameEngine);
 
+    // ========================================================================
+    // MESSAGE HANDLING
+    // ========================================================================
+
+    const handleMessage = useCallback((msg: P2PMessage, asHost: boolean) => {
+        console.log('[P2P Context] Message:', msg.type, asHost ? '(host)' : '(player)');
+
+        if (asHost) {
+            // Host processes all game logic
+            engineRef.current.handleMessage(msg);
+        } else {
+            // Player just receives state updates
+            switch (msg.type) {
+                case 'game:state':
+                    setGameState(msg.payload as GameState);
+                    break;
+                case 'game:numberCalled':
+                    // Could trigger audio here
+                    break;
+            }
+        }
+    }, []);
+
     // Generate unique player ID
     const generatePlayerId = useCallback(() => {
         return 'p2p-' + Math.random().toString(36).substring(2, 10);
@@ -297,29 +320,6 @@ export function P2PProvider({ children }: P2PProviderProps) {
             return false;
         }
     }, [handleMessage]);
-
-    // ========================================================================
-    // MESSAGE HANDLING
-    // ========================================================================
-
-    const handleMessage = useCallback((msg: P2PMessage, asHost: boolean) => {
-        console.log('[P2P Context] Message:', msg.type, asHost ? '(host)' : '(player)');
-
-        if (asHost) {
-            // Host processes all game logic
-            engineRef.current.handleMessage(msg);
-        } else {
-            // Player just receives state updates
-            switch (msg.type) {
-                case 'game:state':
-                    setGameState(msg.payload as GameState);
-                    break;
-                case 'game:numberCalled':
-                    // Could trigger audio here
-                    break;
-            }
-        }
-    }, []);
 
     // ========================================================================
     // GAME ACTIONS
