@@ -281,14 +281,62 @@ export class AudioService {
         this.vibrate([50, 30, 50]);
     }
 
+    public playCrowdCheer() {
+        if (this._isMuted || !this.context) return;
+        this.resumeContext();
+
+        try {
+            // White noise buffer for "crowd" texture
+            const bufferSize = this.context.sampleRate * 3; // 3 seconds
+            const buffer = this.context.createBuffer(1, bufferSize, this.context.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            // Create noise source
+            const noise = this.context.createBufferSource();
+            noise.buffer = buffer;
+
+            // Filter to make it sound like a crowd (bandpass)
+            const filter = this.context.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 1000;
+
+            // Envelope for fade in/out
+            const gain = this.context.createGain();
+            gain.gain.setValueAtTime(0, this.context.currentTime);
+            gain.gain.linearRampToValueAtTime(0.3, this.context.currentTime + 0.5); // Fade in
+            gain.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 3); // Fade out
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.context.destination);
+
+            noise.start(this.context.currentTime);
+
+            // Add some "whistles" (high pitched sine waves)
+            this.playTone(1500, 200, 'sine', 0.1);
+            setTimeout(() => this.playTone(1800, 300, 'triangle', 0.1), 300);
+            setTimeout(() => this.playTone(2000, 150, 'sine', 0.1), 800);
+
+        } catch { /* ignore */ }
+    }
+
     public playVictory() {
         const { frequencies, duration, type } = CHORDS.bingo;
         if (!this.context) return;
 
+        // Play the fanfare melody
         frequencies.forEach((freq, i) => {
-            setTimeout(() => this.playTone(freq, duration, type, 0.2), i * 150);
+            setTimeout(() => this.playTone(freq, duration, type, 0.25), i * 150);
         });
+
+        // Trigger vibration pattern
         this.vibrate([100, 50, 100, 50, 200]);
+
+        // Start crowd cheer slightly after fanfare starts
+        setTimeout(() => this.playCrowdCheer(), 300);
     }
 
     public playLoss() {

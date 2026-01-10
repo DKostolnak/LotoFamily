@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useMemo } from 'react';
-import { Player } from '@/lib/types';
+import { Player, LotoCard as LotoCardType } from '@/lib/types';
+import LotoCard from './LotoCard';
 import ConfettiCanvas from './ConfettiCanvas';
-import { playWinSound, playLossSound, playClickSound } from './GameAudioPlayer';
+import { playWinSound, playLossSound, playClickSound } from '@/lib/audio';
 import Image from 'next/image';
 import type { TranslationDictionary } from '@/lib/translations';
 
@@ -12,6 +13,7 @@ interface WinnerCelebrationProps {
     players: Player[];
     isHost: boolean;
     isPersonalBest?: boolean;
+    winningCard?: LotoCardType;
     onNewGame: () => void;
     onBackToLobby: () => void;
     currentUserId: string;
@@ -27,6 +29,7 @@ export default function WinnerCelebration({
     players,
     isHost,
     isPersonalBest = false,
+    winningCard,
     onNewGame,
     onBackToLobby,
     currentUserId,
@@ -44,16 +47,14 @@ export default function WinnerCelebration({
         }
     }, [isMe]);
 
-    // Calculate leaderboard (excluding winner, or including? User asked for "other players")
-    // Let's show EVERYONE sorted, but highlight the winner at the top.
-    // Actually, usually "Winner" is big at top, then list of others below.
+    // Calculate leaderboard (excluding winner)
     const sortedOthers = useMemo(() => {
         return players
             .filter(p => p.id !== winner.id)
             .sort((a, b) => b.score - a.score);
     }, [players, winner.id]);
 
-    // --- STYLES (Copied from MainMenu/Lobby for consistency) ---
+    // --- STYLES ---
     const mainStyle: React.CSSProperties = {
         position: 'fixed',
         top: 0,
@@ -175,6 +176,27 @@ export default function WinnerCelebration({
                         {isMe ? t.youWon : `${winner.name} ${t.playerWins}`}
                     </p>
                 </div>
+
+                {/* Winning Card Showcase */}
+                {winningCard && (
+                    <div className="relative w-full transform scale-90 sm:scale-100 transition-transform">
+                        <div className="absolute -inset-2 bg-gradient-to-r from-yellow-600 via-yellow-300 to-yellow-600 rounded-lg blur opacity-75 animate-pulse"></div>
+                        <div className="relative border-2 border-yellow-400 rounded-lg overflow-hidden shadow-2xl">
+                            <LotoCard
+                                card={winningCard}
+                                t={t}
+                                compact={true}
+                                theme="classic"
+                            />
+                            {/* "WINNER" Stamp Overlay */}
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="border-4 border-red-600 text-red-600 font-black text-4xl uppercase tracking-widest p-2 rotate-[-15deg] opacity-80 mix-blend-multiply" style={{ textShadow: '0 0 10px rgba(255,255,255,0.5)' }}>
+                                    WINNER
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Winner Score Box */}
                 <div style={{

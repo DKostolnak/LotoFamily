@@ -258,87 +258,103 @@ export default function MainMenu({ onCreateGame, onJoinGame, onStartLocalGame }:
                 />
 
                 {/* Header */}
-                <div style={{ textAlign: 'center', width: '100%' }}>
+                <div style={{ textAlign: 'center', width: '100%' }} className={mode === 'menu' ? 'animate-title' : ''}>
                     <div style={{ fontSize: mode === 'menu' ? '4rem' : '2.5rem', marginBottom: mode === 'menu' ? '8px' : '4px', lineHeight: 1 }}>🎱</div>
-                    <h1 style={{
-                        fontSize: mode === 'menu' ? '2.5rem' : 'clamp(1.5rem, 5vw, 2rem)',
-                        fontWeight: 900,
-                        color: '#ffd700',
-                        textTransform: 'uppercase',
-                        margin: 0,
-                        // Deep, layered shadow for 3D lettering effect
-                        textShadow: '0 2px 0 #b8860b, 0 4px 4px rgba(0,0,0,0.6), 0 0 20px rgba(255, 215, 0, 0.4)',
-                        lineHeight: 1.2,
-                        letterSpacing: '0.05em',
-                    }}>
+                    <h1
+                        className={mode === 'menu' ? 'animate-shine' : ''}
+                        style={{
+                            fontSize: mode === 'menu' ? '2.8rem' : 'clamp(1.5rem, 5vw, 2rem)',
+                            fontWeight: 900,
+                            color: '#ffd700',
+                            textTransform: 'uppercase',
+                            margin: 0,
+                            // Deep, layered shadow for 3D lettering effect (overridden by animate-shine if active, but good fallback)
+                            textShadow: mode === 'menu' ? 'none' : '0 2px 0 #b8860b, 0 4px 4px rgba(0,0,0,0.6), 0 0 20px rgba(255, 215, 0, 0.4)',
+                            lineHeight: 1.2,
+                            letterSpacing: '0.05em',
+                        }}
+                    >
                         {mode === 'menu' ? t.title : (mode === 'create' ? t.createGame : t.joinGame)}
                     </h1>
                     {mode === 'menu' && (
-                        <p style={{ color: '#8b6b4a', margin: '8px 0 0 0', fontSize: '1.1rem' }}>{t.subtitle}</p>
+                        <p style={{ color: '#8b6b4a', margin: '4px 0 0 0', fontSize: '1rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{t.subtitle}</p>
                     )}
                 </div>
 
                 {mode === 'menu' ? (
-                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'clamp(16px, 3vh, 32px)' }}>
-                        <WoodenButton
-                            onClick={() => onModeChange('create')}
-                            variant="gold"
-                            size="lg"
-                            fullWidth
-                            style={{ fontSize: 'clamp(1rem, 3vw, 1.25rem)' }}
-                        >
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
-                                <div><span style={{ fontSize: '1.5rem' }}>👑</span> {t.createGame}</div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: 'normal' }}>Online & LAN Party</div>
-                            </div>
-                        </WoodenButton>
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
+                        {/* 1. Main Action: Create Game (HUGE) */}
+                        <div style={{ margin: '4px 0' }}>
+                            <WoodenButton
+                                onClick={() => onModeChange('create')}
+                                variant="gold"
+                                size="lg"
+                                fullWidth
+                                style={{
+                                    padding: '20px 16px',
+                                    fontSize: '1.4rem',
+                                    boxShadow: '0 8px 16px rgba(255, 215, 0, 0.25), 0 5px 0 #b8860b'
+                                }}
+                            >
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
+                                    <div><span style={{ fontSize: '1.8rem' }}>👑</span> {t.createGame}</div>
+                                    <div style={{ fontSize: '0.8rem', opacity: 0.9, fontWeight: 'bold', marginTop: '4px', textTransform: 'uppercase' }}>Online & LAN Party</div>
+                                </div>
+                            </WoodenButton>
+                        </div>
+
+                        {/* 2. Secondary Action: Join Game */}
                         <WoodenButton
                             onClick={() => onModeChange('join')}
                             variant="primary"
                             size="lg"
                             fullWidth
                             style={{
-                                fontSize: 'clamp(1rem, 3vw, 1.25rem)',
+                                fontSize: '1.2rem',
+                                opacity: 0.9
                             }}
                         >
-                            <span style={{ fontSize: '1.5rem' }}>🎮</span> {t.joinGame}
+                            <span style={{ fontSize: '1.4rem' }}>🎮</span> {t.joinGame}
                         </WoodenButton>
 
-
-
-                        {/* Stats & Shop Buttons Row */}
-                        <div style={{ display: 'flex', gap: '16px' }}>
+                        {/* 3. Extras Row (Stats, Shop, etc) */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: '12px',
+                            marginTop: '12px',
+                            paddingTop: '16px',
+                            borderTop: '2px dashed rgba(139, 107, 74, 0.3)'
+                        }}>
                             <WoodenButton
                                 onClick={() => { playClickSound(); setShowStats(true); }}
                                 variant="secondary"
-                                size="lg"
+                                size="md"
                                 style={{
-                                    flex: 1,
-                                    fontSize: 'clamp(1rem, 3vw, 1.25rem)',
+                                    fontSize: '0.9rem',
                                     background: 'linear-gradient(180deg, #3d2814 0%, #2d1f10 100%)',
-                                    borderBottom: '4px solid #1a1109',
+                                    borderBottom: '3px solid #1a1109',
                                 }}
                             >
-                                <span style={{ fontSize: '1.5rem' }}>📊</span> {t.score || 'Stats'}
+                                <span style={{ fontSize: '1.2rem' }}>📊</span> {t.score || 'Stats'}
                             </WoodenButton>
 
                             <WoodenButton
                                 onClick={() => { playClickSound(); setShowShop(true); }}
                                 variant="secondary"
-                                size="lg"
+                                size="md"
                                 style={{
-                                    flex: 1,
-                                    fontSize: 'clamp(1rem, 3vw, 1.25rem)',
+                                    fontSize: '0.9rem',
                                     background: 'linear-gradient(180deg, #3d2814 0%, #2d1f10 100%)',
-                                    borderBottom: '4px solid #1a1109',
+                                    borderBottom: '3px solid #1a1109',
                                 }}
                             >
-                                <span style={{ fontSize: '1.5rem' }}>🛒</span> Shop
+                                <span style={{ fontSize: '1.2rem' }}>🛒</span> Shop
                             </WoodenButton>
                         </div>
 
-                        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(139, 107, 74, 0.3)', display: 'flex', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
                             <LanguageSelector currentLanguage={language} onLanguageChange={handleLanguageChange} />
                         </div>
                     </div>

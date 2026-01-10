@@ -141,6 +141,18 @@ export default function Home() {
     ? gameState.players.find(p => p.id === gameState.winnerId)
     : null;
 
+  // Calculate winning card for display
+  const winningCard = useMemo(() => {
+    if (!winner || !gameState?.calledNumbers) return undefined;
+    const calledValues = new Set(gameState.calledNumbers.map(cn => cn.value));
+    // Find card with most matches (the winning one)
+    return winner.cards.slice().sort((a, b) => {
+      const countA = a.grid.flat().filter(cell => cell && cell !== 0 && calledValues.has(cell)).length;
+      const countB = b.grid.flat().filter(cell => cell && cell !== 0 && calledValues.has(cell)).length;
+      return countB - countA;
+    })[0];
+  }, [winner, gameState?.calledNumbers]);
+
   // Get current player from state (might have more info than just ID)
   const currentPlayer = gameState?.players.find(p => p.id === playerId);
 
@@ -230,6 +242,7 @@ export default function Home() {
         {audioPlayer}
         <WinnerCelebration
           winner={winner}
+          winningCard={winningCard}
           players={gameState.players}
           isHost={isHost}
           isPersonalBest={isPersonalBest}
