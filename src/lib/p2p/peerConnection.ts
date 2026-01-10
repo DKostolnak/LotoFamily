@@ -12,6 +12,21 @@ import Peer, { DataConnection } from 'peerjs';
 // Room code prefix to namespace our game
 const PEER_PREFIX = 'loto-game-';
 
+// Session storage keys for reconnection
+const SESSION_STORAGE_KEY = 'loto_p2p_session';
+
+interface P2PSession {
+    roomCode: string;
+    playerId: string;
+    playerName: string;
+    avatarUrl?: string;
+    isHost: boolean;
+    timestamp: number;
+}
+
+// Session expires after 30 minutes
+const SESSION_EXPIRY_MS = 30 * 60 * 1000;
+
 export type P2PMessageType =
     | 'player:join'
     | 'player:leave'
@@ -296,8 +311,9 @@ export class P2PConnection {
 
     /**
      * Disconnect and cleanup
+     * @param clearSession - If true, also clears saved session (default: false)
      */
-    disconnect(): void {
+    disconnect(clearSession: boolean = false): void {
         console.log('[P2P] Disconnecting...');
 
         this.connections.forEach((conn) => {
@@ -313,6 +329,107 @@ export class P2PConnection {
         this.isHost = false;
         this.roomCode = '';
         this.localPlayer = null;
+
+        if (clearSession) {
+            this.clearSession();
+        }
+    }
+
+    /**
+     * Save current session for reconnection
+     */
+    saveSession(): void {
+        if (!this.localPlayer || !this.roomCode) return;
+
+        try {
+            const session: P2PSession = {
+                roomCode: this.roomCode,
+                playerId: this.localPlayer.id,
+                playerName: this.localPlayer.name,
+                avatarUrl: this.localPlayer.avatarUrl,
+                isHost: this.isHost,
+                timestamp: Date.now(),
+            };
+            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+            console.log('[P2P] Session saved');
+        } catch (e) {
+            console.warn('[P2P] Failed to save session:', e);
+        }
+    }
+
+    /**
+     * Get saved session if still valid
+     */
+    static getSession(): P2PSession | null {
+        try {
+            const data = localStorage.getItem(SESSION_STORAGE_KEY);
+            if (!data) return null;
+
+            const session: P2PSession = JSON.parse(data);
+
+            // Check if session has expired
+            if (Date.now() - session.timestamp > SESSION_EXPIRY_MS) {
+                localStorage.removeItem(SESSION_STORAGE_KEY);
+                return null;
+            }
+
+            return session;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Clear saved session
+     */
+    clearSession(): void {
+        try {
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+            console.log('[P2P] Session cleared');
+        } catch (e) {
+            console.warn('[P2P] Failed to clear session:', e);
+        }
+    }
+
+    /**
+     * Attempt to rejoin a previous session
+     */
+    async rejoinSession(): Promise<boolean> {
+        const session = P2PConnection.getSession();
+        if (!session) {
+            console.log('[P2P] No valid session to rejoin');
+            return false;
+        }
+
+        console.log('[P2P] Attempting to rejoin session:', session.roomCode);
+
+        const player: P2PPlayer = {
+            id: session.playerId,
+            name: session.playerName,
+            avatarUrl: session.avatarUrl,
+        };
+
+        try {
+            if (session.isHost) {
+                // Host can try to recreate the room with same code
+                await this.createRoom(player, session.roomCode);
+            } else {
+                // Player rejoins the existing room
+                await this.joinRoom(player, session.roomCode);
+            }
+            return true;
+        } catch (e) {
+            console.warn('[P2P] Rejoin failed:', e);
+            this.clearSession();
+            return false;
+        }
+    }
+
+    /**
+     * Check if a rejoinable session exists
+     */
+    static hasSession(): boolean {
+        return P2PConnection.getSession() !== null;
     }
 
     /**

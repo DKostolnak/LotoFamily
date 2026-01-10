@@ -30,6 +30,7 @@ interface P2PContextType {
     isHost: boolean;
     roomCode: string;
     error: string | null;
+    hasSavedSession: boolean; // NEW: Check if rejoin is possible
 
     // Game state (mirrors GameContext)
     gameState: GameState | null;
@@ -39,6 +40,7 @@ interface P2PContextType {
     // Actions
     createRoom: (playerName: string, avatarUrl?: string) => Promise<string>;
     joinRoom: (roomCode: string, playerName: string, avatarUrl?: string) => Promise<void>;
+    rejoinSession: () => Promise<boolean>; // NEW: Rejoin previous session
     leaveRoom: () => void;
     startGame: () => void;
     markCell: (cardId: string, row: number, col: number) => void;
@@ -65,6 +67,7 @@ export function P2PProvider({ children }: P2PProviderProps) {
     const [isHost, setIsHost] = useState(false);
     const [roomCode, setRoomCode] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [hasSavedSession, setHasSavedSession] = useState(false);
 
     // Game state
     const [gameState, setGameState] = useState<GameState | null>(null);
@@ -78,6 +81,11 @@ export function P2PProvider({ children }: P2PProviderProps) {
     // Generate unique player ID
     const generatePlayerId = useCallback(() => {
         return 'p2p-' + Math.random().toString(36).substring(2, 10);
+    }, []);
+
+    // Check for saved session on mount
+    useEffect(() => {
+        setHasSavedSession(P2PConnection.hasSession());
     }, []);
 
     // ========================================================================
@@ -147,6 +155,9 @@ export function P2PProvider({ children }: P2PProviderProps) {
                 connectionRef.current.send(msg);
             });
 
+            // Save session for reconnection
+            connectionRef.current.saveSession();
+
             return code;
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to create room';
@@ -180,12 +191,112 @@ export function P2PProvider({ children }: P2PProviderProps) {
             await connectionRef.current.joinRoom(player, code);
             setRoomCode(code.toUpperCase());
 
+            // Save session for reconnection
+            connectionRef.current.saveSession();
+
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to join room';
             setError(message);
             throw err;
         }
     }, [generatePlayerId]);
+
+    // ========================================================================
+    // REJOIN SESSION
+    // ========================================================================
+
+    const rejoinSession = useCallback(async (): Promise<boolean> => {
+        try {
+            setError(null);
+
+            // Get session data without consuming it yet
+            const session = P2PConnection.getSession();
+            if (!session) {
+                setHasSavedSession(false);
+                return false;
+            }
+
+            // Set state from session
+            setPlayerId(session.playerId);
+            setPlayerName(session.playerName);
+            setRoomCode(session.roomCode);
+            setIsHost(session.isHost);
+
+            // Re-setup handlers before rejoining
+            connectionRef.current.setHandlers({
+                onMessage: (msg) => handleMessage(msg, session.isHost),
+                onPlayerConnect: session.isHost ? (peerId, peerPlayer) => {
+                    // Host re-connection handler (same as createRoom)
+                    if (peerPlayer) {
+                        const newPlayer = engineRef.current.addPlayer(peerPlayer);
+                        if (newPlayer) {
+                            const state = engineRef.current.getState();
+                            if (state) {
+                                connectionRef.current.sendTo(peerId, {
+                                    type: 'game:state',
+                                    payload: state,
+                                    senderId: session.playerId,
+                                    timestamp: Date.now(),
+                                });
+                            }
+                        }
+                    }
+                } : undefined,
+                onPlayerDisconnect: session.isHost ? (peerId) => {
+                    engineRef.current.removePlayer(peerId);
+                } : undefined,
+                onError: (err) => setError(err.message),
+                onReady: () => setIsConnected(true),
+            });
+
+            // If we are host, we might need to recover game state too
+            // For now, we assume game state is lost if host closes page
+            // But if just network drop, P2PConnection keeps it alive? 
+            // Actually P2PConnection is new instance on refresh.
+            // TODO: Persist Game Engine state to localStorage for full host recovery.
+
+            // Attempt rejoin
+            const success = await connectionRef.current.rejoinSession();
+
+            if (success) {
+                if (session.isHost) {
+                    // Host needs to re-initialize engine
+                    // For now, create new game state (limitation: host refresh resets game)
+                    // Ideal: Load game state from storage too
+                    const player: P2PPlayer = {
+                        id: session.playerId,
+                        name: session.playerName,
+                        avatarUrl: session.avatarUrl
+                    };
+                    const state = engineRef.current.createGame(player, session.roomCode);
+                    setGameState(state);
+
+                    // Setup engine callbacks
+                    engineRef.current.setOnStateChange((newState) => {
+                        setGameState(newState);
+                        connectionRef.current.send({
+                            type: 'game:state',
+                            payload: newState,
+                            senderId: session.playerId,
+                            timestamp: Date.now(),
+                        });
+                    });
+                    engineRef.current.setOnBroadcast((msg) => {
+                        connectionRef.current.send(msg);
+                    });
+                }
+            } else {
+                setHasSavedSession(false);
+            }
+
+            return success;
+        } catch (err) {
+            console.error('Failed to rejoin:', err);
+            setError('Failed to rejoin previous session');
+            setHasSavedSession(false);
+            return false;
+        }
+    }, [handleMessage]);
 
     // ========================================================================
     // MESSAGE HANDLING
@@ -232,6 +343,7 @@ export function P2PProvider({ children }: P2PProviderProps) {
         setPlayerId(null);
         setPlayerName('');
         setError(null);
+        setHasSavedSession(false);
     }, [playerId]);
 
     const startGame = useCallback(() => {
@@ -305,11 +417,13 @@ export function P2PProvider({ children }: P2PProviderProps) {
         isHost,
         roomCode,
         error,
+        hasSavedSession,
         gameState,
         playerId,
         playerName,
         createRoom,
         joinRoom,
+        rejoinSession,
         leaveRoom,
         startGame,
         markCell,
