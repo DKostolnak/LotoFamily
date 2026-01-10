@@ -147,8 +147,8 @@ export default function Home() {
     const calledValues = new Set(gameState.calledNumbers.map(cn => cn.value));
     // Find card with most matches (the winning one)
     return winner.cards.slice().sort((a, b) => {
-      const countA = a.grid.flat().filter(cell => cell && cell !== 0 && calledValues.has(cell)).length;
-      const countB = b.grid.flat().filter(cell => cell && cell !== 0 && calledValues.has(cell)).length;
+      const countA = a.grid.flat().filter(cell => cell.value && cell.value !== 0 && calledValues.has(cell.value)).length;
+      const countB = b.grid.flat().filter(cell => cell.value && cell.value !== 0 && calledValues.has(cell.value)).length;
       return countB - countA;
     })[0];
   }, [winner, gameState?.calledNumbers]);
