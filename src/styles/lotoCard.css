@@ -391,8 +391,91 @@
     /* Gold background */
     box-shadow: inset 0 0 10px var(--color-gold);
     border: 2px solid var(--color-gold);
-    animation: pulse-soft 2s infinite ease-in-out;
+    animation: pulse-gold 2s infinite;
     z-index: 3;
+}
+
+/* ============================================================================
+ * MARKER SKINS
+ * ============================================================================ */
+
+/* Base Marker (Shared) */
+.loto-cell--marked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 85%;
+    height: 85%;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Classic Red Chip (Default) */
+.loto-cell--marked[data-skin="skin_classic"]::after {
+    background: radial-gradient(circle at 30% 30%, rgba(255, 100, 100, 0.9), rgba(200, 0, 0, 0.9));
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    box-shadow:
+        inset 0 0 10px rgba(0, 0, 0, 0.5),
+        0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Gold Coin */
+.loto-cell--marked[data-skin="skin_coin"]::after {
+    background: radial-gradient(ellipse at center, #ffd700 0%, #daa520 100%);
+    border: 2px solid #b8860b;
+    box-shadow:
+        inset 0 0 0 4px #daa520,
+        inset 0 0 0 5px #ffd700,
+        0 5px 10px rgba(0, 0, 0, 0.5);
+    /* Attempt to simulate symbol via gradient or just keep it simple/shiny */
+    background-image:
+        radial-gradient(circle at 50% 50%, transparent 60%, rgba(184, 134, 11, 0.5) 65%, transparent 70%);
+}
+
+.loto-cell--marked[data-skin="skin_coin"] {
+    color: rgba(61, 40, 20, 0.7) !important;
+    /* Dim number under coin */
+}
+
+/* Poker Chip */
+.loto-cell--marked[data-skin="skin_poker"]::after {
+    background: radial-gradient(circle, #ffffff 40%, #ffffff 41%, #3b82f6 42%);
+    border: 1px dashed white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+    background-size: 100% 100%;
+}
+
+/* Emerald Gem */
+.loto-cell--marked[data-skin="skin_gem"]::after {
+    width: 80%;
+    height: 80%;
+    background: linear-gradient(135deg, #4ade80 0%, #16a34a 50%, #14532d 100%);
+    border: 1px solid #86efac;
+    clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+    box-shadow: 0 0 15px rgba(74, 222, 128, 0.6);
+    opacity: 0.9;
+}
+
+/* Pearl */
+.loto-cell--marked[data-skin="skin_pearl"]::after {
+    background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f3f4f6 50%, #d1d5db 100%);
+    box-shadow:
+        inset -5px -5px 10px rgba(0, 0, 0, 0.1),
+        0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Override standard marked style to prevent double visualization */
+.loto-cell--marked {
+    background-color: transparent !important;
+    /* Let skin show */
+    background: inherit;
+    color: inherit;
+    /* We handle background in ::after mostly, but keep legacy color if no skin matches */
 }
 
 .loto-cell-number {

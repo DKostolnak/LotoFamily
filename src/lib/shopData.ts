@@ -28,6 +28,13 @@ export const SHOP_ITEMS: ShopItem[] = [
     { id: 'theme_royal', icon: '👑', name: 'Royal Purple', price: 500, description: 'Regal and elegant', category: 'theme', themeClass: 'royal' },
     { id: 'theme_neon', icon: '💜', name: 'Neon Nights', price: 800, description: 'Cyberpunk glow', category: 'theme', themeClass: 'neon' },
     { id: 'theme_nature', icon: '🌿', name: 'Forest Green', price: 400, description: 'Natural calm', category: 'theme', themeClass: 'nature' },
+
+    // Marker Skins
+    { id: 'skin_classic', icon: '🔴', name: 'Classic Chip', price: 0, description: 'Standard red marker', category: 'skin' },
+    { id: 'skin_coin', icon: '🪙', name: 'Gold Coin', price: 1000, description: 'Shiny and rich!', category: 'skin' },
+    { id: 'skin_poker', icon: '🔵', name: 'Poker Chip', price: 600, description: 'High stakes style', category: 'skin' },
+    { id: 'skin_gem', icon: '💎', name: 'Emerald', price: 800, description: 'Precious gem', category: 'skin' },
+    { id: 'skin_pearl', icon: '⚪', name: 'Pearl', price: 700, description: 'Smooth and elegant', category: 'skin' },
 ];
 
 /** Get the CSS class for a theme by its ID */

@@ -80,6 +80,8 @@ interface GameContextType {
     clearLatestReward: () => void;
     activeTheme: string;
     setActiveTheme: (themeId: string) => void;
+    activeSkin: string;
+    setActiveSkin: (skinId: string) => void;
     // Achievements
     achievements: string[];
     pendingAchievement: { id: string; name: string; icon: string; description: string } | null;
@@ -155,7 +157,7 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
     // ========================================================================
 
     // Initialize coins, inventory, and theme
-    const [activeTheme, setActiveThemeState] = useState('classic');
+    // State moved to bottom or consolidated - removing duplicates here
     // Achievement state
     const [achievements, setAchievements] = useState<string[]>([]);
     const [pendingAchievement, setPendingAchievement] = useState<{
@@ -163,13 +165,13 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
     } | null>(null);
 
     useEffect(() => {
-        // Load initial balance, inventory, and theme
+        // Load initial balance, inventory
         const balance = economyService.getBalance();
-        const inventory = economyService.getInventory();
-        const savedTheme = economyService.getActiveTheme();
+        // const inventory = economyService.getInventory(); // Not used locally in this effect
+        // const savedTheme = economyService.getActiveTheme(); // Handled by separate effect
 
         dispatch({ type: 'setCoins', coins: balance });
-        setActiveThemeState(savedTheme);
+        // setActiveThemeState(savedTheme); // Removed duplicate call
 
         // Also check daily bonus
         const bonus = economyService.checkDailyBonus();
@@ -459,9 +461,25 @@ export function GameProvider({ children, serverUrl = '' }: GameProviderProps) {
         dispatch({ type: 'setLatestReward', reward: null });
     }, []);
 
+    const [activeTheme, setActiveThemeState] = useState('theme_classic');
+    const [activeSkin, setActiveSkinState] = useState('skin_classic');
+
+    // Load persisted settings
+    useEffect(() => {
+        // Initial load from economy service
+        setActiveThemeState(economyService.getActiveTheme());
+        setActiveSkinState(economyService.getActiveSkin());
+    }, []);
+
     const setActiveTheme = useCallback((themeId: string) => {
         if (economyService.setActiveTheme(themeId)) {
             setActiveThemeState(economyService.getActiveTheme());
+        }
+    }, []);
+
+    const setActiveSkin = useCallback((skinId: string) => {
+        if (economyService.setActiveSkin(skinId)) {
+            setActiveSkinState(economyService.getActiveSkin());
         }
     }, []);
 

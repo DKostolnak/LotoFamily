@@ -51,7 +51,8 @@ function PlayerGameScreen({
     onLeaveGame
 }: PlayerGameScreenProps) {
     // Get connection status from context
-    const { isConnected, coins, activeTheme } = useGame();
+    // Get connection status from context
+    const { isConnected, coins, activeTheme, activeSkin } = useGame();
 
     // Memoize derived data
     const calledNumberValues = useMemo(
@@ -169,16 +170,16 @@ function PlayerGameScreen({
                 }}
             >
                 {cards.map((card) => {
-                    // Create a fingerprint of the grid to detect shuffles
-                    const gridFingerprint = card.grid.flat().map(c => c.value ?? 'x').join('');
                     return (
                         <GameCardWrapper
-                            key={`${card.id}-${gridFingerprint}`}
+                            key={card.id}
                             card={card}
                             gameState={gameState}
                             playerId={playerId}
                             calledNumberValues={calledNumberValues}
+                            // Pass Theme AND Skin
                             theme={activeTheme}
+                            skin={activeSkin}
                             onMarkCell={onMarkCell}
                             onClaimWin={onClaimWin}
                             onClaimFlat={onClaimFlat}

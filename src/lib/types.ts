@@ -73,7 +73,10 @@ export interface Player {
   /** Current coin balance (Loto Coins) */
   coins?: number;
   /** IDs of unlocked items */
+  /** ID of unlocked items */
   inventory?: string[];
+  /** Active marker skin ID */
+  activeSkin?: string;
 }
 
 // ============================================================================

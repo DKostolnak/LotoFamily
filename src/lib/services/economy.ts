@@ -8,13 +8,15 @@ interface Wallet {
     inventory: string[];
     lastDailyBonus: number; // Timestamp
     activeTheme: string; // Currently equipped card theme
+    activeSkin: string; // Currently equipped marker skin
 }
 
 const DEFAULT_WALLET: Wallet = {
     coins: 0,
     inventory: [],
     lastDailyBonus: 0,
-    activeTheme: 'classic', // Default theme (always available)
+    activeTheme: 'theme_classic', // Default theme (updated ID to match shopData)
+    activeSkin: 'skin_classic', // Default skin
 };
 
 const DAILY_BONUS_AMOUNT = 50;
@@ -172,31 +174,44 @@ class EconomyService {
 
     /**
      * Get the currently active card theme
+     * Get currently active theme
      */
     public getActiveTheme(): string {
-        return this.wallet.activeTheme || 'classic';
+        return this.wallet.activeTheme || 'theme_classic';
     }
 
     /**
-     * Set the active card theme
-     * @param themeId Theme ID to equip (must be owned or 'classic')
+     * Set active theme
+     * @returns true if successful (user owns it or it's free)
      */
     public setActiveTheme(themeId: string): boolean {
-        // Classic is always available
-        if (themeId === 'classic' || themeId === 'theme_classic') {
-            this.wallet.activeTheme = 'classic';
+        // Free themes or owned themes
+        if (themeId === 'theme_classic' || this.wallet.inventory.includes(themeId)) {
+            this.wallet.activeTheme = themeId;
             this.saveWallet();
             return true;
         }
+        return false;
+    }
 
-        // Check if theme is owned
-        if (this.hasItem(themeId)) {
-            // Extract the class name (e.g., 'theme_ocean' -> 'ocean')
-            this.wallet.activeTheme = themeId.replace('theme_', '');
+    /**
+     * Get currently active marker skin
+     */
+    public getActiveSkin(): string {
+        return this.wallet.activeSkin || 'skin_classic';
+    }
+
+    /**
+     * Set active marker skin
+     * @returns true if successful (user owns it or it's free)
+     */
+    public setActiveSkin(skinId: string): boolean {
+        // Free skins or owned skins
+        if (skinId === 'skin_classic' || this.wallet.inventory.includes(skinId)) {
+            this.wallet.activeSkin = skinId;
             this.saveWallet();
             return true;
         }
-
         return false;
     }
 }

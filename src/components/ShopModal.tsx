@@ -55,18 +55,20 @@ function ThemePreview({ themeClass }: { themeClass: string }) {
 }
 
 export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
-    const { coins, inventory, purchaseItem, activeTheme, setActiveTheme } = useGame();
-    const [activeCategory, setActiveCategory] = useState<'all' | 'avatar' | 'theme'>('all');
+    const { coins, inventory, purchaseItem, activeTheme, setActiveTheme, activeSkin, setActiveSkin } = useGame();
+    const [activeCategory, setActiveCategory] = useState<'all' | 'avatar' | 'theme' | 'skin'>('all');
 
     const handlePurchase = (item: ShopItem) => {
         playClickSound();
         purchaseItem(item.id, item.price);
     };
 
-    const handleEquipTheme = (item: ShopItem) => {
+    const handleEquipItem = (item: ShopItem) => {
         playClickSound();
-        if (item.themeClass) {
-            setActiveTheme(item.id);
+        if (item.category === 'theme' && item.themeClass) {
+            setActiveTheme(item.id); // Use item.id (which is passed to economy service), NOT themeClass directly if service expects ID
+        } else if (item.category === 'skin') {
+            setActiveSkin(item.id);
         }
     };
 
@@ -109,7 +111,7 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
 
                 {/* Categories */}
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                    {(['all', 'avatar', 'theme'] as const).map((cat) => (
+                    {(['all', 'avatar', 'theme', 'skin'] as const).map((cat) => (
                         <button
                             key={cat}
                             onClick={() => { playClickSound(); setActiveCategory(cat); }}
@@ -129,7 +131,7 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
                                 transition: 'all 0.2s'
                             }}
                         >
-                            {cat === 'all' ? 'All' : cat === 'avatar' ? 'Avatars' : 'Themes'}
+                            {cat === 'all' ? 'All' : cat === 'avatar' ? 'Avatars' : cat === 'theme' ? 'Themes' : 'Markers'}
                         </button>
                     ))}
                 </div>
@@ -147,11 +149,16 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
                     {SHOP_ITEMS
                         .filter(item => activeCategory === 'all' || item.category === activeCategory)
                         .map((item) => {
-                            // Classic theme is always owned (it's free)
-                            const isOwned = inventory.includes(item.id) || item.id === 'theme_classic';
+                            // Classic items are always owned (they are free)
+                            const isOwned = inventory.includes(item.id) || item.id === 'theme_classic' || item.id === 'skin_classic';
                             const canAfford = coins >= item.price;
                             const isTheme = item.category === 'theme';
-                            const isEquipped = isTheme && activeTheme === item.themeClass;
+                            const isSkin = item.category === 'skin';
+                            // Logic is slightly mixed: activeTheme stores ID now in context? 
+                            // Economy service stores ID. Types say activeTheme is ID.
+                            // But previous code compared `activeTheme === item.themeClass`.
+                            // Let's assume activeTheme/Skin stores the ID (e.g. 'theme_ocean')
+                            const isEquipped = (isTheme && activeTheme === item.id) || (isSkin && activeSkin === item.id);
 
                             return (
                                 <div key={item.id} style={{ position: 'relative' }}>
@@ -169,9 +176,15 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
                                         transition: 'transform 0.2s',
                                         color: '#e2d0b5'
                                     }}>
-                                        {/* Icon or Theme Preview */}
+                                        {/* Icon or Theme/Skin Preview */}
                                         {isTheme && item.themeClass ? (
                                             <ThemePreview themeClass={item.themeClass} />
+                                        ) : isSkin ? (
+                                            <div style={{ position: 'relative', width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <div className={`loto-cell loto-cell--marked`} data-skin={item.id} style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                                    77
+                                                </div>
+                                            </div>
                                         ) : (
                                             <div style={{ fontSize: '2.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.5)', marginBottom: '8px' }}>
                                                 {item.icon}
@@ -232,11 +245,11 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
                                             </button>
                                         )}
 
-                                        {/* Equip Button for owned themes */}
-                                        {isOwned && isTheme && !isEquipped && (
+                                        {/* Equip Button for owned themes/skins */}
+                                        {isOwned && (isTheme || isSkin) && !isEquipped && (
                                             <button
                                                 type="button"
-                                                onClick={() => handleEquipTheme(item)}
+                                                onClick={() => handleEquipItem(item)}
                                                 style={{
                                                     marginTop: '4px', width: '100%', padding: '6px', borderRadius: '4px',
                                                     fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em',

@@ -39,6 +39,7 @@ interface LotoCardProps {
     playerName?: string;
     calledNumbers?: number[];
     theme?: string; // Card theme CSS class
+    skin?: string; // Marker skin ID
     t: TranslationDictionary;
 }
 
@@ -51,6 +52,7 @@ interface CellProps {
     isCorrect: boolean;
     isTapped: boolean;
     isMistake: boolean;
+    skin?: string;
     onActivate: (row: number, col: number, evt: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => void;
 }
 
@@ -65,6 +67,7 @@ const LotoCell = memo(function LotoCell({
     isCorrect,
     isTapped,
     isMistake,
+    skin,
     onActivate,
 }: CellProps) {
     const isEmpty = value === null;
@@ -97,6 +100,7 @@ const LotoCell = memo(function LotoCell({
     return (
         <div
             className={cellClasses}
+            data-skin={skin}
             onClick={handleClick}
             onKeyDown={handleKeyDown}
             role={isEmpty ? undefined : 'button'}
@@ -132,6 +136,7 @@ function LotoCard({
     playerName,
     calledNumbers = [],
     theme = 'classic',
+    skin,
     t,
 }: LotoCardProps) {
     const [tappedCell, setTappedCell] = useState<string | null>(null);
@@ -260,6 +265,7 @@ function LotoCard({
                                 isTapped={tappedCell === coordinatesKey}
                                 isMistake={mistakeCell === coordinatesKey}
                                 onActivate={handleCellClick}
+                                skin={skin}
                             />
                         );
                     })
