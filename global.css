@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    .font-wood {
+        /* Placeholder for custom font if we add one later */
+    }
+}
