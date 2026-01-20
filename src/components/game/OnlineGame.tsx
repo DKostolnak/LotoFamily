@@ -15,6 +15,7 @@ import { GameHeader } from '@/components/GameHeader';
 import { WoodenButton } from '@/components/common';
 import { ChatOverlay } from '@/components/ChatOverlay';
 import { WinnerModal } from '@/components/WinnerModal';
+import GameStatusListener from '@/components/GameStatusListener';
 import { TriangleAlert } from 'lucide-react-native';
 
 const WOOD_TEXTURE = require('../../../assets/wood-seamless.png');
@@ -36,6 +37,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
 
     // Socket game hook
     const {
+        socket,
         gameState,
         isConnected,
         error: socketError,
@@ -237,6 +239,14 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
         <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
             <StatusBar barStyle="light-content" />
             <View className="absolute inset-0 bg-black/30" pointerEvents="none" />
+
+            <GameStatusListener
+                socket={socket}
+                gameState={gameState}
+                playerId={myPlayerId}
+                isConnected={isConnected}
+                error={socketError}
+            />
 
             <View className="flex-1">
                 <GameHeader

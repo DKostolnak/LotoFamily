@@ -31,7 +31,7 @@ interface GameStatusListenerProps {
     gameState: {
         players: Player[];
         settings: {
-            language: 'en' | 'sk';
+            language: string;
         };
     } | null;
     /** Current player ID */
@@ -62,7 +62,7 @@ function GameStatusListener({
 
     // Get translations
     const t = useMemo(() => {
-        const lang = gameState?.settings?.language || 'en';
+        const lang = (gameState?.settings?.language || 'en') as keyof typeof translations;
         return translations[lang];
     }, [gameState?.settings?.language]);
 

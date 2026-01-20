@@ -30,12 +30,13 @@ import Animated, {
     SlideOutRight,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AchievementToast from './AchievementToast';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-type ToastType = 'success' | 'info' | 'warning' | 'error' | 'celebration';
+type ToastType = 'success' | 'info' | 'warning' | 'error' | 'celebration' | 'achievement';
 
 interface Toast {
     /** Unique toast identifier */
@@ -46,11 +47,13 @@ interface Toast {
     type: ToastType;
     /** Optional custom icon */
     icon?: string;
+    /** Optional title (used for achievements) */
+    title?: string;
 }
 
 interface ToastContextType {
     /** Display a toast notification */
-    showToast: (message: string, type?: ToastType, icon?: string) => void;
+    showToast: (message: string, type?: ToastType, icon?: string, title?: string) => void;
 }
 
 // ============================================================================
@@ -84,6 +87,7 @@ const DEFAULT_ICONS: Record<ToastType, string> = {
     warning: '⚠️',
     info: 'ℹ️',
     celebration: '🎉',
+    achievement: '🏆',
 };
 
 const TOAST_COLORS: Record<ToastType, { background: string; text: string }> = {
@@ -92,6 +96,7 @@ const TOAST_COLORS: Record<ToastType, { background: string; text: string }> = {
     warning: { background: '#ff9800', text: '#ffffff' },
     info: { background: '#795548', text: '#ffffff' },
     celebration: { background: '#ffc107', text: '#5d4037' },
+    achievement: { background: '#6b2d9e', text: '#ffd700' },
 };
 
 // ============================================================================
@@ -163,15 +168,18 @@ export function ToastProvider({ children }: ToastProviderProps) {
     }, []);
 
     const showToast = useCallback(
-        (message: string, type: ToastType = 'info', icon?: string) => {
+        (message: string, type: ToastType = 'info', icon?: string, title?: string) => {
             const id = nextIdRef.current++;
-            setToasts(prev => [...prev, { id, message, type, icon }]);
+            setToasts(prev => [...prev, { id, message, type, icon, title }]);
 
-            const timeout = setTimeout(() => {
-                dismissToast(id);
-            }, TOAST_DURATION_MS);
+            // Achievement toasts handle their own dismissal timing
+            if (type !== 'achievement') {
+                const timeout = setTimeout(() => {
+                    dismissToast(id);
+                }, TOAST_DURATION_MS);
 
-            timeoutsRef.current.set(id, timeout);
+                timeoutsRef.current.set(id, timeout);
+            }
         },
         [dismissToast]
     );
@@ -189,7 +197,21 @@ export function ToastProvider({ children }: ToastProviderProps) {
         <ToastContext.Provider value={{ showToast }}>
             {children}
 
-            {/* Toast Container */}
+            {/* Achievement Toasts (Centered Overlay) */}
+            {toasts
+                .filter(t => t.type === 'achievement')
+                .map(toast => (
+                    <AchievementToast
+                        key={toast.id}
+                        id={String(toast.id)}
+                        name={toast.title || 'Achievement Unlocked!'}
+                        description={toast.message}
+                        icon={toast.icon || '🏆'}
+                        onDismiss={() => dismissToast(toast.id)}
+                    />
+                ))}
+
+            {/* Standard Toast Stack Container */}
             <View
                 style={[
                     styles.container,
@@ -197,13 +219,15 @@ export function ToastProvider({ children }: ToastProviderProps) {
                 ]}
                 pointerEvents="box-none"
             >
-                {toasts.map(toast => (
-                    <ToastItem
-                        key={toast.id}
-                        toast={toast}
-                        onDismiss={dismissToast}
-                    />
-                ))}
+                {toasts
+                    .filter(t => t.type !== 'achievement')
+                    .map(toast => (
+                        <ToastItem
+                            key={toast.id}
+                            toast={toast}
+                            onDismiss={dismissToast}
+                        />
+                    ))}
             </View>
         </ToastContext.Provider>
     );

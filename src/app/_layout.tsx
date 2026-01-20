@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ToastProvider } from '@/components/ToastProvider';
 import { P2PProvider } from '@/lib/p2p/P2PContext';
+import { RateAppModal } from '@/components/RateAppModal';
 import { crashReporting, analytics, audioService } from '@/lib/services';
 
 export default function Layout() {
@@ -31,6 +32,7 @@ export default function Layout() {
                                     animation: 'fade',
                                 }}
                             />
+                            <RateAppModal />
                         </ToastProvider>
                     </P2PProvider>
                 </ErrorBoundary>
