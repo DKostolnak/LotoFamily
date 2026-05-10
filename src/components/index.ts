@@ -41,6 +41,8 @@ export { ShopModal } from './ShopModal';
 export { StatsModal } from './StatsModal';
 export { RateAppModal } from './RateAppModal';
 export { OnboardingModal } from './OnboardingModal';
+export { PrivacyPolicyModal } from './PrivacyPolicyModal';
+export { TermsModal } from './TermsModal';
 
 // ============================================================================
 // Utility Components

@@ -364,6 +364,40 @@ export interface TranslationKeys {
     freeTrack: string;
     premiumTrack: string;
 
+    // Onboarding — name step (4th onboarding screen)
+    onboardingNameTitle: string;
+    onboardingNameDesc: string;
+    onboardingStartGame: string;
+
+    // Legal (Privacy Policy + Terms of Service — App Store / Play Store mandatory)
+    legalSection: string;
+    privacyPolicy: string;
+    termsOfService: string;
+    privacyPolicyTitle: string;
+    privacyDataCollected: string;
+    privacyDataCollectedBody: string;
+    privacyDataUsage: string;
+    privacyDataUsageBody: string;
+    privacyThirdParty: string;
+    privacyThirdPartyBody: string;
+    privacyRights: string;
+    privacyRightsBody: string;
+    privacyContact: string;
+    privacyContactBody: string;
+    termsTitle: string;
+    termsUseTitle: string;
+    termsUseBody: string;
+    termsPaymentsTitle: string;
+    termsPaymentsBody: string;
+    termsConductTitle: string;
+    termsConductBody: string;
+    termsAccountTitle: string;
+    termsAccountBody: string;
+    termsLiabilityTitle: string;
+    termsLiabilityBody: string;
+    termsChangesTitle: string;
+    termsChangesBody: string;
+
     // Connection status banner
     connStatusReconnecting: string;
     connStatusDisconnected: string;

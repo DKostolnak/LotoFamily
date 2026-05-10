@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Switch } from 'react-native';
 import { ModalShell, Section, ListRow, WoodenButton } from '@/components/common';
 import { useGameStore } from '@/lib/store';
-import { Volume2, VolumeX, Zap, Info, Check, BookOpen, Bell } from 'lucide-react-native';
+import { Volume2, VolumeX, Zap, Info, Check, BookOpen, Bell, Shield, FileText } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { ENV, TEXT_STYLES, SPACING } from '@/lib/config';
 import { translations, type Language } from '@/lib/i18n';
 import { notificationsService } from '@/lib/services/notifications';
+import { PrivacyPolicyModal } from './PrivacyPolicyModal';
+import { TermsModal } from './TermsModal';
 
 interface SettingsModalProps {
     visible: boolean;
@@ -30,6 +32,9 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
     } = useGameStore();
 
     const t = translations[language];
+
+    const [privacyVisible, setPrivacyVisible] = useState(false);
+    const [termsVisible, setTermsVisible] = useState(false);
 
     const handleToggleMute = (value: boolean) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -86,6 +91,7 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
     );
 
     return (
+        <>
         <ModalShell
             visible={visible}
             onClose={onClose}
@@ -181,6 +187,29 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
                     );
                 })}
             </Section>
+
+            <Section title={t.legalSection}>
+                <ListRow
+                    icon={<Shield size={20} color="#ffd700" />}
+                    title={t.privacyPolicy}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setPrivacyVisible(true);
+                    }}
+                />
+                <ListRow
+                    icon={<FileText size={20} color="#ffd700" />}
+                    title={t.termsOfService}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setTermsVisible(true);
+                    }}
+                />
+            </Section>
         </ModalShell>
+
+        <PrivacyPolicyModal visible={privacyVisible} onClose={() => setPrivacyVisible(false)} />
+        <TermsModal visible={termsVisible} onClose={() => setTermsVisible(false)} />
+        </>
     );
 };

@@ -149,6 +149,10 @@ export const RUNTIME_VERSION = Constants.expoConfig?.runtimeVersion;
  */
 export const APP_STORE_ID = '6741234567'; // Apple App Store ID (numeric)
 export const PLAY_STORE_ID = 'com.loto.bingo'; // Google Play Store package name
+// IMPORTANT: replace these with the real hosted URLs before App Store / Play Store
+// submission. Apple and Google reject apps without working Privacy Policy and
+// Terms URLs. The in-app PrivacyPolicyModal / TermsModal cover the same content
+// so users (and reviewers) always have an offline-reachable copy.
 export const PRIVACY_POLICY_URL = 'https://loto-game.app/privacy';
 export const TERMS_OF_SERVICE_URL = 'https://loto-game.app/terms';
 export const SUPPORT_EMAIL = 'support@loto-game.app';

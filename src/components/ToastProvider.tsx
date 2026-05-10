@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     container: {
         position: 'absolute',
         right: 16,
-        zIndex: 1200,
+        zIndex: 1500,
         width: Math.min(320, SCREEN_WIDTH * 0.9),
         gap: 12,
     },

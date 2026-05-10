@@ -212,7 +212,7 @@ export function TutorialOverlay({
         <Animated.View
             entering={FadeIn.duration(200)}
             exiting={FadeOut.duration(150)}
-            style={StyleSheet.absoluteFill}
+            style={[StyleSheet.absoluteFill, { zIndex: 5000 }]}
             // Block touches everywhere — only our buttons advance.
             pointerEvents="auto"
             accessibilityViewIsModal

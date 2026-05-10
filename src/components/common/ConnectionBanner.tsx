@@ -157,7 +157,7 @@ export function ConnectionBanner({
                 paddingTop: insets.top,
                 backgroundColor: palette.bg,
                 transform: [{ translateY }],
-                zIndex: 1000,
+                zIndex: 2000,
                 elevation: Platform.OS === 'android' ? 12 : 0,
                 flexDirection: 'row',
                 alignItems: 'center',

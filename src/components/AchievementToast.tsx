@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         alignItems: 'center',
-        zIndex: 9999,
+        zIndex: 1500,
     },
     container: {
         flexDirection: 'row',

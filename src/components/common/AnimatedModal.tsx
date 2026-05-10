@@ -146,7 +146,7 @@ export function AnimatedModal({
     }
 
     return (
-        <View style={[StyleSheet.absoluteFill, { zIndex: 1000 }]} pointerEvents="box-none">
+        <View style={[StyleSheet.absoluteFill, { zIndex: 3000 }]} pointerEvents="box-none">
             {/* Backdrop - positioned behind content */}
             <Animated.View style={[styles.backdrop, backdropStyle]}>
                 <Pressable
