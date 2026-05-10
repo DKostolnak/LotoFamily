@@ -274,6 +274,10 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusError: 'Connection error',
         connRetry: 'Retry',
 
+        // Voice announcer
+        announcerMode: 'Folk Nicknames',
+        announcerModeDesc: 'Add traditional folk callouts',
+
         // Power-ups
         powerUps: 'Power-ups',
         powerUpPeek: 'Peek next 3',
@@ -548,6 +552,10 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusOffline: 'Žiadne pripojenie',
         connStatusError: 'Chyba pripojenia',
         connRetry: 'Skúsiť znova',
+
+        // Voice announcer
+        announcerMode: 'Tradičné prezývky',
+        announcerModeDesc: 'Pridaj tradičné ľudové prezývky',
 
         // Power-ups
         powerUps: 'Vylepšenia',
@@ -824,6 +832,10 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusError: 'Ошибка подключения',
         connRetry: 'Повторить',
 
+        // Voice announcer
+        announcerMode: 'Народные прозвища',
+        announcerModeDesc: 'Добавить традиционные народные выкрики',
+
         // Power-ups
         powerUps: 'Усиления',
         powerUpPeek: 'Подсмотреть 3',
@@ -1098,6 +1110,10 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusOffline: 'Немає з\'єднання',
         connStatusError: 'Помилка підключення',
         connRetry: 'Повторити',
+
+        // Voice announcer
+        announcerMode: 'Народні назви',
+        announcerModeDesc: 'Додати традиційні народні вигуки',
 
         // Power-ups
         powerUps: 'Підсилення',

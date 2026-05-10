@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { LotoCard as LotoCardType } from '@/lib/types';
 import { useResponsive } from '@/hooks';
-import { getThemeColors, getSkinColors } from '@/lib/config';
+import { getThemeColors } from '@/lib/config';
+import { ChipMarker } from './common/ChipMarker';
 
 import type { TranslationKeys } from '@/lib/i18n';
 
@@ -91,41 +92,14 @@ const LotoCell = memo(({
                 {value}
             </Text>
 
-            {/* 3D Chip Overlay */}
-            {isMarked && (
-                <View className="absolute inset-0 items-center justify-center">
-                    {/* Shadow */}
-                    <View className="absolute w-[85%] h-[85%] rounded-full bg-black/30 top-1" />
-
-                    {/* Main Chip Body - Uses skin colors when correctly marked */}
-                    <View
-                        style={{
-                            width: '85%',
-                            height: '85%',
-                            borderRadius: 999,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderWidth: 2,
-                            backgroundColor: isCalled
-                                ? getSkinColors(activeSkin).bg
-                                : getSkinColors(activeSkin).incorrectBg,
-                            borderColor: isCalled
-                                ? getSkinColors(activeSkin).border
-                                : getSkinColors(activeSkin).incorrectBorder,
-                        }}
-                    >
-                        {/* Inner Ring (Detail) */}
-                        <View className="w-[70%] h-[70%] rounded-full border border-white/20 items-center justify-center">
-                            {/* Number on Chip */}
-                            <Text className="font-black text-white shadow-sm" style={{ fontSize: fontSize * 0.8 }}>
-                                {value}
-                            </Text>
-                        </View>
-
-                        {/* Shine Highlight */}
-                        <View className="absolute top-1 left-2 w-[40%] h-[20%] rounded-full bg-white/30 transform -rotate-12" />
-                    </View>
-                </View>
+            {/* Animated wooden chip — only rendered when marked (perf). */}
+            {isMarked && value !== null && (
+                <ChipMarker
+                    marked
+                    value={value}
+                    variant={isCalled ? 'correct' : 'incorrect'}
+                    size={fontSize * 1.9}
+                />
             )}
         </TouchableOpacity>
     );

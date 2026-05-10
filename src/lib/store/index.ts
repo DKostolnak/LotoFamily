@@ -76,6 +76,7 @@ export const useGameStore = create<GameStore>()(
                 batterySaver: state.batterySaver,
                 tutorialCompleted: state.tutorialCompleted,
                 notificationsEnabled: state.notificationsEnabled,
+                announcerMode: state.announcerMode,
                 // Season / Battle Pass
                 seasonId: state.seasonId,
                 seasonStartedAt: state.seasonStartedAt,
@@ -150,11 +151,13 @@ export const useSettings = () =>
             batterySaver: state.batterySaver,
             tutorialCompleted: state.tutorialCompleted,
             notificationsEnabled: state.notificationsEnabled,
+            announcerMode: state.announcerMode,
             setMuted: state.setMuted,
             setLanguage: state.setLanguage,
             setBatterySaver: state.setBatterySaver,
             setTutorialCompleted: state.setTutorialCompleted,
             setNotificationsEnabled: state.setNotificationsEnabled,
+            setAnnouncerMode: state.setAnnouncerMode,
         }))
     );
 

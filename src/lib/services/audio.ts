@@ -1,7 +1,16 @@
 import * as Speech from 'expo-speech';
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
+import { pickAnnounceText } from '../config/numberNicknames';
+import type { Language } from '../i18n';
 
 export type SoundEffect = 'chip' | 'win' | 'call' | 'error' | 'pop';
+
+/**
+ * Announcer behaviour for spoken called numbers.
+ *  - `numbers`    — always speak the plain digit.
+ *  - `nicknames`  — 50/50 plain vs. random traditional folk nickname.
+ */
+export type AnnouncerMode = 'numbers' | 'nicknames';
 
 class AudioService {
     private static instance: AudioService;
@@ -10,6 +19,7 @@ class AudioService {
     private language: string = 'en-US';
     private sounds: Map<SoundEffect, AudioPlayer> = new Map();
     private isInitialized: boolean = false;
+    private announcerMode: AnnouncerMode = 'numbers';
 
     private constructor() { }
 
@@ -114,6 +124,57 @@ class AudioService {
             pitch: 1.0,
             ...options
         });
+    }
+
+    public setAnnouncerMode(mode: AnnouncerMode): void {
+        this.announcerMode = mode;
+    }
+
+    public getAnnouncerMode(): AnnouncerMode {
+        return this.announcerMode;
+    }
+
+    /**
+     * Speak a called number with optional folk nickname. Falls back to
+     * plain digit if the language has no nickname or nicknames mode is off.
+     *
+     * `expo-speech` may not support every locale on every device — we wrap
+     * the call in try/catch and silently swallow errors so a missing TTS
+     * voice never crashes gameplay.
+     */
+    public announceNumber(number: number, language: Language): void {
+        if (this.isMuted || !this.isSpeechEnabled) return;
+
+        const text = pickAnnounceText(
+            number,
+            language,
+            this.announcerMode === 'nicknames'
+        );
+
+        try {
+            Speech.stop();
+            Speech.speak(text, {
+                language: this.getSpeechLanguageCode(language),
+                rate: 0.95,
+                pitch: 1.0,
+            });
+        } catch {
+            // Silent fail — TTS may be unavailable (e.g. some emulators)
+        }
+    }
+
+    /**
+     * Map our short locale code to the BCP-47-ish tag expected by
+     * native TTS engines.
+     */
+    private getSpeechLanguageCode(language: Language): string {
+        switch (language) {
+            case 'sk': return 'sk-SK';
+            case 'ru': return 'ru-RU';
+            case 'uk': return 'uk-UA';
+            case 'en': return 'en-US';
+            default: return 'en-US';
+        }
     }
 
     public async playBonusSound() {

@@ -405,6 +405,10 @@ export interface TranslationKeys {
     connStatusOffline: string;
     connStatusError: string;
     connRetry: string;
+
+    // Voice announcer (folk nicknames toggle)
+    announcerMode: string;
+    announcerModeDesc: string;
 }
 
 /**

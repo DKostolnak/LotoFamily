@@ -7,6 +7,9 @@
 
 import type { Language } from '../i18n';
 import type { SeasonReward } from '../config/season.config';
+import type { AnnouncerMode } from '../services/audio';
+
+export type { AnnouncerMode };
 
 // ============================================================================
 // Player Slice Types
@@ -131,6 +134,11 @@ export interface SettingsState {
      * to true so we can schedule reminders the moment permission is granted.
      */
     notificationsEnabled: boolean;
+    /**
+     * Voice announcer mode for called numbers. `nicknames` mixes in
+     * traditional folk callouts ("two fat ladies" / "топорики").
+     */
+    announcerMode: AnnouncerMode;
 }
 
 export interface SettingsActions {
@@ -139,6 +147,7 @@ export interface SettingsActions {
     setBatterySaver: (enabled: boolean) => void;
     setTutorialCompleted: (done: boolean) => void;
     setNotificationsEnabled: (enabled: boolean) => void;
+    setAnnouncerMode: (mode: AnnouncerMode) => void;
 }
 
 export type SettingsSlice = SettingsState & SettingsActions;
@@ -257,6 +266,7 @@ export const DEFAULT_SETTINGS_STATE: SettingsState = {
     batterySaver: false,
     tutorialCompleted: false,
     notificationsEnabled: true,
+    announcerMode: 'numbers',
 };
 
 export const DEFAULT_APP_STATE: AppState = {

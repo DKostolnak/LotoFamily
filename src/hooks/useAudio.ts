@@ -1,7 +1,10 @@
 import { useEffect, useCallback } from 'react';
 import { audioService } from '@/lib/services';
+import { useGameStore } from '@/lib/store';
 
 export function useAudio() {
+    const language = useGameStore((s) => s.language);
+
     useEffect(() => {
         // Initialize audio session on mount
         audioService.initialize();
@@ -11,9 +14,18 @@ export function useAudio() {
         audioService.speak(text);
     }, []);
 
+    /**
+     * Speak a called number using the announcer mode + language stored
+     * in settings. Replaces the old digit-only `speakNumber` behaviour
+     * while keeping that method around for backward compatibility.
+     */
+    const announceNumber = useCallback((number: number) => {
+        audioService.announceNumber(number, language);
+    }, [language]);
+
     const speakNumber = useCallback((number: number) => {
-        audioService.speak(number.toString());
-    }, []);
+        audioService.announceNumber(number, language);
+    }, [language]);
 
     const stopAudio = useCallback(() => {
         audioService.stopAll();
@@ -30,6 +42,7 @@ export function useAudio() {
     return {
         speak,
         speakNumber,
+        announceNumber,
         stopAudio,
         setMuted,
         playSound,

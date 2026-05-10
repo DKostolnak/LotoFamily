@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Switch } from 'react-native';
 import { ModalShell, Section, ListRow, WoodenButton } from '@/components/common';
 import { useGameStore } from '@/lib/store';
-import { Volume2, VolumeX, Zap, Info, Check, BookOpen, Bell, Shield, FileText } from 'lucide-react-native';
+import { Volume2, VolumeX, Zap, Info, Check, BookOpen, Bell, Shield, FileText, Megaphone } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { ENV, TEXT_STYLES, SPACING } from '@/lib/config';
 import { translations, type Language } from '@/lib/i18n';
@@ -29,6 +29,7 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
         batterySaver, setBatterySaver,
         tutorialCompleted, setTutorialCompleted,
         notificationsEnabled, setNotificationsEnabled,
+        announcerMode, setAnnouncerMode,
     } = useGameStore();
 
     const t = translations[language];
@@ -63,6 +64,11 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
             // Cancel everything currently scheduled so the user is no longer nagged.
             await notificationsService.cancelAll();
         }
+    };
+
+    const handleToggleAnnouncer = (value: boolean) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setAnnouncerMode(value ? 'nicknames' : 'numbers');
     };
 
     const handleResetTutorial = () => {
@@ -128,6 +134,19 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
                             onValueChange={handleBatterySaverChange}
                             trackColor={{ false: '#3d2814', true: '#d4b075' }}
                             thumbColor={batterySaver ? '#ffd700' : '#8b7355'}
+                        />
+                    }
+                />
+                <ListRow
+                    icon={<Megaphone size={20} color={announcerMode === 'nicknames' ? '#ffd700' : '#d4b896'} />}
+                    title={(t as any).announcerMode ?? 'Folk Nicknames'}
+                    subtitle={(t as any).announcerModeDesc ?? 'Add traditional folk callouts'}
+                    right={
+                        <Switch
+                            value={announcerMode === 'nicknames'}
+                            onValueChange={handleToggleAnnouncer}
+                            trackColor={{ false: '#3d2814', true: '#d4b075' }}
+                            thumbColor={announcerMode === 'nicknames' ? '#ffd700' : '#8b7355'}
                         />
                     }
                 />

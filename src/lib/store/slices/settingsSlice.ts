@@ -9,7 +9,7 @@
  */
 
 import type { StateCreator } from 'zustand';
-import type { GameStore, SettingsSlice } from '../types';
+import type { GameStore, SettingsSlice, AnnouncerMode } from '../types';
 import type { Language } from '../../i18n';
 
 export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice> = (set) => ({
@@ -18,6 +18,7 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
     batterySaver: false,
     tutorialCompleted: false,
     notificationsEnabled: true,
+    announcerMode: 'numbers',
 
     setMuted: (muted: boolean) => set({ isMuted: muted }),
 
@@ -28,4 +29,17 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
     setTutorialCompleted: (done: boolean) => set({ tutorialCompleted: done }),
 
     setNotificationsEnabled: (enabled: boolean) => set({ notificationsEnabled: enabled }),
+
+    setAnnouncerMode: (mode: AnnouncerMode) => {
+        // Lazy require so this slice can be loaded in pure-JS test
+        // environments (jest) where `expo-audio` native code can't run.
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { audioService } = require('../../services/audio');
+            audioService.setAnnouncerMode(mode);
+        } catch {
+            // Audio module unavailable (tests) — settings still update.
+        }
+        set({ announcerMode: mode });
+    },
 });

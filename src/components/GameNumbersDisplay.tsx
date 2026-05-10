@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { NumberMedallion } from './NumberMedallion';
+import { WoodenBarrel } from './common/WoodenBarrel';
 import Animated, { FadeInRight, FadeOutLeft, Layout } from 'react-native-reanimated';
 import { SPACING, RADII } from '@/lib/config';
 
@@ -26,7 +27,7 @@ const GameNumbersDisplayComponent = ({
     history,
     compact = false,
 }: GameNumbersDisplayProps) => {
-    const heroSize = compact ? 'lg' : 'xl';
+    const barrelSize: 'md' | 'lg' = compact ? 'md' : 'lg';
     const chipSize = compact ? 'sm' : 'sm';
     const chipCount = compact ? 4 : 5;
 
@@ -58,9 +59,13 @@ const GameNumbersDisplayComponent = ({
                 })}
             </View>
 
-            {/* Current number — dominant gold hero */}
+            {/* Current number — wooden barrel hero (rolls + reveals number) */}
             <View style={[styles.heroWrapper, { paddingHorizontal: compact ? SPACING.md : SPACING.xl }]}>
-                <NumberMedallion number={currentNumber} size={heroSize} />
+                <WoodenBarrel
+                    number={currentNumber}
+                    rollKey={history.length}
+                    size={barrelSize}
+                />
             </View>
         </View>
     );
