@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { ModalShell, ListRow, Badge, CoinBadge, WoodenButton, EmptyState } from '@/components/common';
-import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
+import { ModalShell, Badge, CoinBadge, WoodenButton, EmptyState } from '@/components/common';
+import { TEXT_STYLES, SPACING, RADII, FONT_WEIGHTS } from '@/lib/config';
 import { useGameStore } from '@/lib/store';
 import { SHOP_ITEMS, type ShopItem, isPowerUpItem } from '@/lib/shop';
 import { translations } from '@/lib/i18n';
@@ -13,16 +13,23 @@ interface ShopModalProps {
     onClose: () => void;
 }
 
+/**
+ * ShopModal — 2-column card grid layout (was a dense vertical list with
+ * filler descriptions). Each card has a big preview tile, the item name,
+ * and a single primary action (equip / buy / claim).
+ */
 export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
-    const { coins, inventory, purchaseItem, removeCoins, addPowerUp, activeTheme, activeSkin, equipItem, playerAvatar, setPlayerAvatar, language } = useGameStore();
+    const {
+        coins, inventory, purchaseItem, removeCoins, addPowerUp,
+        activeTheme, activeSkin, equipItem, playerAvatar, setPlayerAvatar,
+        language,
+    } = useGameStore();
     const t = translations[language];
     type CategoryId = 'all' | 'avatar' | 'theme' | 'skin' | 'powerup';
     const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
 
     useEffect(() => {
-        if (visible) {
-            setActiveCategory('all');
-        }
+        if (visible) setActiveCategory('all');
     }, [visible]);
 
     const handlePurchase = (item: ShopItem) => {
@@ -30,8 +37,6 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => { });
             return;
         }
-        // Power-up packs are consumable — never enter the cosmetic `inventory`
-        // array. Deduct coins and increment the powerUps counter directly.
         if (isPowerUpItem(item)) {
             const ok = removeCoins(item.price);
             if (ok) {
@@ -76,7 +81,7 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
             title={t.shopTitle}
             headerRight={<CoinBadge coins={coins} size="sm" />}
         >
-            {/* Tab strip */}
+            {/* Tab strip — horizontal scroll so all category labels render at native size */}
             <View
                 style={{
                     height: 52,
@@ -122,9 +127,7 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                                     numberOfLines={1}
                                     style={[
                                         TEXT_STYLES.captionUpper,
-                                        {
-                                            color: isActive ? '#ffd700' : '#d4b896',
-                                        },
+                                        { color: isActive ? '#ffd700' : '#d4b896' },
                                     ]}
                                 >
                                     {cat.label}
@@ -135,54 +138,77 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                 </ScrollView>
             </View>
 
-            {/* Items list — plain map; ModalShell provides ScrollView wrapping */}
+            {/* Card grid — 2 columns */}
             {filteredItems.length === 0 ? (
                 <EmptyState title={t.emptyShelf} description={t.emptyShelfDesc} />
             ) : (
-                <View style={{ gap: SPACING.md }}>
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        gap: SPACING.md,
+                    }}
+                >
                     {filteredItems.map((item) => {
                         const isPowerUp = isPowerUpItem(item);
-                        const isOwned = !isPowerUp && (inventory.includes(item.id) || item.price === 0);
-                        const isEquipped = !isPowerUp && (
-                            activeTheme === item.id ||
-                            activeSkin === item.id ||
-                            (item.category === 'avatar' && playerAvatar === item.icon)
-                        );
+                        const isOwned =
+                            !isPowerUp &&
+                            (inventory.includes(item.id) || item.price === 0);
+                        const isEquipped =
+                            !isPowerUp &&
+                            (activeTheme === item.id ||
+                                activeSkin === item.id ||
+                                (item.category === 'avatar' &&
+                                    playerAvatar === item.icon));
                         const canAfford = coins >= item.price;
-                        const isFreeUnowned = !isPowerUp && item.price === 0 && !isEquipped;
 
-                        let badge: React.ReactNode = null;
+                        // Status badge in the top-right corner of the card
+                        let cornerBadge: React.ReactNode = null;
                         if (isEquipped) {
-                            badge = <Badge label={t.active} variant="gold" />;
-                        } else if (isOwned && !isFreeUnowned) {
-                            badge = <Badge label={t.owned} variant="success" />;
-                        } else if (isFreeUnowned) {
-                            badge = <Badge label={t.free} variant="info" />;
+                            cornerBadge = <Badge label={t.active} variant="gold" />;
+                        } else if (isOwned && item.price > 0) {
+                            cornerBadge = <Badge label={t.owned} variant="success" />;
+                        } else if (item.price === 0 && !isEquipped) {
+                            cornerBadge = <Badge label={t.free} variant="info" />;
                         }
 
+                        // Bottom action — single button per card
                         let action: React.ReactNode;
                         if (isOwned) {
-                            if (['theme', 'skin', 'avatar'].includes(item.category)) {
+                            if (
+                                ['theme', 'skin', 'avatar'].includes(item.category)
+                            ) {
                                 action = (
                                     <WoodenButton
                                         size="sm"
                                         variant={isEquipped ? 'secondary' : 'gold'}
                                         onPress={() => handleEquip(item)}
                                         disabled={isEquipped}
+                                        fullWidth
                                     >
                                         {isEquipped ? t.active : t.equip}
                                     </WoodenButton>
                                 );
                             } else {
-                                action = <Badge label={t.owned} variant="success" />;
+                                action = (
+                                    <WoodenButton
+                                        size="sm"
+                                        variant="secondary"
+                                        disabled
+                                        fullWidth
+                                    >
+                                        {t.owned}
+                                    </WoodenButton>
+                                );
                             }
                         } else {
                             action = (
                                 <WoodenButton
                                     size="sm"
-                                    variant={canAfford ? 'success' : 'secondary'}
+                                    variant={canAfford ? 'gold' : 'secondary'}
                                     onPress={() => handlePurchase(item)}
                                     disabled={!canAfford}
+                                    fullWidth
                                 >
                                     {`💰 ${item.price}`}
                                 </WoodenButton>
@@ -190,30 +216,71 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                         }
 
                         return (
-                            <ListRow
+                            <View
                                 key={item.id}
-                                icon={
-                                    <View
-                                        style={{
-                                            width: 36,
-                                            height: 36,
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                        }}
-                                    >
-                                        <ShopItemPreview item={item} />
-                                    </View>
-                                }
-                                title={item.name}
-                                subtitle={item.description}
-                                selected={isEquipped}
-                                right={
-                                    <View style={{ alignItems: 'flex-end', gap: SPACING.xs }}>
-                                        {badge}
-                                        {action}
-                                    </View>
-                                }
-                            />
+                                style={{
+                                    width: '48%',
+                                    backgroundColor: 'rgba(26, 17, 9, 0.7)',
+                                    borderRadius: RADII.md,
+                                    borderWidth: 2,
+                                    borderColor: isEquipped
+                                        ? '#ffd700'
+                                        : 'rgba(90, 64, 37, 0.55)',
+                                    padding: SPACING.md,
+                                    gap: SPACING.sm,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 3 },
+                                    shadowOpacity: isEquipped ? 0.55 : 0.35,
+                                    shadowRadius: 4,
+                                    elevation: isEquipped ? 6 : 3,
+                                }}
+                            >
+                                {/* Preview tile + corner badge */}
+                                <View
+                                    style={{
+                                        height: 96,
+                                        borderRadius: RADII.sm,
+                                        backgroundColor: 'rgba(0, 0, 0, 0.35)',
+                                        borderWidth: 1,
+                                        borderColor: 'rgba(255, 215, 0, 0.18)',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        overflow: 'hidden',
+                                    }}
+                                >
+                                    <ShopItemPreview item={item} size="md" />
+
+                                    {cornerBadge ? (
+                                        <View
+                                            style={{
+                                                position: 'absolute',
+                                                top: 4,
+                                                right: 4,
+                                            }}
+                                        >
+                                            {cornerBadge}
+                                        </View>
+                                    ) : null}
+                                </View>
+
+                                {/* Item name */}
+                                <Text
+                                    style={[
+                                        TEXT_STYLES.bodyBold,
+                                        {
+                                            color: '#f5e6c8',
+                                            textAlign: 'center',
+                                            fontWeight: FONT_WEIGHTS.bold,
+                                        },
+                                    ]}
+                                    numberOfLines={1}
+                                >
+                                    {item.name}
+                                </Text>
+
+                                {/* Action button */}
+                                {action}
+                            </View>
                         );
                     })}
                 </View>
