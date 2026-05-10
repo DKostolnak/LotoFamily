@@ -59,6 +59,9 @@ export {
     type RewardedAdResult,
 } from './ads';
 
+// Notifications
+export { notificationsService, type NotificationCategory } from './notifications';
+
 // In-App Purchases
 export {
     purchasesService,

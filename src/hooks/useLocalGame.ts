@@ -57,6 +57,19 @@ interface UseLocalGameReturn {
     restartGame: () => void;
     exitGame: () => void;
 
+    // Power-up game effects (do not consume inventory — caller manages economy)
+    /** Return next `count` upcoming numbers without modifying state. */
+    peekUpcoming: (count?: number) => number[];
+    /**
+     * Auto-mark the first called-but-unmarked cell on the player's cards.
+     * @returns true if a cell was marked.
+     */
+    luckyMark: () => boolean;
+    /** Enable the slow-time effect: doubles the auto-call interval for `durationMs`. */
+    enableSlowTime: (durationMs?: number) => void;
+    /** True while the slow-time effect is active (live ticking). */
+    isSlowTimeActive: boolean;
+
     // Auto-call
     toggleAutoCall: () => void;
     isAutoCallEnabled: boolean;
@@ -86,6 +99,14 @@ export function useLocalGame(options: UseLocalGameOptions): UseLocalGameReturn {
     const [isAutoCallEnabled, setIsAutoCallEnabled] = useState(initialAutoCall);
     const [autoCallSpeed, setAutoCallSpeed] = useState<'slow' | 'normal' | 'fast'>(initialSpeed);
     const autoCallTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Slow-time power-up state. `slowTimeUntil` is the wall-clock ms timestamp
+    // until which the auto-call interval is doubled. We expose `isSlowTimeActive`
+    // as live state so consumers can show a UI indicator. The timer effect
+    // re-reads `slowTimeUntil` to refresh the auto-call interval.
+    const [slowTimeUntil, setSlowTimeUntil] = useState<number>(0);
+    const [isSlowTimeActive, setIsSlowTimeActive] = useState<boolean>(false);
+    const slowTimeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Player ID (stable across renders)
     const playerIdRef = useRef<string>(generatePlayerId());
@@ -237,7 +258,9 @@ export function useLocalGame(options: UseLocalGameOptions): UseLocalGameReturn {
     // Auto-call effect
     useEffect(() => {
         if (isAutoCallEnabled && gameState?.phase === 'playing') {
-            const intervalMs = AUTO_CALL_INTERVALS[autoCallSpeed];
+            // Slow-time power-up doubles the interval while active.
+            const baseInterval = AUTO_CALL_INTERVALS[autoCallSpeed];
+            const intervalMs = Date.now() < slowTimeUntil ? baseInterval * 2 : baseInterval;
             autoCallTimerRef.current = setInterval(() => {
                 callNumber();
             }, intervalMs);
@@ -254,7 +277,91 @@ export function useLocalGame(options: UseLocalGameOptions): UseLocalGameReturn {
                 autoCallTimerRef.current = null;
             }
         };
-    }, [isAutoCallEnabled, autoCallSpeed, gameState?.phase, callNumber]);
+    }, [isAutoCallEnabled, autoCallSpeed, gameState?.phase, callNumber, isSlowTimeActive, slowTimeUntil]);
+
+    // ========================================================================
+    // POWER-UP EFFECTS
+    // ========================================================================
+
+    /**
+     * Return next `count` upcoming numbers without consuming/modifying state.
+     * `remainingNumbers` is the shuffled draw pool — `callNextNumber` pops from
+     * the front, so the next-up is `remainingNumbers[0..count-1]`.
+     */
+    const peekUpcoming = useCallback((count: number = 3): number[] => {
+        if (!gameState) return [];
+        return gameState.remainingNumbers.slice(0, count);
+    }, [gameState]);
+
+    /**
+     * Auto-mark the first called-but-unmarked cell on the player's cards.
+     * Walks own cards in order; for each cell, if value has been called but
+     * isMarked is false, marks via the existing engine helper.
+     */
+    const luckyMark = useCallback((): boolean => {
+        if (!gameState) return false;
+        const calledSet = new Set(gameState.calledNumbers.map(cn => cn.value));
+
+        let foundCardId: string | null = null;
+        let foundRow = -1;
+        let foundCol = -1;
+
+        const myPlayer = gameState.players.find(p => p.id === playerIdRef.current);
+        if (!myPlayer) return false;
+
+        outer: for (const card of myPlayer.cards) {
+            for (let r = 0; r < card.grid.length; r++) {
+                const row = card.grid[r];
+                for (let c = 0; c < row.length; c++) {
+                    const cell = row[c];
+                    if (cell.value !== null && !cell.isMarked && calledSet.has(cell.value)) {
+                        foundCardId = card.id;
+                        foundRow = r;
+                        foundCol = c;
+                        break outer;
+                    }
+                }
+            }
+        }
+
+        if (!foundCardId) return false;
+
+        const updatedPlayers = gameState.players.map(player => {
+            if (player.id !== playerIdRef.current) return player;
+            const updatedCards = player.cards.map(card => {
+                if (card.id !== foundCardId) return card;
+                return markCellEngine(card, foundRow, foundCol);
+            });
+            return { ...player, cards: updatedCards };
+        });
+        setGameState({ ...gameState, players: updatedPlayers });
+        return true;
+    }, [gameState]);
+
+    /**
+     * Activate slow-time: doubles auto-call interval for `durationMs`.
+     */
+    const enableSlowTime = useCallback((durationMs: number = 30000) => {
+        const until = Date.now() + durationMs;
+        setSlowTimeUntil(until);
+        setIsSlowTimeActive(true);
+        if (slowTimeTimeoutRef.current) clearTimeout(slowTimeTimeoutRef.current);
+        slowTimeTimeoutRef.current = setTimeout(() => {
+            setIsSlowTimeActive(false);
+            setSlowTimeUntil(0);
+            slowTimeTimeoutRef.current = null;
+        }, durationMs);
+    }, []);
+
+    // Cleanup slow-time timer on unmount
+    useEffect(() => {
+        return () => {
+            if (slowTimeTimeoutRef.current) {
+                clearTimeout(slowTimeTimeoutRef.current);
+                slowTimeTimeoutRef.current = null;
+            }
+        };
+    }, []);
 
     return {
         // State
@@ -283,5 +390,11 @@ export function useLocalGame(options: UseLocalGameOptions): UseLocalGameReturn {
         isAutoCallEnabled,
         setAutoCallSpeed,
         autoCallSpeed,
+
+        // Power-ups
+        peekUpcoming,
+        luckyMark,
+        enableSlowTime,
+        isSlowTimeActive,
     };
 }

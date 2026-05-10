@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
+import * as Linking from 'expo-linking';
 import { WoodenCard, WoodenButton } from '@/components/common';
 import { PlayerList } from './PlayerList';
 import { Player } from '@/lib/types';
@@ -68,13 +69,19 @@ export const WaitingLobby = memo(({
     const handleShare = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         try {
+            // Build a deep link the recipient can tap to open the app pre-filled
+            // in Join mode (handler in src/app/index.tsx parses ?room=).
+            const url = Linking.createURL('/', { queryParams: { room: roomCode } });
+            const message = `${t.joinMyGame ?? 'Join my Loto game!'} ${url}`;
             await Share.share({
-                message: `${t.joinWithCode ?? 'Join my Loto game with code:'} ${roomCode}`,
+                message,
+                url, // iOS surfaces this as the rich preview link
+                title: 'LOTO Invite',
             });
         } catch {
-            // user cancelled
+            // user cancelled or share unavailable
         }
-    }, [roomCode, t.joinWithCode]);
+    }, [roomCode, t.joinMyGame]);
 
     const handleCopy = useCallback(async () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -176,7 +183,7 @@ export const WaitingLobby = memo(({
                     >
                         <Share2 size={16} color="#d4b896" />
                         <Text style={[TEXT_STYLES.button, { color: '#d4b896' }]}>
-                            {t.share ?? 'SHARE'}
+                            {(t as any).shareInvite ?? t.share ?? 'SHARE'}
                         </Text>
                     </TouchableOpacity>
                 </View>

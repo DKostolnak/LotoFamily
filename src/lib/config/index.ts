@@ -44,6 +44,9 @@ export * from './ui.config';
 // Design system tokens (typography, spacing, button sizing)
 export * from './typography.config';
 
+// Season / Battle Pass
+export * from './season.config';
+
 // ============================================================================
 // Backward compatibility aliases (formerly in lib/constants.ts)
 // ============================================================================

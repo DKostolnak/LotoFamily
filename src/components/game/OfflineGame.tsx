@@ -12,7 +12,10 @@ import { WaitingLobby } from '@/components/WaitingLobby';
 import { LotoCard } from '@/components/LotoCard';
 import { GameHeader } from '@/components/GameHeader';
 import GamePausedOverlay from '@/components/GamePausedOverlay';
-import { WoodenButton, TutorialOverlay, type TutorialStep } from '@/components/common';
+import { WoodenButton, TutorialOverlay, type TutorialStep, PowerUpBar } from '@/components/common';
+import { useToast } from '@/components/ToastProvider';
+import { adsService, AD_PLACEMENTS } from '@/lib/services/ads';
+import type { PowerUpInventory } from '@/lib/store/types';
 import { WinnerModal } from '@/components/WinnerModal';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Player } from '@/lib/types';
@@ -33,7 +36,11 @@ export const OfflineGame = () => {
         activeTheme,
         tutorialCompleted,
         setTutorialCompleted,
+        powerUps,
+        usePowerUp,
+        addPowerUp,
     } = useGameStore();
+    const { showToast } = useToast();
     const haptics = useHapticFeedback();
     const insets = useSafeAreaInsets();
     const { speak, speakNumber, playSound } = useAudio();
@@ -59,6 +66,10 @@ export const OfflineGame = () => {
         exitGame,
         toggleAutoCall,
         isAutoCallEnabled,
+        peekUpcoming,
+        luckyMark,
+        enableSlowTime,
+        isSlowTimeActive,
     } = useLocalGame({
         playerName: playerName || 'Player',
         playerAvatar: playerAvatar || '🐻',
@@ -202,6 +213,16 @@ export const OfflineGame = () => {
                 currentWinStreak: newWinStreak,
                 longestWinStreak: bestWinStreak,
             });
+
+            // Battle Pass: grant season XP for game completion / win / streak.
+            // Read directly from store so we avoid adding new hook deps to the
+            // existing winner effect (which intentionally has narrow deps).
+            const addSeasonXp = useGameStore.getState().addSeasonXp;
+            addSeasonXp(50); // game played
+            if (isWin) {
+                addSeasonXp(150); // win bonus
+                if (newWinStreak >= 3) addSeasonXp(100); // streak bonus
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [winner, haptics, updateStats]);
@@ -247,6 +268,57 @@ export const OfflineGame = () => {
         setShowWinner(false);
         restartGame();
     };
+
+    // ========================================================================
+    // POWER-UPS
+    // ========================================================================
+
+    const powerUpDisplayNames: Record<keyof PowerUpInventory, string> = {
+        peek: t.powerUpPeek,
+        luckyMark: t.powerUpLuckyMark,
+        slowTime: t.powerUpSlowTime,
+    };
+
+    const handleUsePowerUp = (type: keyof PowerUpInventory) => {
+        // Decrement inventory first; if none, the bar's onUse won't fire
+        // (count===0 routes through onWatchAd). usePowerUp returns false
+        // defensively if state changed mid-tap.
+        if (!usePowerUp(type)) return;
+        haptics.impactMedium();
+
+        if (type === 'peek') {
+            const upcoming = peekUpcoming(3);
+            const text = t.nextNumbersAre.replace('{numbers}', upcoming.join(', '));
+            showToast(text, 'info', '🔮');
+        } else if (type === 'luckyMark') {
+            const marked = luckyMark();
+            if (marked) {
+                haptics.notifySuccess();
+                playSound('chip');
+            } else {
+                // Nothing markable — refund the consumed power-up.
+                addPowerUp('luckyMark', 1);
+            }
+        } else if (type === 'slowTime') {
+            enableSlowTime(30000);
+            showToast(t.slowTimeActive, 'info', '⏰');
+        }
+    };
+
+    const handleWatchAdForPowerUp = async (type: keyof PowerUpInventory) => {
+        haptics.impactLight();
+        const result = await adsService.showRewardedAd(AD_PLACEMENTS.POWER_UP_REWARD);
+        if (result.rewarded) {
+            addPowerUp(type, 1);
+            const earnedText = t.powerUpEarned.replace('{name}', powerUpDisplayNames[type]);
+            showToast(earnedText, 'success', '🎁');
+        }
+    };
+
+    const activeEffects = useMemo(
+        () => ({ slowTime: isSlowTimeActive }),
+        [isSlowTimeActive]
+    );
 
     // ========================================================================
     // RENDER - LOBBY
@@ -433,6 +505,15 @@ export const OfflineGame = () => {
                         </Text>
                     </View>
                 </View>
+
+                {/* Power-up bar — consumable boosts (peek / lucky mark / slow time) */}
+                <PowerUpBar
+                    inventory={powerUps}
+                    onUse={handleUsePowerUp}
+                    onWatchAd={handleWatchAdForPowerUp}
+                    activeEffects={activeEffects}
+                    a11yWatchAdLabel={t.watchAdForPowerUp}
+                />
 
                 {/* Cards Container - Responsive bottom padding for safe area */}
                 <View

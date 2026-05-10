@@ -7,7 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ToastProvider } from '@/components/ToastProvider';
 import { RateAppModal } from '@/components/RateAppModal';
-import { crashReporting, analytics, audioService } from '@/lib/services';
+import { crashReporting, analytics, audioService, notificationsService } from '@/lib/services';
 
 export default function Layout() {
     // Initialize services on app start
@@ -15,6 +15,7 @@ export default function Layout() {
         crashReporting.init();
         analytics.init();
         audioService.initialize();
+        notificationsService.init().catch(() => {});
     }, []);
 
     return (

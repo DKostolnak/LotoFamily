@@ -323,6 +323,47 @@ export interface TranslationKeys {
     resetTutorialDesc: string;
     reset: string;
 
+    // Power-ups (consumable in-game boosts)
+    powerUps: string;
+    powerUpPeek: string;
+    powerUpPeekDesc: string;
+    powerUpLuckyMark: string;
+    powerUpLuckyMarkDesc: string;
+    powerUpSlowTime: string;
+    powerUpSlowTimeDesc: string;
+    watchAdForPowerUp: string;
+    /** Toast template — replace {numbers} with comma-joined upcoming numbers. */
+    nextNumbersAre: string;
+    /** Toast template — replace {name} with the power-up display name. */
+    powerUpEarned: string;
+    slowTimeActive: string;
+
+    // Notifications & invite (retention)
+    notificationsLabel: string;
+    notificationsDesc: string;
+    dailyBonusNotifTitle: string;
+    dailyBonusNotifBody: string;
+    shareInvite: string;
+    invitedToJoin: string;
+
+    // Battle Pass / Season Pass
+    battlePass: string;
+    seasonPass: string;
+    seasonLevel: string;
+    seasonXp: string;
+    unlockPremium: string;
+    getPremium: string;
+    premiumPrice: string;
+    /** "{n} days left" — replace {n} with days remaining */
+    daysLeft: string;
+    seasonEnded: string;
+    claim: string;
+    claimed: string;
+    locked: string;
+    nextReward: string;
+    freeTrack: string;
+    premiumTrack: string;
+
     // Connection status banner
     connStatusReconnecting: string;
     connStatusDisconnected: string;

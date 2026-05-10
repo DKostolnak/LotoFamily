@@ -17,6 +17,7 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
     language: 'en' as Language,
     batterySaver: false,
     tutorialCompleted: false,
+    notificationsEnabled: true,
 
     setMuted: (muted: boolean) => set({ isMuted: muted }),
 
@@ -25,4 +26,6 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
     setBatterySaver: (enabled: boolean) => set({ batterySaver: enabled }),
 
     setTutorialCompleted: (done: boolean) => set({ tutorialCompleted: done }),
+
+    setNotificationsEnabled: (enabled: boolean) => set({ notificationsEnabled: enabled }),
 });

@@ -41,6 +41,7 @@ export const AD_PLACEMENTS = {
     EXTRA_CARD: 'extra_card',
     SKIP_INTERSTITIAL: 'skip_interstitial',
     POST_GAME_INTERSTITIAL: 'post_game_interstitial',
+    POWER_UP_REWARD: 'power_up_reward',
 } as const;
 
 export type AdPlacement = (typeof AD_PLACEMENTS)[keyof typeof AD_PLACEMENTS];

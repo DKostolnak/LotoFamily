@@ -3,7 +3,7 @@ import { View, Text, Pressable, FlatList } from 'react-native';
 import { ModalShell, ListRow, Badge, CoinBadge, WoodenButton, EmptyState } from '@/components/common';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 import { useGameStore } from '@/lib/store';
-import { SHOP_ITEMS, type ShopItem } from '@/lib/shop';
+import { SHOP_ITEMS, type ShopItem, isPowerUpItem } from '@/lib/shop';
 import { translations } from '@/lib/i18n';
 import * as Haptics from 'expo-haptics';
 import { ShopItemPreview } from '@/components/shop/ShopItemPreview';
@@ -14,9 +14,9 @@ interface ShopModalProps {
 }
 
 export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
-    const { coins, inventory, purchaseItem, activeTheme, activeSkin, equipItem, playerAvatar, setPlayerAvatar, language } = useGameStore();
+    const { coins, inventory, purchaseItem, removeCoins, addPowerUp, activeTheme, activeSkin, equipItem, playerAvatar, setPlayerAvatar, language } = useGameStore();
     const t = translations[language];
-    type CategoryId = 'all' | 'avatar' | 'theme' | 'skin';
+    type CategoryId = 'all' | 'avatar' | 'theme' | 'skin' | 'powerup';
     const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
 
     useEffect(() => {
@@ -26,13 +26,23 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
     }, [visible]);
 
     const handlePurchase = (item: ShopItem) => {
-        if (coins >= item.price) {
-            const success = purchaseItem(item.id, item.price);
-            if (success) {
+        if (coins < item.price) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => { });
+            return;
+        }
+        // Power-up packs are consumable — never enter the cosmetic `inventory`
+        // array. Deduct coins and increment the powerUps counter directly.
+        if (isPowerUpItem(item)) {
+            const ok = removeCoins(item.price);
+            if (ok) {
+                addPowerUp(item.powerUpType, item.count);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
             }
-        } else {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => { });
+            return;
+        }
+        const success = purchaseItem(item.id, item.price);
+        if (success) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
         }
     };
 
@@ -51,6 +61,7 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
         { id: 'avatar', label: t.avatars },
         { id: 'theme', label: t.themes },
         { id: 'skin', label: t.markers },
+        { id: 'powerup', label: t.powerUps },
     ];
 
     const filteredItems = useMemo(
@@ -131,10 +142,12 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                     />
                 }
                 renderItem={({ item }) => {
-                    const isOwned = inventory.includes(item.id) || item.price === 0;
-                    const isEquipped = activeTheme === item.id || activeSkin === item.id || (item.category === 'avatar' && playerAvatar === item.icon);
+                    // Power-up packs are consumable — always purchasable, never "owned".
+                    const isPowerUp = isPowerUpItem(item);
+                    const isOwned = !isPowerUp && (inventory.includes(item.id) || item.price === 0);
+                    const isEquipped = !isPowerUp && (activeTheme === item.id || activeSkin === item.id || (item.category === 'avatar' && playerAvatar === item.icon));
                     const canAfford = coins >= item.price;
-                    const isFreeUnowned = item.price === 0 && !isEquipped;
+                    const isFreeUnowned = !isPowerUp && item.price === 0 && !isEquipped;
 
                     let badge: React.ReactNode = null;
                     if (isEquipped) {

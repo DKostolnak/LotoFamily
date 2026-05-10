@@ -7,12 +7,15 @@
 
 import { ThemeId, SkinId } from './config/theme.config';
 import { PREMIUM_AVATARS } from './config/avatar.config';
+import type { PowerUpInventory } from './store/types';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type ShopCategory = 'avatar' | 'skin' | 'theme';
+export type ShopCategory = 'avatar' | 'skin' | 'theme' | 'powerup';
+
+export type PowerUpType = keyof PowerUpInventory;
 
 interface BaseShopItem {
     readonly id: string;
@@ -37,7 +40,18 @@ export interface SkinShopItem extends BaseShopItem {
     readonly skinId: SkinId;
 }
 
-export type ShopItem = AvatarShopItem | ThemeShopItem | SkinShopItem;
+/**
+ * Power-up pack — consumable. Buying grants `count` of `powerUpType`.
+ * Power-ups never enter the cosmetic `inventory` array; they live in the
+ * dedicated `powerUps` counter object on EconomyState.
+ */
+export interface PowerUpShopItem extends BaseShopItem {
+    readonly category: 'powerup';
+    readonly powerUpType: PowerUpType;
+    readonly count: number;
+}
+
+export type ShopItem = AvatarShopItem | ThemeShopItem | SkinShopItem | PowerUpShopItem;
 
 // ============================================================================
 // SHOP INVENTORY
@@ -108,11 +122,45 @@ const SKIN_ITEMS: readonly SkinShopItem[] = [
     },
 ] as const;
 
+const POWERUP_ITEMS: readonly PowerUpShopItem[] = [
+    {
+        id: 'powerup_peek_3',
+        icon: '🔮',
+        name: 'Peek pack',
+        price: 50,
+        description: '3× Peek next 3 numbers',
+        category: 'powerup',
+        powerUpType: 'peek',
+        count: 3,
+    },
+    {
+        id: 'powerup_lucky_3',
+        icon: '✨',
+        name: 'Lucky Mark pack',
+        price: 75,
+        description: '3× Auto-mark a missing number',
+        category: 'powerup',
+        powerUpType: 'luckyMark',
+        count: 3,
+    },
+    {
+        id: 'powerup_slow_3',
+        icon: '⏰',
+        name: 'Slow Time pack',
+        price: 100,
+        description: '3× 30s slow auto-call',
+        category: 'powerup',
+        powerUpType: 'slowTime',
+        count: 3,
+    },
+] as const;
+
 /** All shop items combined */
 export const SHOP_ITEMS: readonly ShopItem[] = [
     ...AVATAR_ITEMS,
     ...THEME_ITEMS,
     ...SKIN_ITEMS,
+    ...POWERUP_ITEMS,
 ];
 
 // ============================================================================
@@ -169,4 +217,11 @@ export function isSkinItem(item: ShopItem): item is SkinShopItem {
  */
 export function isAvatarItem(item: ShopItem): item is AvatarShopItem {
     return item.category === 'avatar';
+}
+
+/**
+ * Type guard for power-up items
+ */
+export function isPowerUpItem(item: ShopItem): item is PowerUpShopItem {
+    return item.category === 'powerup';
 }

@@ -24,4 +24,6 @@ export * from './ListRow';
 export * from './Badge';
 export * from './TutorialOverlay';
 export * from './ConnectionBanner';
+export * from './PowerUpBar';
+export * from './SeasonPassChip';
 

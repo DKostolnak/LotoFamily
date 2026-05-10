@@ -2,10 +2,11 @@ import React from 'react';
 import { View, Text, Switch } from 'react-native';
 import { ModalShell, Section, ListRow, WoodenButton } from '@/components/common';
 import { useGameStore } from '@/lib/store';
-import { Volume2, VolumeX, Zap, Info, Check, BookOpen } from 'lucide-react-native';
+import { Volume2, VolumeX, Zap, Info, Check, BookOpen, Bell } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { ENV, TEXT_STYLES, SPACING } from '@/lib/config';
 import { translations, type Language } from '@/lib/i18n';
+import { notificationsService } from '@/lib/services/notifications';
 
 interface SettingsModalProps {
     visible: boolean;
@@ -25,6 +26,7 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
         language, setLanguage,
         batterySaver, setBatterySaver,
         tutorialCompleted, setTutorialCompleted,
+        notificationsEnabled, setNotificationsEnabled,
     } = useGameStore();
 
     const t = translations[language];
@@ -43,6 +45,19 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
     const handleBatterySaverChange = (value: boolean) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setBatterySaver(value);
+    };
+
+    const handleToggleNotifications = async (value: boolean) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setNotificationsEnabled(value);
+        if (value) {
+            // Re-init in case user previously denied — request permission again
+            // and surface OS prompt if not yet granted.
+            await notificationsService.init();
+        } else {
+            // Cancel everything currently scheduled so the user is no longer nagged.
+            await notificationsService.cancelAll();
+        }
     };
 
     const handleResetTutorial = () => {
@@ -107,6 +122,22 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
                             onValueChange={handleBatterySaverChange}
                             trackColor={{ false: '#3d2814', true: '#d4b075' }}
                             thumbColor={batterySaver ? '#ffd700' : '#8b7355'}
+                        />
+                    }
+                />
+            </Section>
+
+            <Section title={(t as any).notificationsLabel ?? 'Notifications'}>
+                <ListRow
+                    icon={<Bell size={20} color={notificationsEnabled ? '#ffd700' : '#d4b896'} />}
+                    title={(t as any).notificationsLabel ?? 'Notifications'}
+                    subtitle={(t as any).notificationsDesc ?? 'Daily bonus reminders, friend invites'}
+                    right={
+                        <Switch
+                            value={notificationsEnabled}
+                            onValueChange={handleToggleNotifications}
+                            trackColor={{ false: '#3d2814', true: '#d4b075' }}
+                            thumbColor={notificationsEnabled ? '#ffd700' : '#8b7355'}
                         />
                     }
                 />

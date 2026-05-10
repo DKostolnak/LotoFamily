@@ -10,6 +10,7 @@ import {
     SkeletonList,
     StickyHeader,
     DailyBonusCard,
+    SeasonPassChip,
     FreeCoinsCTA,
     PlayNowButton,
     HomeFooter,
@@ -36,6 +37,7 @@ import { StatsModal } from '@/components/StatsModal';
 import { SettingsModal } from '@/components/SettingsModal';
 import { LeaderboardModal } from '@/components/LeaderboardModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
+import { BattlePassModal } from '@/components/BattlePassModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useResponsive } from '@/hooks';
 import ENV from '@/lib/config/env.config';
@@ -85,8 +87,9 @@ export default function MainMenu() {
     const [publicRoomsState, setPublicRoomsState] = useState<'idle' | 'loading' | 'error' | 'loaded'>('idle');
     const [publicRoomsError, setPublicRoomsError] = useState<string | null>(null);
     const [publicRoomsRefreshKey, setPublicRoomsRefreshKey] = useState(0);
+    const [joinedViaInvite, setJoinedViaInvite] = useState(false);
 
-    type MenuModal = 'rules' | 'shop' | 'stats' | 'settings' | 'leaderboard' | 'quests' | null;
+    type MenuModal = 'rules' | 'shop' | 'stats' | 'settings' | 'leaderboard' | 'quests' | 'seasonPass' | null;
     const [activeModal, setActiveModal] = useState<MenuModal>(null);
 
     const openModal = (modal: Exclude<MenuModal, null>) => setActiveModal(modal);
@@ -126,11 +129,22 @@ export default function MainMenu() {
             if (queryParams?.room) {
                 setRoomCode(String(queryParams.room).toUpperCase());
                 setMode('join');
+                setJoinedViaInvite(true);
             }
         };
+        // Cold-start: app launched directly from a deep link
+        Linking.getInitialURL().then((url) => {
+            if (url) handleDeepLink({ url });
+        }).catch(() => {});
         const subscription = Linking.addEventListener('url', handleDeepLink);
         return () => subscription.remove();
     }, []);
+
+    // Clear the invite banner when leaving join mode so it doesn't reappear
+    // if the user opens Join again manually.
+    useEffect(() => {
+        if (mode !== 'join') setJoinedViaInvite(false);
+    }, [mode]);
 
     useEffect(() => {
         setIsMounted(true);
@@ -328,6 +342,12 @@ export default function MainMenu() {
                         cooldown: labelAvailableIn,
                     }}
                 />
+                <SeasonPassChip
+                    onPress={() => openModal('seasonPass')}
+                    label={t.seasonPass ?? 'Season Pass'}
+                    claimLabel={t.claim ?? 'Claim'}
+                    levelLabel={t.seasonLevel ?? t.level ?? 'Level'}
+                />
             </Animated.View>
         </View>
     );
@@ -495,6 +515,31 @@ export default function MainMenu() {
                 </View>
             ) : (
                 <View style={{ gap: SPACING.lg }}>
+                    {joinedViaInvite && (
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: SPACING.sm,
+                                paddingVertical: SPACING.sm,
+                                paddingHorizontal: SPACING.md,
+                                borderRadius: RADII.lg,
+                                borderWidth: 1,
+                                borderColor: '#ffd700',
+                                backgroundColor: 'rgba(255, 215, 0, 0.08)',
+                            }}
+                            accessibilityRole="text"
+                        >
+                            <Text style={{ fontSize: 18, lineHeight: 22 }}>👋</Text>
+                            <Text
+                                style={[TEXT_STYLES.bodyBold, { color: '#ffd700', textAlign: 'center', flexShrink: 1 }]}
+                                numberOfLines={2}
+                            >
+                                {(t as any).invitedToJoin ?? "You're joining via invite"}
+                            </Text>
+                        </View>
+                    )}
                     <WoodenInput
                         label={t.roomCode}
                         value={roomCode}
@@ -790,6 +835,7 @@ export default function MainMenu() {
             {activeModal === 'settings' && <SettingsModal visible={true} onClose={closeModal} />}
             {activeModal === 'leaderboard' && <LeaderboardModal visible={true} onClose={closeModal} />}
             {activeModal === 'quests' && <QuestsModal visible={true} onClose={closeModal} />}
+            {activeModal === 'seasonPass' && <BattlePassModal visible={true} onClose={closeModal} />}
             <DailyBonusModal />
             <OnboardingModal />
         </ImageBackground>

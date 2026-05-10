@@ -207,6 +207,31 @@ export const translations: Record<Language, TranslationKeys> = {
         resetTutorialDesc: 'Show the tutorial again next practice game.',
         reset: 'Reset',
 
+        // Notifications & invite
+        notificationsLabel: 'Notifications',
+        notificationsDesc: 'Daily bonus reminders, friend invites',
+        dailyBonusNotifTitle: '🎁 Daily bonus is ready!',
+        dailyBonusNotifBody: 'Open LOTO and claim your reward.',
+        shareInvite: 'Share invite',
+        invitedToJoin: "You're joining via invite",
+
+        // Battle Pass / Season Pass
+        battlePass: 'Battle Pass',
+        seasonPass: 'Season Pass',
+        seasonLevel: 'Level',
+        seasonXp: 'XP',
+        unlockPremium: 'Unlock Premium',
+        getPremium: 'Get Premium',
+        premiumPrice: '$4.99',
+        daysLeft: '{n} days left',
+        seasonEnded: 'Season ended',
+        claim: 'Claim',
+        claimed: 'Claimed',
+        locked: 'Locked',
+        nextReward: 'Next reward',
+        freeTrack: 'Free',
+        premiumTrack: 'Premium',
+
         // Connection status banner
         connStatusReconnecting: 'Reconnecting...',
         connStatusDisconnected: 'Connection lost',
@@ -214,6 +239,19 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusOffline: 'No connection',
         connStatusError: 'Connection error',
         connRetry: 'Retry',
+
+        // Power-ups
+        powerUps: 'Power-ups',
+        powerUpPeek: 'Peek next 3',
+        powerUpPeekDesc: 'See the next 3 numbers',
+        powerUpLuckyMark: 'Lucky Mark',
+        powerUpLuckyMarkDesc: 'Auto-mark a missing number',
+        powerUpSlowTime: 'Slow Time',
+        powerUpSlowTimeDesc: '2x slower auto-calls for 30s',
+        watchAdForPowerUp: 'Watch ad for +1',
+        nextNumbersAre: 'Next: {numbers}',
+        powerUpEarned: 'Earned 1 {name}!',
+        slowTimeActive: '⏰ Slow time',
     },
     sk: {
         // Menu
@@ -410,6 +448,31 @@ export const translations: Record<Language, TranslationKeys> = {
         resetTutorialDesc: 'Znovu zobraziť tutorial pri ďalšej Practice hre.',
         reset: 'Reset',
 
+        // Notifications & invite
+        notificationsLabel: 'Upozornenia',
+        notificationsDesc: 'Pripomenutia na denný bonus, pozvánky',
+        dailyBonusNotifTitle: '🎁 Denný bonus je pripravený!',
+        dailyBonusNotifBody: 'Otvor LOTO a vyzdvihni odmenu.',
+        shareInvite: 'Zdieľaj pozvánku',
+        invitedToJoin: 'Pripájaš sa cez pozvánku',
+
+        // Battle Pass / Season Pass
+        battlePass: 'Bojový Pass',
+        seasonPass: 'Sezónny Pass',
+        seasonLevel: 'Úroveň',
+        seasonXp: 'XP',
+        unlockPremium: 'Odomkni Premium',
+        getPremium: 'Získať Premium',
+        premiumPrice: '$4.99',
+        daysLeft: '{n} dní zostáva',
+        seasonEnded: 'Sezóna skončila',
+        claim: 'Vyzdvihnúť',
+        claimed: 'Vyzdvihnuté',
+        locked: 'Zamknuté',
+        nextReward: 'Ďalšia odmena',
+        freeTrack: 'Zadarmo',
+        premiumTrack: 'Premium',
+
         // Connection status banner
         connStatusReconnecting: 'Pripájam sa...',
         connStatusDisconnected: 'Stratené pripojenie',
@@ -417,6 +480,19 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusOffline: 'Žiadne pripojenie',
         connStatusError: 'Chyba pripojenia',
         connRetry: 'Skúsiť znova',
+
+        // Power-ups
+        powerUps: 'Vylepšenia',
+        powerUpPeek: 'Pozri ďalšie 3',
+        powerUpPeekDesc: 'Uvidíš ďalšie 3 čísla',
+        powerUpLuckyMark: 'Šťastná značka',
+        powerUpLuckyMarkDesc: 'Automaticky označí chýbajúce číslo',
+        powerUpSlowTime: 'Spomaliť čas',
+        powerUpSlowTimeDesc: '2× pomalšie auto-call na 30s',
+        watchAdForPowerUp: 'Pozri reklamu za +1',
+        nextNumbersAre: 'Ďalšie: {numbers}',
+        powerUpEarned: 'Získal si 1 {name}!',
+        slowTimeActive: '⏰ Pomalý čas',
     },
     ru: {
         // Menu
@@ -613,6 +689,31 @@ export const translations: Record<Language, TranslationKeys> = {
         resetTutorialDesc: 'Показать обучение снова в следующей тренировочной игре.',
         reset: 'Сброс',
 
+        // Notifications & invite
+        notificationsLabel: 'Уведомления',
+        notificationsDesc: 'Напоминания о бонусе, приглашения друзей',
+        dailyBonusNotifTitle: '🎁 Ежедневный бонус готов!',
+        dailyBonusNotifBody: 'Откройте ЛОТО и заберите награду.',
+        shareInvite: 'Поделиться',
+        invitedToJoin: 'Вы присоединяетесь по приглашению',
+
+        // Battle Pass / Season Pass
+        battlePass: 'Боевой пропуск',
+        seasonPass: 'Сезонный пропуск',
+        seasonLevel: 'Уровень',
+        seasonXp: 'Опыт',
+        unlockPremium: 'Открыть Премиум',
+        getPremium: 'Получить Премиум',
+        premiumPrice: '$4.99',
+        daysLeft: 'Осталось {n} дн.',
+        seasonEnded: 'Сезон окончен',
+        claim: 'Забрать',
+        claimed: 'Получено',
+        locked: 'Заблокировано',
+        nextReward: 'Следующая награда',
+        freeTrack: 'Бесплатно',
+        premiumTrack: 'Премиум',
+
         // Connection status banner
         connStatusReconnecting: 'Подключение...',
         connStatusDisconnected: 'Соединение потеряно',
@@ -620,6 +721,19 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusOffline: 'Нет соединения',
         connStatusError: 'Ошибка подключения',
         connRetry: 'Повторить',
+
+        // Power-ups
+        powerUps: 'Усиления',
+        powerUpPeek: 'Подсмотреть 3',
+        powerUpPeekDesc: 'Увидеть следующие 3 числа',
+        powerUpLuckyMark: 'Счастливая метка',
+        powerUpLuckyMarkDesc: 'Автоматически отметит пропущенное число',
+        powerUpSlowTime: 'Замедлить время',
+        powerUpSlowTimeDesc: '2× медленнее авто-вызов на 30с',
+        watchAdForPowerUp: 'Посмотреть рекламу за +1',
+        nextNumbersAre: 'Следующие: {numbers}',
+        powerUpEarned: 'Получено 1 {name}!',
+        slowTimeActive: '⏰ Замедление',
     },
     uk: {
         // Menu
@@ -816,6 +930,31 @@ export const translations: Record<Language, TranslationKeys> = {
         resetTutorialDesc: 'Знову показати навчання у наступній тренувальній грі.',
         reset: 'Скинути',
 
+        // Notifications & invite
+        notificationsLabel: 'Сповіщення',
+        notificationsDesc: 'Нагадування про бонус, запрошення друзів',
+        dailyBonusNotifTitle: '🎁 Щоденний бонус готовий!',
+        dailyBonusNotifBody: 'Відкрий ЛОТО і забери нагороду.',
+        shareInvite: 'Поділитися',
+        invitedToJoin: 'Ти приєднуєшся за запрошенням',
+
+        // Battle Pass / Season Pass
+        battlePass: 'Бойовий пропуск',
+        seasonPass: 'Сезонний пропуск',
+        seasonLevel: 'Рівень',
+        seasonXp: 'Досвід',
+        unlockPremium: 'Розблокувати Преміум',
+        getPremium: 'Отримати Преміум',
+        premiumPrice: '$4.99',
+        daysLeft: 'Залишилось {n} дн.',
+        seasonEnded: 'Сезон закінчився',
+        claim: 'Забрати',
+        claimed: 'Отримано',
+        locked: 'Заблоковано',
+        nextReward: 'Наступна нагорода',
+        freeTrack: 'Безкоштовно',
+        premiumTrack: 'Преміум',
+
         // Connection status banner
         connStatusReconnecting: 'Підключення...',
         connStatusDisconnected: 'З\'єднання втрачено',
@@ -823,6 +962,19 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusOffline: 'Немає з\'єднання',
         connStatusError: 'Помилка підключення',
         connRetry: 'Повторити',
+
+        // Power-ups
+        powerUps: 'Підсилення',
+        powerUpPeek: 'Підглянути 3',
+        powerUpPeekDesc: 'Побачити наступні 3 числа',
+        powerUpLuckyMark: 'Щаслива позначка',
+        powerUpLuckyMarkDesc: 'Автоматично позначить пропущене число',
+        powerUpSlowTime: 'Уповільнити час',
+        powerUpSlowTimeDesc: '2× повільніше авто-виклик на 30с',
+        watchAdForPowerUp: 'Переглянути рекламу за +1',
+        nextNumbersAre: 'Далі: {numbers}',
+        powerUpEarned: 'Отримано 1 {name}!',
+        slowTimeActive: '⏰ Уповільнення',
     }
 };
 

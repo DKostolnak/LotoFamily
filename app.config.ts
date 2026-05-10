@@ -111,6 +111,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         'expo-router',
         'expo-updates',
         'expo-audio',
+        [
+            'expo-notifications',
+            {
+                icon: './assets/icon.png',
+                color: '#ffd700',
+            },
+        ],
     ],
     
     experiments: {

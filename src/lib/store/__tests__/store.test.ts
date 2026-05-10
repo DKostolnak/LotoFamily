@@ -76,6 +76,15 @@ const baselineState = {
     language: 'en' as const,
     batterySaver: false,
     tutorialCompleted: false,
+    powerUps: { peek: 1, luckyMark: 1, slowTime: 1 },
+    seasonId: '',
+    seasonStartedAt: 0,
+    seasonEndsAt: 0,
+    seasonXp: 0,
+    seasonLevel: 1,
+    hasPremium: false,
+    claimedFree: [],
+    claimedPremium: [],
 };
 
 describe('useGameStore', () => {
@@ -373,6 +382,218 @@ describe('useGameStore', () => {
             const s = useGameStore.getState();
             expect(s.stats.currentStreak).toBe(8);
             expect(s.stats.longestStreak).toBe(8);
+        });
+    });
+
+    describe('Power-ups', () => {
+        it('starts with default power-up inventory of 1 each', () => {
+            const { powerUps } = useGameStore.getState();
+            expect(powerUps).toEqual({ peek: 1, luckyMark: 1, slowTime: 1 });
+        });
+
+        it('addPowerUp increments the given type by count', () => {
+            act(() => {
+                useGameStore.getState().addPowerUp('peek', 2);
+            });
+            expect(useGameStore.getState().powerUps.peek).toBe(3);
+            // Other types unchanged.
+            expect(useGameStore.getState().powerUps.luckyMark).toBe(1);
+        });
+
+        it('usePowerUp returns true and decrements when count > 0', () => {
+            const before = useGameStore.getState().powerUps.peek;
+            let result: boolean = false;
+            act(() => {
+                result = useGameStore.getState().usePowerUp('peek');
+            });
+            expect(result).toBe(true);
+            expect(useGameStore.getState().powerUps.peek).toBe(before - 1);
+        });
+
+        it('usePowerUp returns false and leaves state unchanged when count === 0', () => {
+            act(() => {
+                useGameStore.setState({
+                    powerUps: { peek: 0, luckyMark: 1, slowTime: 1 },
+                });
+            });
+            let result: boolean = true;
+            act(() => {
+                result = useGameStore.getState().usePowerUp('peek');
+            });
+            expect(result).toBe(false);
+            expect(useGameStore.getState().powerUps.peek).toBe(0);
+        });
+
+        it('addPowerUp ignores non-positive counts', () => {
+            const before = useGameStore.getState().powerUps.slowTime;
+            act(() => {
+                useGameStore.getState().addPowerUp('slowTime', 0);
+                useGameStore.getState().addPowerUp('slowTime', -5);
+            });
+            expect(useGameStore.getState().powerUps.slowTime).toBe(before);
+        });
+    });
+
+    describe('Season / Battle Pass', () => {
+        it('has sane defaults when reset', () => {
+            act(() => {
+                useGameStore.setState({
+                    seasonId: '',
+                    seasonStartedAt: 0,
+                    seasonEndsAt: 0,
+                    seasonXp: 0,
+                    seasonLevel: 1,
+                    hasPremium: false,
+                    claimedFree: [],
+                    claimedPremium: [],
+                });
+            });
+            const s = useGameStore.getState();
+            expect(s.seasonLevel).toBe(1);
+            expect(s.seasonXp).toBe(0);
+            expect(s.hasPremium).toBe(false);
+            expect(s.claimedFree).toEqual([]);
+            expect(s.claimedPremium).toEqual([]);
+        });
+
+        it('addSeasonXp bootstraps season and levels up when xpRequired is met', () => {
+            act(() => {
+                useGameStore.setState({
+                    seasonId: '',
+                    seasonStartedAt: 0,
+                    seasonEndsAt: 0,
+                    seasonXp: 0,
+                    seasonLevel: 1,
+                });
+            });
+            // Level 1 requires 100 XP -> 150 XP should land on level 2.
+            act(() => {
+                useGameStore.getState().addSeasonXp(150);
+            });
+            const s = useGameStore.getState();
+            expect(s.seasonXp).toBe(150);
+            expect(s.seasonLevel).toBeGreaterThanOrEqual(2);
+            expect(s.seasonStartedAt).toBeGreaterThan(0);
+            expect(s.seasonEndsAt).toBeGreaterThan(s.seasonStartedAt);
+        });
+
+        it('claimReward(level=1, "free") grants reward and marks claimed', () => {
+            act(() => {
+                useGameStore.setState({
+                    seasonId: 'season_test',
+                    seasonStartedAt: Date.now(),
+                    seasonEndsAt: Date.now() + 30 * 86400000,
+                    seasonXp: 200,
+                    seasonLevel: 2,
+                    hasPremium: false,
+                    claimedFree: [],
+                    claimedPremium: [],
+                    coins: 0,
+                });
+            });
+            let reward: any = undefined;
+            act(() => {
+                reward = useGameStore.getState().claimReward(1, 'free');
+            });
+            expect(reward).not.toBeNull();
+            const s = useGameStore.getState();
+            expect(s.claimedFree).toContain(1);
+            // Level 1 free reward is 25 coins per the pattern.
+            expect(s.coins).toBe(25);
+        });
+
+        it('claimReward premium track returns null when !hasPremium', () => {
+            act(() => {
+                useGameStore.setState({
+                    seasonId: 'season_test',
+                    seasonStartedAt: Date.now(),
+                    seasonEndsAt: Date.now() + 30 * 86400000,
+                    seasonXp: 200,
+                    seasonLevel: 2,
+                    hasPremium: false,
+                    claimedFree: [],
+                    claimedPremium: [],
+                });
+            });
+            let reward: any;
+            act(() => {
+                reward = useGameStore.getState().claimReward(1, 'premium');
+            });
+            expect(reward).toBeNull();
+            expect(useGameStore.getState().claimedPremium).toEqual([]);
+        });
+
+        it('claimReward returns null if level not yet reached', () => {
+            act(() => {
+                useGameStore.setState({
+                    seasonId: 'season_test',
+                    seasonStartedAt: Date.now(),
+                    seasonEndsAt: Date.now() + 30 * 86400000,
+                    seasonXp: 0,
+                    seasonLevel: 1,
+                    hasPremium: true,
+                    claimedFree: [],
+                    claimedPremium: [],
+                });
+            });
+            let reward: any;
+            act(() => {
+                reward = useGameStore.getState().claimReward(5, 'free');
+            });
+            expect(reward).toBeNull();
+        });
+
+        it('claimReward cannot be claimed twice', () => {
+            act(() => {
+                useGameStore.setState({
+                    seasonId: 'season_test',
+                    seasonStartedAt: Date.now(),
+                    seasonEndsAt: Date.now() + 30 * 86400000,
+                    seasonXp: 200,
+                    seasonLevel: 2,
+                    hasPremium: false,
+                    claimedFree: [],
+                    claimedPremium: [],
+                    coins: 0,
+                });
+            });
+            let r1: any;
+            let r2: any;
+            act(() => {
+                r1 = useGameStore.getState().claimReward(1, 'free');
+                r2 = useGameStore.getState().claimReward(1, 'free');
+            });
+            expect(r1).not.toBeNull();
+            expect(r2).toBeNull();
+        });
+
+        it('purchasePremium flips hasPremium=true (mock IAP)', async () => {
+            act(() => {
+                useGameStore.setState({ hasPremium: false });
+            });
+            let ok = false;
+            await act(async () => {
+                ok = await useGameStore.getState().purchasePremium();
+            });
+            expect(ok).toBe(true);
+            expect(useGameStore.getState().hasPremium).toBe(true);
+        });
+
+        it('checkSeasonRollover bootstraps a fresh season when none exists', () => {
+            act(() => {
+                useGameStore.setState({
+                    seasonId: '',
+                    seasonStartedAt: 0,
+                    seasonEndsAt: 0,
+                    seasonXp: 0,
+                    seasonLevel: 1,
+                });
+                useGameStore.getState().checkSeasonRollover();
+            });
+            const s = useGameStore.getState();
+            expect(s.seasonStartedAt).toBeGreaterThan(0);
+            expect(s.seasonEndsAt).toBeGreaterThan(s.seasonStartedAt);
+            expect(s.seasonId).toMatch(/^season_\d{4}_\d{2}$/);
         });
     });
 

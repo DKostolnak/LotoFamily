@@ -21,6 +21,7 @@ import {
     createStatsSlice,
     createSettingsSlice,
     createAppSlice,
+    createSeasonSlice,
 } from './slices';
 
 /**
@@ -49,6 +50,9 @@ export const useGameStore = create<GameStore>()(
 
             // App lifecycle management
             ...createAppSlice(...args),
+
+            // Season / Battle Pass progression
+            ...createSeasonSlice(...args),
         }),
         {
             name: 'loto-game-storage',
@@ -64,12 +68,23 @@ export const useGameStore = create<GameStore>()(
                 lastDailyBonus: state.lastDailyBonus,
                 activeTheme: state.activeTheme,
                 activeSkin: state.activeSkin,
+                powerUps: state.powerUps,
                 stats: state.stats,
                 tier: state.tier,
                 isMuted: state.isMuted,
                 language: state.language,
                 batterySaver: state.batterySaver,
                 tutorialCompleted: state.tutorialCompleted,
+                notificationsEnabled: state.notificationsEnabled,
+                // Season / Battle Pass
+                seasonId: state.seasonId,
+                seasonStartedAt: state.seasonStartedAt,
+                seasonEndsAt: state.seasonEndsAt,
+                seasonXp: state.seasonXp,
+                seasonLevel: state.seasonLevel,
+                hasPremium: state.hasPremium,
+                claimedFree: state.claimedFree,
+                claimedPremium: state.claimedPremium,
             }),
         }
     )
@@ -134,10 +149,12 @@ export const useSettings = () =>
             language: state.language,
             batterySaver: state.batterySaver,
             tutorialCompleted: state.tutorialCompleted,
+            notificationsEnabled: state.notificationsEnabled,
             setMuted: state.setMuted,
             setLanguage: state.setLanguage,
             setBatterySaver: state.setBatterySaver,
             setTutorialCompleted: state.setTutorialCompleted,
+            setNotificationsEnabled: state.setNotificationsEnabled,
         }))
     );
 

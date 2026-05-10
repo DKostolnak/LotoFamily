@@ -12,7 +12,10 @@ import { useGameSocket, useHapticFeedback, useAudio, useSocketStatus } from '@/h
 import { WaitingLobby } from '@/components/WaitingLobby';
 import { LotoCard } from '@/components/LotoCard';
 import { GameHeader } from '@/components/GameHeader';
-import { WoodenButton, ErrorView, ConnectionBanner } from '@/components/common';
+import { WoodenButton, ErrorView, ConnectionBanner, PowerUpBar } from '@/components/common';
+import { useToast } from '@/components/ToastProvider';
+import { adsService, AD_PLACEMENTS } from '@/lib/services/ads';
+import type { PowerUpInventory } from '@/lib/store/types';
 import { ChatOverlay } from '@/components/ChatOverlay';
 import { WinnerModal } from '@/components/WinnerModal';
 import GamePausedOverlay from '@/components/GamePausedOverlay';
@@ -31,7 +34,8 @@ interface OnlineGameProps {
 export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode = false }: OnlineGameProps) => {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { playerName, playerAvatar, coins, language, activeSkin, activeTheme } = useGameStore();
+    const { playerName, playerAvatar, coins, language, activeSkin, activeTheme, powerUps, usePowerUp, addPowerUp } = useGameStore();
+    const { showToast } = useToast();
     const haptics = useHapticFeedback();
     const { speak, speakNumber, playSound } = useAudio();
     const t = translations[language];
@@ -189,6 +193,40 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                 playSound('win');
                 claimWin(firstCard.id);
             }
+        }
+    };
+
+    // ========================================================================
+    // POWER-UPS (online: only `peek` works client-side; lucky-mark / slow-time
+    // need server cooperation for fairness, so they are best-effort only.)
+    // ========================================================================
+
+    const powerUpDisplayNames: Record<keyof PowerUpInventory, string> = {
+        peek: t.powerUpPeek,
+        luckyMark: t.powerUpLuckyMark,
+        slowTime: t.powerUpSlowTime,
+    };
+
+    const handleUsePowerUp = (type: keyof PowerUpInventory) => {
+        if (type !== 'peek') {
+            // lucky-mark and slow-time require server logic which is not yet
+            // implemented online — do not consume inventory.
+            return;
+        }
+        if (!usePowerUp(type)) return;
+        haptics.impactMedium();
+        const upcoming = (gameState?.remainingNumbers ?? []).slice(0, 3);
+        const text = t.nextNumbersAre.replace('{numbers}', upcoming.join(', '));
+        showToast(text, 'info', '🔮');
+    };
+
+    const handleWatchAdForPowerUp = async (type: keyof PowerUpInventory) => {
+        haptics.impactLight();
+        const result = await adsService.showRewardedAd(AD_PLACEMENTS.POWER_UP_REWARD);
+        if (result.rewarded) {
+            addPowerUp(type, 1);
+            const earnedText = t.powerUpEarned.replace('{name}', powerUpDisplayNames[type]);
+            showToast(earnedText, 'success', '🎁');
         }
     };
 
@@ -419,6 +457,15 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                         </Text>
                     </View>
                 </View>
+
+                {/* Power-up bar — peek works client-side; lucky-mark / slow-time
+                    are no-ops online until server support lands. */}
+                <PowerUpBar
+                    inventory={powerUps}
+                    onUse={handleUsePowerUp}
+                    onWatchAd={handleWatchAdForPowerUp}
+                    a11yWatchAdLabel={t.watchAdForPowerUp}
+                />
 
                 {/* Cards Container */}
                 <View
