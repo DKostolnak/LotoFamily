@@ -26,6 +26,8 @@ interface GameHeaderProps {
     onLeave: () => void;
     /** Optional explicit label — defaults to "LIVE" / "OFF" */
     statusLabel?: string;
+    /** Hide the connection status pill entirely (e.g. offline practice). */
+    hideConnectionStatus?: boolean;
 }
 
 const BUTTON_BOX_SIZE = 44; // Apple HIG min tap target.
@@ -37,6 +39,7 @@ const GameHeaderComponent = ({
     isConnected,
     onLeave,
     statusLabel,
+    hideConnectionStatus = false,
 }: GameHeaderProps) => {
     const insets = useSafeAreaInsets();
     const { isMuted, setMuted } = useGameStore();
@@ -155,35 +158,37 @@ const GameHeaderComponent = ({
 
                 {/* Right: Status pill + Coins */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.md }}>
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: SPACING.xs,
-                            backgroundColor: 'rgba(45, 31, 16, 0.9)',
-                            paddingHorizontal: SPACING.md,
-                            paddingVertical: SPACING.xs,
-                            borderRadius: RADII.pill,
-                            borderWidth: 1,
-                            borderColor: 'rgba(90, 64, 37, 0.6)',
-                        }}
-                    >
+                    {!hideConnectionStatus && (
                         <View
                             style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: 4,
-                                backgroundColor: isConnected ? '#4ade80' : '#ef4444',
-                                shadowColor: isConnected ? '#4ade80' : '#ef4444',
-                                shadowOpacity: 1,
-                                shadowRadius: 4,
-                                elevation: 2,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: SPACING.xs,
+                                backgroundColor: 'rgba(45, 31, 16, 0.9)',
+                                paddingHorizontal: SPACING.md,
+                                paddingVertical: SPACING.xs,
+                                borderRadius: RADII.pill,
+                                borderWidth: 1,
+                                borderColor: 'rgba(90, 64, 37, 0.6)',
                             }}
-                        />
-                        <Text style={[TEXT_STYLES.captionUpper, { color: '#d4b896' }]}>
-                            {statusLabel ?? (isConnected ? 'LIVE' : 'OFF')}
-                        </Text>
-                    </View>
+                        >
+                            <View
+                                style={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: 4,
+                                    backgroundColor: isConnected ? '#4ade80' : '#ef4444',
+                                    shadowColor: isConnected ? '#4ade80' : '#ef4444',
+                                    shadowOpacity: 1,
+                                    shadowRadius: 4,
+                                    elevation: 2,
+                                }}
+                            />
+                            <Text style={[TEXT_STYLES.captionUpper, { color: '#d4b896' }]}>
+                                {statusLabel ?? (isConnected ? 'LIVE' : 'OFF')}
+                            </Text>
+                        </View>
+                    )}
                     <CoinBadge coins={coins} />
                 </View>
             </View>

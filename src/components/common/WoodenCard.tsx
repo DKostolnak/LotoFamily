@@ -75,8 +75,8 @@ export function WoodenCard({
                 ...style,
             }}
         >
-            {/* Back Arrow (absolute, legacy) */}
-            {showBackArrow && onBack && (
+            {/* Back Arrow (absolute, only when there is NO structured header — otherwise rendered inline below). */}
+            {showBackArrow && onBack && !hasStructuredHeader && (
                 <TouchableOpacity
                     onPress={onBack}
                     accessibilityRole="button"
@@ -136,8 +136,30 @@ export function WoodenCard({
                         paddingBottom: SPACING.md,
                         borderBottomWidth: 1,
                         borderBottomColor: HEADER_DIVIDER_COLOR,
+                        gap: SPACING.md,
                     }}
                 >
+                    {/* Inline back arrow (when structured header is present). */}
+                    {showBackArrow && onBack && (
+                        <TouchableOpacity
+                            onPress={onBack}
+                            accessibilityRole="button"
+                            accessibilityLabel="Go back"
+                            style={{
+                                width: 44,
+                                height: 44,
+                                backgroundColor: '#c9a66b',
+                                borderRadius: RADII.sm,
+                                borderWidth: 2,
+                                borderColor: '#5a4025',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <ChevronLeft color="#3d2814" size={22} strokeWidth={2.5} />
+                        </TouchableOpacity>
+                    )}
+
                     <View style={{ flex: 1, paddingRight: onClose ? SPACING.md : 0 }}>
                         {title && (
                             <Text

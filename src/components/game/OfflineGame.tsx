@@ -388,8 +388,9 @@ export const OfflineGame = () => {
                         currentNumber={currentNumber}
                         history={calledNumbers}
                         coins={coins}
-                        isConnected={false} // Offline
-                        onLeave={isPaused ? resumeGame : pauseGame} // Toggle Pause
+                        isConnected={false}
+                        hideConnectionStatus  // practice mode is offline by design — no need for "OFF" warning pill
+                        onLeave={isPaused ? resumeGame : pauseGame}
                     />
 
                     {/* Overlay Pause Icon on top of the back button location if needed, 
