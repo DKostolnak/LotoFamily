@@ -6,7 +6,6 @@ import { CoinBadge } from './common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameStore } from '@/lib/store';
 import { audioService } from '@/lib/services';
-import { useResponsive } from '@/hooks';
 import * as Haptics from 'expo-haptics';
 import Animated, {
     useSharedValue,
@@ -15,6 +14,7 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
+import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 
 const WOOD_TEXTURE = require('../../assets/wood-seamless.png');
 
@@ -24,33 +24,33 @@ interface GameHeaderProps {
     coins: number;
     isConnected: boolean;
     onLeave: () => void;
+    /** Optional explicit label — defaults to "LIVE" / "OFF" */
+    statusLabel?: string;
 }
 
-const GameHeaderComponent = ({ currentNumber, history, coins, isConnected, onLeave }: GameHeaderProps) => {
+const BUTTON_BOX_SIZE = 44; // Apple HIG min tap target.
+
+const GameHeaderComponent = ({
+    currentNumber,
+    history,
+    coins,
+    isConnected,
+    onLeave,
+    statusLabel,
+}: GameHeaderProps) => {
     const insets = useSafeAreaInsets();
     const { isMuted, setMuted } = useGameStore();
-    const { responsive, isSmallScreen } = useResponsive();
-
-    // Responsive sizing
-    const headerHeight = responsive(100, 140);
-    const buttonSize = responsive(36, 40);
-    const iconSize = responsive(20, 24);
-    const numberDisplayTop = responsive(28, 36);
-    const numberDisplayHeight = responsive(60, 80);
 
     // Animation values
     const iconScale = useSharedValue(1);
     const iconRotation = useSharedValue(0);
 
-    // Sync audio service with store
     useEffect(() => {
         audioService.setMuted(isMuted);
     }, [isMuted]);
 
     const handleToggleMute = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-        // Animate icon
         iconScale.value = withSequence(
             withTiming(0.7, { duration: 100 }),
             withSpring(1, { damping: 8, stiffness: 300 })
@@ -59,7 +59,6 @@ const GameHeaderComponent = ({ currentNumber, history, coins, isConnected, onLea
             withTiming(isMuted ? -15 : 15, { duration: 100 }),
             withSpring(0, { damping: 10 })
         );
-
         setMuted(!isMuted);
     };
 
@@ -70,19 +69,31 @@ const GameHeaderComponent = ({ currentNumber, history, coins, isConnected, onLea
         ],
     }));
 
-    const ButtonBox = ({ children, onPress }: any) => (
+    const ButtonBox = ({
+        children,
+        onPress,
+        accessibilityLabel,
+    }: {
+        children: React.ReactNode;
+        onPress: () => void;
+        accessibilityLabel?: string;
+    }) => (
         <TouchableOpacity
             onPress={onPress}
-            className="rounded-lg bg-wood-darker border border-wood-medium items-center justify-center active:bg-wood-dark"
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel}
+            className="bg-wood-darker border border-wood-medium items-center justify-center active:bg-wood-dark"
             style={{
-                width: buttonSize,
-                height: buttonSize,
+                width: BUTTON_BOX_SIZE,
+                height: BUTTON_BOX_SIZE,
+                borderRadius: RADII.md,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.5,
                 shadowRadius: 2,
-                elevation: 3
+                elevation: 3,
             }}
+            hitSlop={6}
         >
             {children}
         </TouchableOpacity>
@@ -93,63 +104,104 @@ const GameHeaderComponent = ({ currentNumber, history, coins, isConnected, onLea
             source={WOOD_TEXTURE}
             style={{
                 width: '100%',
-                height: headerHeight + insets.top,
+                paddingTop: insets.top,
+                paddingBottom: SPACING.md,
                 borderBottomWidth: 2,
                 borderColor: '#5a4025',
                 zIndex: 50,
-                position: 'relative',
             }}
             resizeMode="repeat"
         >
-            {/* Dark Overlay for richness */}
-            <View className="absolute inset-0 bg-black/40" />
-            <View className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/60 to-transparent" />
-
-            {/* Center Area: Numbers Display */}
+            {/* Cozy wooden-panel overlay (rgba 0.85 — drevený panel feel) */}
             <View
-                className="absolute inset-x-0 flex-row justify-center items-center pointer-events-none"
-                style={{ top: insets.top + numberDisplayTop, height: numberDisplayHeight, zIndex: 0 }}
-            >
-                <GameNumbersDisplay currentNumber={currentNumber} history={history} compact={isSmallScreen} />
-            </View>
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(45, 31, 16, 0.85)',
+                }}
+            />
 
-            {/* Controls Layer */}
+            {/* Top control row */}
             <View
-                className="absolute inset-x-0 flex-row justify-between items-start z-50 pointer-events-box-none"
-                style={{ top: insets.top, paddingHorizontal: responsive(12, 16) }}
+                style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingHorizontal: SPACING.lg,
+                    gap: SPACING.md,
+                }}
             >
                 {/* Left: Back & Sound */}
-                <View className="flex-row" style={{ gap: responsive(6, 8) }}>
-                    <ButtonBox onPress={onLeave}>
-                        <ChevronLeft color="#e8d4b8" size={iconSize} strokeWidth={2.5} />
+                <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+                    <ButtonBox onPress={onLeave} accessibilityLabel="Back">
+                        <ChevronLeft color="#e8d4b8" size={24} strokeWidth={2.5} />
                     </ButtonBox>
-                    <ButtonBox onPress={handleToggleMute}>
+                    <ButtonBox
+                        onPress={handleToggleMute}
+                        accessibilityLabel={isMuted ? 'Unmute' : 'Mute'}
+                    >
                         <Animated.View style={iconAnimatedStyle}>
                             {isMuted ? (
-                                <VolumeX color="#ef4444" size={iconSize - 4} />
+                                <VolumeX color="#ef4444" size={20} />
                             ) : (
-                                <Volume2 color="#4ade80" size={iconSize - 4} />
+                                <Volume2 color="#4ade80" size={20} />
                             )}
                         </Animated.View>
                     </ButtonBox>
                 </View>
 
-                {/* Right: Status & Coins */}
-                <View className="flex-row items-center gap-3">
-                    {/* Connection Status Pill */}
-                    <View className="flex-row items-center gap-1.5 bg-wood-darker/90 px-2 py-1 rounded-full border border-wood-medium/50 shadow-sm">
+                {/* Right: Status pill + Coins */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.md }}>
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: SPACING.xs,
+                            backgroundColor: 'rgba(45, 31, 16, 0.9)',
+                            paddingHorizontal: SPACING.md,
+                            paddingVertical: SPACING.xs,
+                            borderRadius: RADII.pill,
+                            borderWidth: 1,
+                            borderColor: 'rgba(90, 64, 37, 0.6)',
+                        }}
+                    >
                         <View
-                            className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success' : 'bg-danger'}`}
-                            style={{ elevation: 2, shadowColor: isConnected ? '#4ade80' : '#ef4444', shadowOpacity: 1, shadowRadius: 4 }}
+                            style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: 4,
+                                backgroundColor: isConnected ? '#4ade80' : '#ef4444',
+                                shadowColor: isConnected ? '#4ade80' : '#ef4444',
+                                shadowOpacity: 1,
+                                shadowRadius: 4,
+                                elevation: 2,
+                            }}
                         />
-                        <Text className="text-[10px] font-bold text-muted uppercase">
-                            {isConnected ? 'LIVE' : 'OFF'}
+                        <Text style={[TEXT_STYLES.captionUpper, { color: '#d4b896' }]}>
+                            {statusLabel ?? (isConnected ? 'LIVE' : 'OFF')}
                         </Text>
                     </View>
                     <CoinBadge coins={coins} />
                 </View>
             </View>
 
+            {/* Numbers display row */}
+            <View
+                style={{
+                    marginTop: SPACING.md,
+                    paddingHorizontal: SPACING.lg,
+                    alignItems: 'center',
+                }}
+            >
+                <GameNumbersDisplay
+                    currentNumber={currentNumber}
+                    history={history}
+                    compact={true}
+                />
+            </View>
         </ImageBackground>
     );
 };

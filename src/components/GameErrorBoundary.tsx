@@ -1,7 +1,9 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { TriangleAlert, Home } from 'lucide-react-native';
 import { crashReporting } from '@/lib/services/crashReporting';
+import { WoodenButton } from '@/components/common';
+import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 
 interface Props {
     children: ReactNode;
@@ -73,10 +75,16 @@ export class GameErrorBoundary extends Component<Props, State> {
                         )}
 
                         {/* Action Button */}
-                        <TouchableOpacity style={styles.button} onPress={this.handleReset}>
-                            <Home size={20} color="#3d2814" />
-                            <Text style={styles.buttonText}>Return to Menu</Text>
-                        </TouchableOpacity>
+                        <WoodenButton
+                            variant="gold"
+                            size="md"
+                            fullWidth
+                            onPress={this.handleReset}
+                            icon={<Home size={20} color="#3d2814" />}
+                            accessibilityLabel="Return to menu"
+                        >
+                            Return to Menu
+                        </WoodenButton>
                     </View>
                 </View>
             );
@@ -92,17 +100,18 @@ const styles = StyleSheet.create({
         backgroundColor: '#1a1109',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 24,
+        padding: SPACING.xl,
     },
     card: {
         backgroundColor: '#2d1f10',
-        borderRadius: 16,
-        padding: 24,
+        borderRadius: RADII.lg,
+        padding: SPACING.xl,
         alignItems: 'center',
         borderWidth: 2,
         borderColor: '#5a4025',
-        maxWidth: 320,
+        maxWidth: 360,
         width: '100%',
+        gap: SPACING.md,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
@@ -116,53 +125,29 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 16,
+        marginBottom: SPACING.sm,
         borderWidth: 2,
         borderColor: 'rgba(239, 68, 68, 0.3)',
     },
     title: {
-        fontSize: 20,
-        fontWeight: '800',
+        ...TEXT_STYLES.h2,
         color: '#f5e6c8',
         textAlign: 'center',
-        marginBottom: 8,
     },
     description: {
-        fontSize: 14,
+        ...TEXT_STYLES.body,
         color: '#d4b896',
         textAlign: 'center',
-        lineHeight: 20,
-        marginBottom: 16,
     },
     errorBox: {
         backgroundColor: 'rgba(0,0,0,0.3)',
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 16,
+        borderRadius: RADII.sm,
+        padding: SPACING.md,
         width: '100%',
     },
     errorText: {
-        fontSize: 11,
+        ...TEXT_STYLES.caption,
         fontFamily: 'monospace',
         color: '#ef4444',
-    },
-    button: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        backgroundColor: '#ffd700',
-        paddingVertical: 14,
-        paddingHorizontal: 24,
-        borderRadius: 12,
-        borderBottomWidth: 4,
-        borderColor: '#b8860b',
-        width: '100%',
-    },
-    buttonText: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: '#3d2814',
-        textTransform: 'uppercase',
     },
 });

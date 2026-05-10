@@ -19,7 +19,7 @@ interface ErrorViewProps {
 export const ErrorView = ({ message, onRetry, retryLabel = 'Retry', onSecondary, secondaryLabel }: ErrorViewProps) => {
     return (
         <View
-            className="flex-1 items-center justify-center px-6 bg-[#1a1109]"
+            className="flex-1 items-center justify-center px-6 bg-wood-darkest"
             accessibilityRole="alert"
             accessibilityLiveRegion="assertive"
         >

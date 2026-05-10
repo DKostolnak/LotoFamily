@@ -80,7 +80,7 @@ export function MainMenuSkeleton() {
     return (
         <View className="w-full p-4">
             {/* Profile skeleton */}
-            <View className="flex-row items-center bg-[#2d1f10] p-4 rounded-2xl mb-8">
+            <View className="flex-row items-center bg-wood-darker p-4 rounded-2xl mb-8">
                 <Skeleton width={64} height={64} borderRadius={16} />
                 <View className="flex-1 ml-4">
                     <Skeleton width={80} height={12} style={{ marginBottom: 8 }} />
@@ -119,7 +119,7 @@ export function MainMenuSkeleton() {
  */
 export function GameCardSkeleton() {
     return (
-        <View className="w-full bg-[#3d2814] rounded-xl p-2">
+        <View className="w-full bg-wood-dark rounded-xl p-2">
             <Skeleton width="100%" height={24} style={{ marginBottom: 8 }} />
             <View className="flex-row flex-wrap">
                 {Array.from({ length: 27 }).map((_, i) => (

@@ -91,14 +91,14 @@ export class ErrorBoundary extends Component<Props, State> {
                         <WoodenCard className="w-full max-w-sm">
                             <View className="items-center py-6">
                                 <Text className="text-4xl mb-2">😵‍💫</Text>
-                                <Text className="text-[#ffd700] text-3xl font-black mb-2 uppercase tracking-wide text-center">
+                                <Text className="text-gold text-3xl font-black mb-2 uppercase tracking-wide text-center">
                                     OOPS!
                                 </Text>
                                 <Text className="text-muted text-center mb-6 font-medium">
                                     The game got confused. Don't worry, your coins are safe!
                                 </Text>
 
-                                <ScrollView className="max-h-40 bg-[#1a1109] rounded-lg p-3 w-full mb-6 border border-[#5a4025]">
+                                <ScrollView className="max-h-40 bg-wood-darkest rounded-lg p-3 w-full mb-6 border border-wood-medium">
                                     <Text className="text-red-400 font-mono text-xs">
                                         {this.state.error?.toString()}
                                     </Text>
@@ -108,7 +108,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                     <WoodenButton onPress={this.handleRestart} variant="gold" fullWidth>
                                         <View className="flex-row items-center gap-2">
                                             <RefreshCw size={20} color="#3d2814" />
-                                            <Text className="text-[#3d2814] font-bold uppercase">Restart Game</Text>
+                                            <Text className="text-wood-dark font-bold uppercase">Restart Game</Text>
                                         </View>
                                     </WoodenButton>
 
@@ -117,7 +117,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                             <WoodenButton onPress={this.handleCopyError} variant="secondary" fullWidth size="sm">
                                                 <View className="flex-row items-center gap-2">
                                                     <Copy size={16} color="#e8d4b8" />
-                                                    <Text className="text-[#e8d4b8] text-xs font-bold uppercase">Copy</Text>
+                                                    <Text className="text-cream-dark text-xs font-bold uppercase">Copy</Text>
                                                 </View>
                                             </WoodenButton>
                                         </View>
@@ -125,7 +125,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                             <WoodenButton onPress={this.handleEmailSupport} variant="secondary" fullWidth size="sm">
                                                 <View className="flex-row items-center gap-2">
                                                     <Mail size={16} color="#e8d4b8" />
-                                                    <Text className="text-[#e8d4b8] text-xs font-bold uppercase">Report</Text>
+                                                    <Text className="text-cream-dark text-xs font-bold uppercase">Report</Text>
                                                 </View>
                                             </WoodenButton>
                                         </View>

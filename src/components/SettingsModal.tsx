@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, Switch, TouchableOpacity, ScrollView } from 'react-native';
-import { WoodenCard, AnimatedModal } from '@/components/common';
+import { View, Text, Switch } from 'react-native';
+import { ModalShell, Section, ListRow } from '@/components/common';
 import { useGameStore } from '@/lib/store';
-import { Volume2, VolumeX, Globe, Zap, Info } from 'lucide-react-native';
+import { Volume2, VolumeX, Zap, Info, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { ENV } from '@/lib/config';
+import { ENV, TEXT_STYLES, SPACING } from '@/lib/config';
 import { translations, type Language } from '@/lib/i18n';
 
 interface SettingsModalProps {
@@ -13,27 +13,28 @@ interface SettingsModalProps {
 }
 
 const LANGUAGES: { code: Language; label: string; flag: string }[] = [
-    { code: 'en', label: 'EN', flag: '🇬🇧' },
-    { code: 'sk', label: 'SK', flag: '🇸🇰' },
-    { code: 'uk', label: 'UK', flag: '🇺🇦' },
-    { code: 'ru', label: 'RU', flag: '🇷🇺' },
+    { code: 'sk', label: 'Slovenčina', flag: '🇸🇰' },
+    { code: 'en', label: 'English', flag: '🇬🇧' },
+    { code: 'uk', label: 'Українська', flag: '🇺🇦' },
+    { code: 'ru', label: 'Русский', flag: '🇷🇺' },
 ];
 
 export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
     const {
         isMuted, setMuted,
         language, setLanguage,
-        batterySaver, setBatterySaver
+        batterySaver, setBatterySaver,
     } = useGameStore();
 
     const t = translations[language];
 
     const handleToggleMute = (value: boolean) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setMuted(value);
+        setMuted(!value);
     };
 
     const handleLanguageChange = (lang: Language) => {
+        if (lang === language) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setLanguage(lang);
     };
@@ -43,93 +44,86 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
         setBatterySaver(value);
     };
 
-    const SettingRow = ({ label, children, icon: Icon, description }: any) => (
-        <View className="mb-6">
-            <View className="flex-row items-center justify-between mb-1">
-                <View className="flex-row items-center gap-2">
-                    {Icon && <Icon size={20} color="#d4b075" />}
-                    <Text className="text-[#f5e6c8] font-bold text-lg">{label}</Text>
-                </View>
-                {children}
+    const footer = (
+        <View
+            style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                opacity: 0.7,
+            }}
+        >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs }}>
+                <Info size={14} color="#d4b896" />
+                <Text style={[TEXT_STYLES.caption, { color: '#d4b896' }]}>
+                    v{ENV.app.version} ({ENV.app.buildNumber}){ENV.isDevelopment ? ' DEV' : ''}
+                </Text>
             </View>
-            {description && (
-                <Text className="text-[#a6814c] text-xs ml-7">{description}</Text>
-            )}
+            <Text style={[TEXT_STYLES.caption, { color: '#d4b896' }]}>© 2026 LOTO</Text>
         </View>
     );
 
     return (
-        <AnimatedModal visible={visible} onClose={onClose} animation="scale">
-            <WoodenCard
-                title={t.settings?.toUpperCase() || 'SETTINGS'}
-                className="w-full"
-                onClose={onClose}
-            >
-                <ScrollView className="mt-2" showsVerticalScrollIndicator={false}>
-
-                    {/* Audio Setting */}
-                    <SettingRow
-                        label={t.audioSound}
-                        icon={isMuted ? VolumeX : Volume2}
-                        description={t.audioDesc}
-                    >
+        <ModalShell
+            visible={visible}
+            onClose={onClose}
+            title={t.settings}
+            footer={footer}
+        >
+            <Section title={(t as any).audioSection ?? t.settings}>
+                <ListRow
+                    icon={
+                        isMuted ? (
+                            <VolumeX size={20} color="#d4b896" />
+                        ) : (
+                            <Volume2 size={20} color="#ffd700" />
+                        )
+                    }
+                    title={t.audioSound}
+                    subtitle={t.audioDesc}
+                    right={
                         <Switch
                             value={!isMuted}
-                            onValueChange={(v) => handleToggleMute(!v)}
+                            onValueChange={handleToggleMute}
                             trackColor={{ false: '#3d2814', true: '#d4b075' }}
                             thumbColor={!isMuted ? '#ffd700' : '#8b7355'}
                         />
-                    </SettingRow>
-
-                    {/* Language Selection */}
-                    <SettingRow
-                        label={t.languageLabel}
-                        icon={Globe}
-                        description={t.languageDesc}
-                    >
-                        <View className="flex-row bg-black/40 rounded-lg p-1">
-                            {LANGUAGES.map(({ code, label }) => (
-                                <TouchableOpacity
-                                    key={code}
-                                    onPress={() => handleLanguageChange(code)}
-                                    className={`px-3 py-1 rounded ${language === code ? 'bg-[#d4b075]' : ''}`}
-                                >
-                                    <Text className={`font-bold ${language === code ? 'text-[#3d2814]' : 'text-[#f5e6c8]'}`}>
-                                        {label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </SettingRow>
-
-                    {/* Battery Saver */}
-                    <SettingRow
-                        label={t.batterySaver}
-                        icon={Zap}
-                        description={t.batterySaverDesc}
-                    >
+                    }
+                />
+                <ListRow
+                    icon={<Zap size={20} color="#ffd700" />}
+                    title={t.batterySaver}
+                    subtitle={t.batterySaverDesc}
+                    right={
                         <Switch
                             value={batterySaver}
                             onValueChange={handleBatterySaverChange}
                             trackColor={{ false: '#3d2814', true: '#d4b075' }}
                             thumbColor={batterySaver ? '#ffd700' : '#8b7355'}
                         />
-                    </SettingRow>
+                    }
+                />
+            </Section>
 
-                    {/* Version Info */}
-                    <View className="mt-4 pt-4 border-t border-[#d4b075]/20 flex-row items-center justify-between opacity-60">
-                        <View className="flex-row items-center gap-2">
-                            <Info size={14} color="#f5e6c8" />
-                            <Text className="text-[#f5e6c8] text-xs">
-                                v{ENV.app.version} ({ENV.app.buildNumber}){ENV.isDevelopment ? ' DEV' : ''}
-                            </Text>
-                        </View>
-                        <Text className="text-[#f5e6c8] text-xs">© 2026 LOTO</Text>
-                    </View>
-
-                    <View className="h-4" />
-                </ScrollView>
-            </WoodenCard>
-        </AnimatedModal>
+            <Section title={t.languageLabel}>
+                {LANGUAGES.map(({ code, label, flag }) => {
+                    const isActive = language === code;
+                    return (
+                        <ListRow
+                            key={code}
+                            icon={<Text style={{ fontSize: 22 }}>{flag}</Text>}
+                            title={label}
+                            selected={isActive}
+                            onPress={() => handleLanguageChange(code)}
+                            right={
+                                isActive ? (
+                                    <Check size={20} color="#ffd700" strokeWidth={3} />
+                                ) : null
+                            }
+                        />
+                    );
+                })}
+            </Section>
+        </ModalShell>
     );
 };

@@ -1,5 +1,5 @@
 import * as Speech from 'expo-speech';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 
 export type SoundEffect = 'chip' | 'win' | 'call' | 'error' | 'pop';
 
@@ -8,7 +8,7 @@ class AudioService {
     private isMuted: boolean = false;
     private isSpeechEnabled: boolean = true;
     private language: string = 'en-US';
-    private sounds: Map<SoundEffect, Audio.Sound> = new Map();
+    private sounds: Map<SoundEffect, AudioPlayer> = new Map();
     private isInitialized: boolean = false;
 
     private constructor() { }
@@ -29,12 +29,12 @@ class AudioService {
         if (this.isInitialized) return; // Guard against double initialization
 
         try {
-            await Audio.setAudioModeAsync({
-                allowsRecordingIOS: false,
-                playsInSilentModeIOS: true,
-                shouldDuckAndroid: true,
-                staysActiveInBackground: false,
-                playThroughEarpieceAndroid: false,
+            await setAudioModeAsync({
+                allowsRecording: false,
+                playsInSilentMode: true,
+                shouldPlayInBackground: false,
+                shouldRouteThroughEarpiece: false,
+                interruptionMode: 'duckOthers',
             });
             await this.loadSounds();
             this.isInitialized = true;
@@ -57,8 +57,8 @@ class AudioService {
 
         for (const [key, asset] of Object.entries(soundAssets)) {
             try {
-                const { sound } = await Audio.Sound.createAsync(asset);
-                this.sounds.set(key as SoundEffect, sound);
+                const player = createAudioPlayer(asset);
+                this.sounds.set(key as SoundEffect, player);
             } catch (e) {
                 // Silently fail if asset doesn't exist yet
                 console.warn(`Could not load sound: ${key}. Asset may be missing.`);
@@ -70,19 +70,13 @@ class AudioService {
         this.isMuted = muted;
         if (muted) {
             Speech.stop();
-            // Mute all loaded sounds too
-            this.sounds.forEach(async (sound) => {
-                try {
-                    await sound.setIsMutedAsync(true);
-                } catch (e) { }
-            });
-        } else {
-            this.sounds.forEach(async (sound) => {
-                try {
-                    await sound.setIsMutedAsync(false);
-                } catch (e) { }
-            });
         }
+        // Mute/unmute all loaded sounds
+        this.sounds.forEach((player) => {
+            try {
+                player.muted = muted;
+            } catch (e) { }
+        });
     }
 
     public setSpeechEnabled(enabled: boolean) {
@@ -95,11 +89,12 @@ class AudioService {
     public async playSound(effect: SoundEffect) {
         if (this.isMuted) return;
 
-        const sound = this.sounds.get(effect);
-        if (sound) {
+        const player = this.sounds.get(effect);
+        if (player) {
             try {
                 // Replay from start if already playing
-                await sound.replayAsync();
+                player.seekTo(0);
+                player.play();
             } catch (e) {
                 console.warn(`Failed to play sound: ${effect}`, e);
             }
@@ -127,11 +122,25 @@ class AudioService {
 
     public stopAll() {
         Speech.stop();
-        this.sounds.forEach(async (sound) => {
+        this.sounds.forEach((player) => {
             try {
-                await sound.stopAsync();
+                player.pause();
+                player.seekTo(0);
             } catch (e) { }
         });
+    }
+
+    /**
+     * Release all audio players. Call on app teardown.
+     */
+    public unload() {
+        this.sounds.forEach((player) => {
+            try {
+                player.remove();
+            } catch (e) { }
+        });
+        this.sounds.clear();
+        this.isInitialized = false;
     }
 }
 

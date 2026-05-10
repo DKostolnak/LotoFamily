@@ -15,7 +15,9 @@ import { GameHeader } from '@/components/GameHeader';
 import { WoodenButton, ErrorView } from '@/components/common';
 import { ChatOverlay } from '@/components/ChatOverlay';
 import { WinnerModal } from '@/components/WinnerModal';
+import GamePausedOverlay from '@/components/GamePausedOverlay';
 import GameStatusListener from '@/components/GameStatusListener';
+import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 
 const WOOD_TEXTURE = require('../../../assets/wood-seamless.png');
 
@@ -213,14 +215,26 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                     accessibilityLabel={t.a11yLoadingGame}
                 >
                     <ActivityIndicator size="large" color="#ffd700" />
-                    <Text className="text-[#e8d4b8] mt-4 font-bold text-lg">{t.connecting}</Text>
+                    <Text style={[TEXT_STYLES.h3, { color: '#e8d4b8', marginTop: SPACING.lg }]}>
+                        {t.connecting}
+                    </Text>
                     <TouchableOpacity
                         onPress={handleLeave}
-                        className="mt-8 bg-[#5a4025] px-8 py-4 rounded-xl border-b-4 border-[#3d2814]"
                         accessibilityRole="button"
                         accessibilityLabel={t.cancel}
+                        style={{
+                            marginTop: SPACING.xxl,
+                            backgroundColor: '#5a4025',
+                            paddingHorizontal: SPACING.xl,
+                            paddingVertical: SPACING.md,
+                            borderRadius: RADII.lg,
+                            borderBottomWidth: 4,
+                            borderColor: '#3d2814',
+                            minHeight: 56,
+                            justifyContent: 'center',
+                        }}
                     >
-                        <Text className="text-[#e8d4b8] font-bold">{t.cancel}</Text>
+                        <Text style={[TEXT_STYLES.button, { color: '#e8d4b8' }]}>{t.cancel}</Text>
                     </TouchableOpacity>
                 </View>
             </ImageBackground>
@@ -281,38 +295,105 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                 />
 
                 {/* Game Info Strip */}
-                <View className="flex-row items-center justify-between px-3 py-2 bg-[#2d1f10]/80 border-b border-[#5a4025] z-40">
-                    <View className="flex-row items-center gap-3 flex-1">
-                        <View className="w-10 h-10 bg-[#3d2814] rounded-lg border border-[#ffd700]/50 items-center justify-center">
-                            <Text className="text-xl">{playerAvatar}</Text>
+                <View
+                    className="flex-row items-center justify-between bg-wood-darker/85 border-b border-wood-medium z-40"
+                    style={{
+                        paddingHorizontal: SPACING.lg,
+                        paddingVertical: SPACING.sm,
+                        gap: SPACING.md,
+                    }}
+                >
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            flex: 1,
+                            gap: SPACING.md,
+                        }}
+                    >
+                        <View
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: RADII.md,
+                                backgroundColor: '#3d2814',
+                                borderWidth: 1,
+                                borderColor: 'rgba(255, 215, 0, 0.5)',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Text style={{ fontSize: 22 }}>{playerAvatar}</Text>
                         </View>
-                        <View className="flex-1">
-                            <View className="flex-row justify-between mb-1">
-                                <Text className="text-muted text-[10px] font-bold uppercase tracking-wider">{t.progress}</Text>
-                                <Text className="text-[#f5e6c8] text-[10px] font-bold">
+                        <View style={{ flex: 1 }}>
+                            <View
+                                style={{
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-between',
+                                    marginBottom: SPACING.xs,
+                                }}
+                            >
+                                <Text style={[TEXT_STYLES.captionUpper, { color: '#d4b896' }]}>
+                                    {t.progress}
+                                </Text>
+                                <Text style={[TEXT_STYLES.bodyBold, { color: '#f5e6c8' }]}>
                                     {markedNumbers}/{totalNumbers}
                                 </Text>
                             </View>
-                            <View className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-[#5a4025]/30">
+                            <View
+                                style={{
+                                    height: 8,
+                                    width: '100%',
+                                    backgroundColor: 'rgba(0,0,0,0.4)',
+                                    borderRadius: RADII.pill,
+                                    overflow: 'hidden',
+                                    borderWidth: 1,
+                                    borderColor: 'rgba(90, 64, 37, 0.3)',
+                                }}
+                            >
                                 <View
-                                    className="h-full bg-[#4ade80]"
-                                    style={{ width: `${progressPercent}%` }}
+                                    style={{
+                                        height: '100%',
+                                        width: `${progressPercent}%`,
+                                        backgroundColor: '#4ade80',
+                                    }}
                                 />
                             </View>
                         </View>
                     </View>
 
-                    <View className="ml-4 items-end">
-                        <View className="flex-row items-center gap-1">
-                            <View className={`w-2 h-2 rounded-full ${isHost ? 'bg-yellow-500' : 'bg-blue-500'}`} />
-                            <Text className="text-muted text-[10px] font-bold uppercase tracking-wider">{isHost ? 'HOST' : 'PLAYER'}</Text>
+                    <View style={{ alignItems: 'flex-end', gap: SPACING.xs }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs }}>
+                            <View
+                                style={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: 4,
+                                    backgroundColor: isHost ? '#ffd700' : '#3b82f6',
+                                }}
+                            />
+                            <Text style={[TEXT_STYLES.captionUpper, { color: '#d4b896' }]}>
+                                {isHost ? (t.host ?? 'HOST') : (t.players ?? 'PLAYER')}
+                            </Text>
                         </View>
-                        <Text className="text-[#f5e6c8] font-bold">{gameState.players.length} <Text className="text-muted text-xs">{t.online?.toUpperCase()}</Text></Text>
+                        <Text style={[TEXT_STYLES.bodyBold, { color: '#f5e6c8' }]}>
+                            {gameState.players.length}{' '}
+                            <Text style={[TEXT_STYLES.caption, { color: '#d4b896' }]}>
+                                {t.online?.toUpperCase()}
+                            </Text>
+                        </Text>
                     </View>
                 </View>
 
                 {/* Cards Container */}
-                <View className="flex-1 px-2 py-2 justify-evenly gap-2">
+                <View
+                    className="flex-1"
+                    style={{
+                        paddingHorizontal: SPACING.lg,
+                        paddingTop: SPACING.sm,
+                        gap: SPACING.sm,
+                    }}
+                >
                     {myCards.map((card) => (
                         <LotoCard
                             key={card.id}
@@ -331,57 +412,76 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
 
                 {/* Control Deck Footer */}
                 <View
-                    style={{ paddingBottom: Math.max(16, insets.bottom + 8) }}
-                    className="h-24 bg-[#1a1109] border-t-[4px] border-[#8b6b4a] flex-row items-center justify-between px-6 shadow-lg z-50"
+                    style={{
+                        paddingBottom: Math.max(SPACING.lg, insets.bottom + SPACING.sm),
+                        paddingTop: SPACING.md,
+                        paddingHorizontal: SPACING.lg,
+                        backgroundColor: '#1a1109',
+                        borderTopWidth: 4,
+                        borderColor: '#8b6b4a',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: SPACING.md,
+                        zIndex: 50,
+                    }}
                 >
-
-                    {/* Left: Host Pause or Empty */}
+                    {/* Left: Host Pause */}
                     {isHost ? (
-                        <TouchableOpacity
+                        <WoodenButton
                             onPress={isPaused ? resumeGame : pauseGame}
-                            className="items-center justify-center w-14 h-14 rounded-full bg-[#2d1f10] border-2 border-[#5a4025] active:bg-[#3d2814]"
+                            variant="secondary"
+                            size="md"
+                            accessibilityLabel={isPaused ? (t.resume ?? 'Resume') : (t.pause ?? 'Pause')}
                         >
-                            <Text className="text-2xl">{isPaused ? '▶️' : '⏸️'}</Text>
-                        </TouchableOpacity>
+                            {isPaused ? (t.resume ?? 'RESUME') : (t.pause ?? 'PAUSE')}
+                        </WoodenButton>
                     ) : (
-                        <View className="w-14" />
+                        <View />
                     )}
 
-                    {/* Center: BINGO Button (Main Action) */}
-                    <View className="-mt-8 shadow-xl">
+                    {/* Center: BINGO */}
+                    <View style={{ flex: 1, alignItems: 'center' }}>
                         <WoodenButton
                             onPress={handleClaimBingo}
-                            variant="danger"
+                            variant="gold"
                             size="lg"
-                            style={{
-                                width: 80,
-                                height: 80,
-                                borderRadius: 40,
-                                shadowColor: '#ef4444',
-                                shadowOffset: { width: 0, height: 8 },
-                                shadowOpacity: 0.6,
-                                shadowRadius: 16,
-                                borderWidth: 4,
-                                borderColor: '#991b1b'
-                            }}
+                            fullWidth
+                            accessibilityLabel="BINGO"
                         >
-                            <View className="items-center justify-center h-full w-full">
-                                <Text className="text-3xl mb-1">🏆</Text>
-                            </View>
+                            {t.claimBingo ?? 'BINGO!'}
                         </WoodenButton>
-                        <View className="absolute -bottom-8 left-0 right-0 items-center">
-                            <Text className="text-[#ef4444] font-black text-xs uppercase tracking-widest shadow-black">BINGO!</Text>
-                        </View>
                     </View>
 
-                    {/* Right: Leave/Menu */}
-                    <TouchableOpacity
+                    {/* Right: Leave */}
+                    <WoodenButton
                         onPress={handleLeave}
-                        className="items-center justify-center w-14 h-14 rounded-full bg-[#2d1f10] border-2 border-[#5a4025] active:bg-[#3d2814]"
+                        variant="danger"
+                        size="md"
+                        accessibilityLabel={t.exitGame ?? 'Exit'}
                     >
-                        <Text className="text-xl">🚪</Text>
-                    </TouchableOpacity>
+                        {t.exitGame ?? 'EXIT'}
+                    </WoodenButton>
                 </View>
+
+                {/* Pause Overlay */}
+                {isPaused && (
+                    <GamePausedOverlay
+                        roomCode={roomCode || undefined}
+                        isHost={isHost}
+                        onResume={resumeGame}
+                        onQuit={handleLeave}
+                        t={{
+                            paused: t.paused ?? 'PAUSED',
+                            pausedByHost: t.pausedByHost,
+                            roomCodeLabel: t.roomCodeLabel,
+                            resume: t.resume ?? 'RESUME',
+                            exitGame: t.exitGame ?? 'EXIT',
+                            waitingForHost: t.waitingForHost ?? 'Waiting for host…',
+                            tapToCopy: t.tapToCopy,
+                            copied: t.copied,
+                        }}
+                    />
+                )}
 
                 <WinnerModal
                     visible={showWinner}

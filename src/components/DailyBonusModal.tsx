@@ -1,83 +1,74 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Animated } from 'react-native';
-import { AnimatedModal, WoodenButton, WoodenCard } from '@/components/common';
+import { View, Text } from 'react-native';
+import { ModalShell, WoodenButton } from '@/components/common';
 import { useGameStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
 import * as Haptics from 'expo-haptics';
+import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 
 const DailyBonusModal = () => {
     const { checkDailyBonus, language } = useGameStore();
     const t = translations[language];
     const [visible, setVisible] = useState(false);
     const [amount, setAmount] = useState(0);
-    const scaleAnim = useRef(new Animated.Value(0)).current;
     const hasChecked = useRef(false);
 
     useEffect(() => {
-        // Only check once
         if (hasChecked.current) return;
         hasChecked.current = true;
 
-        // Check for bonus on mount
         const bonus = checkDailyBonus();
         if (bonus > 0) {
             setAmount(bonus);
             setVisible(true);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-            // Pop in animation
-            Animated.spring(scaleAnim, {
-                toValue: 1,
-                useNativeDriver: true,
-                tension: 50,
-                friction: 7
-            }).start();
         }
-    }, [checkDailyBonus, scaleAnim]);
+    }, [checkDailyBonus]);
 
     const handleClaim = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         setVisible(false);
     };
 
+    const footer = (
+        <WoodenButton variant="gold" size="xl" fullWidth onPress={handleClaim}>
+            {t.claimAndPlay}
+        </WoodenButton>
+    );
+
     return (
-        <AnimatedModal
+        <ModalShell
             visible={visible}
             onClose={handleClaim}
-            animation="scale"
-            closeOnBackdrop={false}
+            title={t.dailyBonus || 'Daily Bonus'}
+            subtitle={t.dailyBonusWelcome}
+            hideClose
+            noScroll
+            footer={footer}
         >
-            <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%', maxWidth: 380 }}>
-                <WoodenCard
-                    title={(t.dailyBonus || 'Daily Bonus').toUpperCase()}
-                    className="w-full"
+            <View style={{ alignItems: 'center', gap: SPACING.lg, paddingVertical: SPACING.lg }}>
+                <Text style={{ fontSize: 80 }}>🎁</Text>
+
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: SPACING.md,
+                        backgroundColor: 'rgba(0,0,0,0.4)',
+                        borderRadius: RADII.lg,
+                        borderWidth: 1,
+                        borderColor: 'rgba(255, 215, 0, 0.3)',
+                        paddingHorizontal: SPACING.xl,
+                        paddingVertical: SPACING.md,
+                        width: '100%',
+                    }}
                 >
-                    <Text className="text-[#e8d4b8] text-center mb-6 font-medium">
-                        {t.dailyBonusWelcome}
-                    </Text>
-
-                    {/* Gift Icon */}
-                    <View className="mb-6">
-                        <Text className="text-[80px]">🎁</Text>
-                    </View>
-
-                    {/* Reward Amount */}
-                    <View className="flex-row items-center justify-center bg-black/40 px-8 py-4 rounded-2xl border border-[#ffd700]/30 mb-8 gap-3 w-full">
-                        <Text className="text-4xl">💰</Text>
-                        <Text className="text-[#ffd700] text-5xl font-black">{amount}</Text>
-                    </View>
-
-                    <WoodenButton
-                        variant="gold"
-                        size="lg"
-                        fullWidth
-                        onPress={handleClaim}
-                    >
-                        {t.claimAndPlay}
-                    </WoodenButton>
-                </WoodenCard>
-            </Animated.View>
-        </AnimatedModal>
+                    <Text style={{ fontSize: 36 }}>💰</Text>
+                    <Text style={[TEXT_STYLES.display, { color: '#ffd700' }]}>+{amount}</Text>
+                </View>
+            </View>
+        </ModalShell>
     );
 };
 

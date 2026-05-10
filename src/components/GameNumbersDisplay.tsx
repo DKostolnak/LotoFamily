@@ -1,53 +1,67 @@
 import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { NumberMedallion } from './NumberMedallion';
-import Animated, { FadeInRight, FadeOutRight, Layout } from 'react-native-reanimated';
+import Animated, { FadeInRight, FadeOutLeft, Layout } from 'react-native-reanimated';
+import { SPACING, RADII } from '@/lib/config';
 
 interface GameNumbersDisplayProps {
     currentNumber: number | null;
     history: number[];
+    /** Compact mode for smaller screens / header embedding. */
     compact?: boolean;
 }
 
-const GameNumbersDisplayComponent = ({ currentNumber, history, compact = false }: GameNumbersDisplayProps) => {
-    // Responsive sizes based on compact mode
-    const dentSize = compact ? 64 : 84;
-    const historyHeight = compact ? 38 : 50;
-    const historyPaddingLeft = compact ? 28 : 36;
+/**
+ * Volané čísla — kľúčový element hry.
+ *
+ * - Current number HERO vpravo (xl 120pt / lg 80pt v compact)
+ * - History strip vľavo: posledných 5 čísel, najnovšie napravo, najstaršie naľavo s opacity fade
+ * - Atmosféra: čísla "zostarnú" smerom doľava
+ *
+ * Pozn.: `history` je očakávané ako "newest first" (rovnaký kontrakt ako predtým),
+ * takže `history[0]` = predchádzajúce volané, `history[1]` = staršie atď.
+ */
+const GameNumbersDisplayComponent = ({
+    currentNumber,
+    history,
+    compact = false,
+}: GameNumbersDisplayProps) => {
+    const heroSize = compact ? 'lg' : 'xl';
+    const chipSize = compact ? 'sm' : 'sm';
+    const chipCount = compact ? 4 : 5;
+
+    // Drop the most recent (it's already shown as hero / current).
+    // Render in oldest-first order so newest is on the right.
+    const historyChips = history
+        .slice(currentNumber !== null && history[0] === currentNumber ? 1 : 0, chipCount + 1)
+        .reverse();
 
     return (
-        <View style={styles.container}>
-            {/* Main Number Dent/Inset */}
-            <View style={styles.mainWrapper}>
-                <View style={[
-                    styles.dent,
-                    { width: dentSize, height: dentSize, borderRadius: dentSize / 2 }
-                ]}>
-                    <NumberMedallion number={currentNumber} size={compact ? 'md' : 'lg'} />
-                </View>
+        <View style={[styles.container, { gap: compact ? SPACING.sm : SPACING.md }]}>
+            {/* History strip — older numbers fade out left */}
+            <View style={[styles.historyTrack, { gap: compact ? SPACING.xs : SPACING.sm }]}>
+                {historyChips.map((num, idx) => {
+                    // idx 0 = oldest (leftmost), last idx = newest (rightmost)
+                    const ageFromNewest = historyChips.length - 1 - idx;
+                    const opacity = Math.max(0.35, 1 - ageFromNewest * 0.18);
+                    return (
+                        <Animated.View
+                            key={`history-${num}`}
+                            entering={FadeInRight.duration(280)}
+                            exiting={FadeOutLeft.duration(180)}
+                            layout={Layout.springify().damping(15)}
+                            style={{ opacity }}
+                        >
+                            <NumberMedallion number={num} size={chipSize} />
+                        </Animated.View>
+                    );
+                })}
             </View>
 
-            {/* History Strip - Animated chips sliding in */}
-            {history.length > 0 && (
-                <View style={styles.historyWrapper}>
-                    <View style={[
-                        styles.historyTrack,
-                        { height: historyHeight, paddingLeft: historyPaddingLeft, gap: compact ? 4 : 6 }
-                    ]}>
-                        {history.slice(0, compact ? 2 : 4).map((num, idx) => (
-                            <Animated.View
-                                key={`history-${num}`}
-                                entering={FadeInRight.delay(idx * 50).duration(300)}
-                                exiting={FadeOutRight.duration(200)}
-                                layout={Layout.springify().damping(15)}
-                                style={{ opacity: 1 - idx * 0.15 }}
-                            >
-                                <NumberMedallion number={num} size="sm" />
-                            </Animated.View>
-                        ))}
-                    </View>
-                </View>
-            )}
+            {/* Current number — dominant gold hero */}
+            <View style={[styles.heroWrapper, { paddingHorizontal: compact ? SPACING.md : SPACING.xl }]}>
+                <NumberMedallion number={currentNumber} size={heroSize} />
+            </View>
         </View>
     );
 };
@@ -59,49 +73,20 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        height: '100%',
-        width: '80%',
-        position: 'relative',
-    },
-    mainWrapper: {
-        position: 'absolute',
-        left: '25%',
-        zIndex: 50,
-        alignItems: 'center',
         justifyContent: 'center',
-    },
-    historyWrapper: {
-        position: 'absolute',
-        left: '42%',
-        zIndex: 10,
-    },
-    dent: {
-        backgroundColor: '#1a1109',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.05)',
-        borderTopWidth: 3,
-        borderTopColor: 'rgba(0,0,0,0.8)',
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.1)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.6,
-        shadowRadius: 8,
-        elevation: 8,
     },
     historyTrack: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#261b12',
-        padding: 4,
-        paddingRight: 8,
-        borderRadius: 20,
-        borderTopWidth: 2,
-        borderTopColor: 'rgba(0,0,0,0.5)',
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.05)',
-        zIndex: 10,
-    }
+        backgroundColor: 'rgba(26, 17, 9, 0.55)',
+        borderRadius: RADII.pill,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: SPACING.xs,
+        borderWidth: 1,
+        borderColor: 'rgba(90, 64, 37, 0.6)',
+    },
+    heroWrapper: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 });

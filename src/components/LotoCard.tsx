@@ -47,8 +47,8 @@ const LotoCell = memo(({
     }
 
     // Base Styles
-    let bgClass = "bg-[#fffaf0]";
-    let textClass = "text-[#3d2814]";
+    let bgClass = "bg-cream-light";
+    let textClass = "text-wood-dark";
 
     // State Styles
     if (isMissed) {

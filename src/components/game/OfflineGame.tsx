@@ -7,14 +7,16 @@ import { View, ImageBackground, StatusBar, Text, ActivityIndicator } from 'react
 import { useRouter } from 'expo-router';
 import { useGameStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
-import { useLocalGame, useHapticFeedback, useResponsive, useAudio, useQuests } from '@/hooks';
+import { useLocalGame, useHapticFeedback, useAudio, useQuests } from '@/hooks';
 import { WaitingLobby } from '@/components/WaitingLobby';
 import { LotoCard } from '@/components/LotoCard';
 import { GameHeader } from '@/components/GameHeader';
+import GamePausedOverlay from '@/components/GamePausedOverlay';
 import { WoodenButton } from '@/components/common';
 import { WinnerModal } from '@/components/WinnerModal';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Player } from '@/lib/types';
+import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 
 const WOOD_TEXTURE = require('../../../assets/wood-seamless.png');
 
@@ -22,7 +24,6 @@ export const OfflineGame = () => {
     const router = useRouter();
     const { playerName, playerAvatar, coins, language, stats, updateStats, activeSkin, activeTheme } = useGameStore();
     const haptics = useHapticFeedback();
-    const { responsive } = useResponsive();
     const insets = useSafeAreaInsets();
     const { speak, speakNumber, playSound } = useAudio();
     const { trackProgress } = useQuests();
@@ -202,7 +203,9 @@ export const OfflineGame = () => {
                     accessibilityLabel={t.a11yLoadingGame}
                 >
                     <ActivityIndicator size="large" color="#ffd700" />
-                    <Text className="text-cream mt-4 font-bold uppercase tracking-widest">
+                    <Text
+                        style={[TEXT_STYLES.button, { color: '#f5e6c8', marginTop: SPACING.lg }]}
+                    >
                         {t.loadingGame}
                     </Text>
                 </View>
@@ -264,53 +267,120 @@ export const OfflineGame = () => {
                     */}
                 </View>
 
-                {/* Game Info Strip - Compact on small screens */}
-                <View className="flex-row items-center justify-between px-2 bg-[#2d1f10]/80 border-b border-[#5a4025] z-40" style={{ paddingVertical: responsive(4, 8) }}>
-                    <View className="flex-row items-center flex-1" style={{ gap: responsive(8, 12) }}>
+                {/* Game Info Strip */}
+                <View
+                    className="flex-row items-center justify-between bg-wood-darker/85 border-b border-wood-medium z-40"
+                    style={{
+                        paddingVertical: SPACING.sm,
+                        paddingHorizontal: SPACING.lg,
+                        gap: SPACING.md,
+                    }}
+                >
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            flex: 1,
+                            gap: SPACING.md,
+                        }}
+                    >
                         <View
-                            className="bg-[#3d2814] rounded-lg border border-[#ffd700]/50 items-center justify-center"
-                            style={{ width: responsive(32, 40), height: responsive(32, 40) }}
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: RADII.md,
+                                backgroundColor: '#3d2814',
+                                borderWidth: 1,
+                                borderColor: 'rgba(255, 215, 0, 0.5)',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
                         >
-                            <Text style={{ fontSize: responsive(16, 20) }}>{playerAvatar}</Text>
+                            <Text style={{ fontSize: 22 }}>{playerAvatar}</Text>
                         </View>
-                        <View className="flex-1">
-                            <View className="flex-row justify-between mb-0.5">
-                                <Text className="text-muted font-bold uppercase" style={{ fontSize: responsive(8, 10) }}>{t.progress}</Text>
-                                <Text className="text-[#f5e6c8] font-bold" style={{ fontSize: responsive(8, 10) }}>
+                        <View style={{ flex: 1 }}>
+                            <View
+                                style={{
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-between',
+                                    marginBottom: SPACING.xs,
+                                }}
+                            >
+                                <Text style={[TEXT_STYLES.captionUpper, { color: '#d4b896' }]}>
+                                    {t.progress}
+                                </Text>
+                                <Text style={[TEXT_STYLES.bodyBold, { color: '#f5e6c8' }]}>
                                     {markedNumbers}/{totalNumbers}
                                 </Text>
                             </View>
-                            <View className="w-full bg-black/40 rounded-full overflow-hidden border border-[#5a4025]/30" style={{ height: responsive(4, 8) }}>
+                            <View
+                                style={{
+                                    height: 8,
+                                    width: '100%',
+                                    backgroundColor: 'rgba(0,0,0,0.4)',
+                                    borderRadius: RADII.pill,
+                                    overflow: 'hidden',
+                                    borderWidth: 1,
+                                    borderColor: 'rgba(90, 64, 37, 0.3)',
+                                }}
+                            >
                                 <View
-                                    className="h-full bg-[#4ade80]"
-                                    style={{ width: `${progressPercent}%` }}
+                                    style={{
+                                        height: '100%',
+                                        width: `${progressPercent}%`,
+                                        backgroundColor: '#4ade80',
+                                    }}
                                 />
                             </View>
                         </View>
                     </View>
 
-                    <View className="ml-3 items-end">
+                    <View style={{ alignItems: 'flex-end', gap: SPACING.xs }}>
                         {isPaused ? (
-                            <View className="bg-red-500/20 px-1.5 py-0.5 rounded border border-red-500/50">
-                                <Text className="text-red-400 font-bold uppercase" style={{ fontSize: responsive(8, 10) }}>{t.paused?.toUpperCase()}</Text>
+                            <View
+                                style={{
+                                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                                    paddingHorizontal: SPACING.sm,
+                                    paddingVertical: SPACING.xs,
+                                    borderRadius: RADII.sm,
+                                    borderWidth: 1,
+                                    borderColor: 'rgba(239, 68, 68, 0.5)',
+                                }}
+                            >
+                                <Text style={[TEXT_STYLES.captionUpper, { color: '#ef4444' }]}>
+                                    {t.paused?.toUpperCase()}
+                                </Text>
                             </View>
                         ) : (
-                            <View className="bg-green-500/20 px-1.5 py-0.5 rounded border border-green-500/50">
-                                <Text className="text-green-400 font-bold uppercase" style={{ fontSize: responsive(8, 10) }}>{t.autoPlay}</Text>
+                            <View
+                                style={{
+                                    backgroundColor: 'rgba(74, 222, 128, 0.18)',
+                                    paddingHorizontal: SPACING.sm,
+                                    paddingVertical: SPACING.xs,
+                                    borderRadius: RADII.sm,
+                                    borderWidth: 1,
+                                    borderColor: 'rgba(74, 222, 128, 0.5)',
+                                }}
+                            >
+                                <Text style={[TEXT_STYLES.captionUpper, { color: '#4ade80' }]}>
+                                    {t.autoPlay}
+                                </Text>
                             </View>
                         )}
-                        <Text className="text-muted font-bold uppercase mt-0.5" style={{ fontSize: responsive(8, 10) }}>
-                            {90 - remainingCount} <Text className="text-[#666]">{t.called}</Text>
+                        <Text style={[TEXT_STYLES.caption, { color: '#d4b896' }]}>
+                            {90 - remainingCount} {t.called}
                         </Text>
                     </View>
                 </View>
 
                 {/* Cards Container - Responsive bottom padding for safe area */}
                 <View
-                    className="flex-1 px-2 py-1"
+                    className="flex-1"
                     style={{
-                        gap: responsive(2, 8),
-                        paddingBottom: insets.bottom > 0 ? insets.bottom + 10 : 10
+                        paddingHorizontal: SPACING.lg,
+                        paddingTop: SPACING.sm,
+                        gap: SPACING.sm,
+                        paddingBottom: insets.bottom > 0 ? insets.bottom + SPACING.md : SPACING.md,
                     }}
                 >
                     {myCards.map((card) => (
@@ -332,36 +402,41 @@ export const OfflineGame = () => {
                 {/* Floating BINGO Button (Only when needed) */}
                 {canBingo && (
                     <View
-                        className="absolute left-0 right-0 items-center z-50"
-                        style={{ bottom: Math.max(20, insets.bottom + 20) }}
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            alignItems: 'center',
+                            zIndex: 50,
+                            bottom: Math.max(SPACING.xl, insets.bottom + SPACING.xl),
+                        }}
                     >
                         <WoodenButton
                             onPress={handleClaimBingo}
                             variant="gold"
                             size="lg"
-                            className="shadow-2xl border-4 border-[#ffd700]"
-                            style={{ width: 200, height: 70 }}
+                            accessibilityLabel="BINGO"
                         >
-                            <Text className="text-2xl mr-2">🏆</Text> BINGO!
+                            {t.claimBingo ?? 'BINGO!'}
                         </WoodenButton>
                     </View>
                 )}
 
-                {/* Pause Overlay Menu */}
+                {/* Pause Overlay (full-screen, design-system) */}
                 {isPaused && (
-                    <View className="absolute inset-0 bg-black/60 z-[60] justify-center items-center">
-                        <View className="bg-[#2d1f10] p-6 rounded-2xl border-2 border-[#8b6b4a] w-[80%] gap-4 shadow-xl">
-                            <Text className="text-[#f5e6c8] text-2xl font-bold text-center mb-2 uppercase tracking-widest">{t.paused}</Text>
-
-                            <WoodenButton onPress={resumeGame} variant="success" size="lg" fullWidth>
-                                {t.resume?.toUpperCase() || 'RESUME'}
-                            </WoodenButton>
-
-                            <WoodenButton onPress={handleLeave} variant="secondary" size="md" fullWidth>
-                                {t.exitGame?.toUpperCase() || 'EXIT GAME'}
-                            </WoodenButton>
-                        </View>
-                    </View>
+                    <GamePausedOverlay
+                        isHost
+                        onResume={resumeGame}
+                        onRestart={restartGame}
+                        onQuit={handleLeave}
+                        t={{
+                            paused: t.paused ?? 'PAUSED',
+                            resume: t.resume ?? 'RESUME',
+                            restart: t.playAgain ?? 'RESTART',
+                            exitGame: t.exitGame ?? 'EXIT',
+                            waitingForHost: t.waitingForHost ?? 'Waiting…',
+                        }}
+                    />
                 )}
 
                 <WinnerModal

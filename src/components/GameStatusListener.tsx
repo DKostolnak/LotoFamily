@@ -9,6 +9,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Text, StyleSheet } from 'react-native';
+import { TEXT_STYLES, SPACING } from '@/lib/config';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -148,12 +149,12 @@ function GameStatusListener({
         <Animated.View
             style={[
                 styles.disconnectBanner,
-                { paddingTop: insets.top + 12 },
+                { paddingTop: insets.top + SPACING.md },
                 bannerStyle,
             ]}
         >
-            <Text style={styles.disconnectText}>
-                ⚠️ Connection lost – reconnecting…
+            <Text style={[TEXT_STYLES.bodyBold, styles.disconnectText]}>
+                ⚠️ {t.connectionError ?? 'Connection lost – reconnecting…'}
             </Text>
         </Animated.View>
     );
@@ -170,8 +171,8 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         backgroundColor: '#e53935',
-        paddingBottom: 12,
-        paddingHorizontal: 16,
+        paddingBottom: SPACING.md,
+        paddingHorizontal: SPACING.lg,
         zIndex: 1100,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -181,8 +182,6 @@ const styles = StyleSheet.create({
     },
     disconnectText: {
         color: 'white',
-        fontSize: 14,
-        fontWeight: '700',
         textAlign: 'center',
     },
 });

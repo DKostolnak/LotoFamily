@@ -41,6 +41,9 @@ export * from './avatar.config';
 // UI constants
 export * from './ui.config';
 
+// Design system tokens (typography, spacing, button sizing)
+export * from './typography.config';
+
 // ============================================================================
 // Backward compatibility aliases (formerly in lib/constants.ts)
 // ============================================================================

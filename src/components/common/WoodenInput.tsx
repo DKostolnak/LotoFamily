@@ -28,7 +28,7 @@ export const WoodenInput = forwardRef<TextInput, WoodenInputProps>(
                 )}
                 <TextInput
                     ref={ref}
-                    className="bg-[#1a1109] border-[2px] border-[#5a4025] rounded-xl p-4 text-[#ffd700] font-bold text-lg"
+                    className="bg-wood-darkest border-[2px] border-wood-medium rounded-xl p-4 text-gold font-bold text-lg"
                     placeholderTextColor="#5a4025"
                     accessibilityLabel={props.accessibilityLabel || label}
                     style={[

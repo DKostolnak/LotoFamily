@@ -1,20 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, Pressable, FlatList } from 'react-native';
-import { WoodenCard, AnimatedModal, EmptyState } from '@/components/common';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, Pressable, FlatList } from 'react-native';
+import { ModalShell, ListRow, Badge, CoinBadge, WoodenButton, EmptyState } from '@/components/common';
+import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 import { useGameStore } from '@/lib/store';
-import { SHOP_ITEMS, type ShopItem, isThemeItem, isSkinItem } from '@/lib/shop';
-import { getThemeColors, getSkinColors } from '@/lib/config';
+import { SHOP_ITEMS, type ShopItem } from '@/lib/shop';
 import { translations } from '@/lib/i18n';
 import * as Haptics from 'expo-haptics';
-import { Check } from 'lucide-react-native';
+import { ShopItemPreview } from '@/components/shop/ShopItemPreview';
 
 interface ShopModalProps {
     visible: boolean;
     onClose: () => void;
 }
-// ... (rest of imports)
-
-import { ShopItemPreview } from '@/components/shop/ShopItemPreview';
 
 export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
     const { coins, inventory, purchaseItem, activeTheme, activeSkin, equipItem, playerAvatar, setPlayerAvatar, language } = useGameStore();
@@ -22,7 +19,6 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
     type CategoryId = 'all' | 'avatar' | 'theme' | 'skin';
     const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
 
-    // Reset category whenever the shop is reopened so "All" always shows the full catalog.
     useEffect(() => {
         if (visible) {
             setActiveCategory('all');
@@ -33,7 +29,6 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
         if (coins >= item.price) {
             const success = purchaseItem(item.id, item.price);
             if (success) {
-                // Haptics may fail on unsupported platforms; ignore errors so UI keeps working.
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
             }
         } else {
@@ -46,7 +41,6 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
             equipItem(item.category, item.id);
             Haptics.selectionAsync().catch(() => { });
         } else if (item.category === 'avatar') {
-            // For avatars, set the player avatar to the item's icon
             setPlayerAvatar(item.icon);
             Haptics.selectionAsync().catch(() => { });
         }
@@ -65,222 +59,148 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
     );
 
     return (
-        <AnimatedModal visible={visible} onClose={onClose} animation="slide" closeOnBackdrop={false}>
-            <View style={{ width: '100%', height: '70%' }}>
-                <WoodenCard style={{ flex: 1, width: '100%' }} onClose={onClose}>
+        <ModalShell
+            visible={visible}
+            onClose={onClose}
+            title={t.shopTitle}
+            headerRight={<CoinBadge coins={coins} size="sm" />}
+            noScroll
+            maxHeight="85%"
+        >
+            {/* Tab strip */}
+            <View
+                style={{
+                    height: 52,
+                    backgroundColor: '#1a1109',
+                    borderRadius: RADII.md,
+                    borderWidth: 1,
+                    borderColor: '#5a4025',
+                    flexDirection: 'row',
+                    padding: 4,
+                    overflow: 'hidden',
+                }}
+            >
+                {categories.map((cat) => {
+                    const isActive = activeCategory === cat.id;
+                    return (
+                        <Pressable
+                            key={cat.id}
+                            style={{
+                                flex: 1,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: RADII.sm,
+                                backgroundColor: isActive ? '#3d2814' : 'transparent',
+                                borderWidth: isActive ? 1 : 0,
+                                borderColor: isActive ? 'rgba(255, 215, 0, 0.5)' : 'transparent',
+                            }}
+                            onPress={() => {
+                                Haptics.selectionAsync().catch(() => { });
+                                setActiveCategory(cat.id);
+                            }}
+                        >
+                            <Text
+                                numberOfLines={1}
+                                style={[
+                                    TEXT_STYLES.captionUpper,
+                                    {
+                                        paddingHorizontal: SPACING.xs,
+                                        color: isActive ? '#ffd700' : '#d4b896',
+                                    },
+                                ]}
+                            >
+                                {cat.label}
+                            </Text>
+                        </Pressable>
+                    );
+                })}
+            </View>
 
-                    {/* Custom Header Row to avoid Z-Index/Stacking issues */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingHorizontal: 4, marginBottom: 12 }}>
-                        {/* Balance Badge */}
-                        <View style={{ backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255, 215, 0, 0.3)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Text style={{ fontSize: 16 }}>💰</Text>
-                            <Text style={{ color: '#ffd700', fontWeight: 'bold', fontFamily: 'monospace', fontSize: 16 }}>{coins}</Text>
-                        </View>
+            {/* Items list */}
+            <FlatList
+                data={filteredItems}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                style={{ flex: 1, marginTop: SPACING.md }}
+                contentContainerStyle={{ gap: SPACING.md, paddingBottom: SPACING.lg }}
+                windowSize={5}
+                ListEmptyComponent={
+                    <EmptyState
+                        title={t.emptyShelf}
+                        description={t.emptyShelfDesc}
+                    />
+                }
+                renderItem={({ item }) => {
+                    const isOwned = inventory.includes(item.id) || item.price === 0;
+                    const isEquipped = activeTheme === item.id || activeSkin === item.id || (item.category === 'avatar' && playerAvatar === item.icon);
+                    const canAfford = coins >= item.price;
+                    const isFreeUnowned = item.price === 0 && !isEquipped;
 
-                        {/* Title */}
-                        <Text style={{
-                            fontSize: 24,
-                            fontWeight: '900',
-                            color: '#ffd700',
-                            textTransform: 'uppercase',
-                            textAlign: 'center',
-                            textShadowColor: 'rgba(0,0,0,0.5)',
-                            textShadowOffset: { width: 0, height: 2 },
-                            textShadowRadius: 4,
-                            // Offset slightly to center visually against the close button space
-                            marginRight: 20
-                        }}>
-                            {t.shopTitle}
-                        </Text>
+                    let badge: React.ReactNode = null;
+                    if (isEquipped) {
+                        badge = <Badge label={t.active} variant="gold" />;
+                    } else if (isOwned && !isFreeUnowned) {
+                        badge = <Badge label={t.owned} variant="success" />;
+                    } else if (isFreeUnowned) {
+                        badge = <Badge label={t.free} variant="info" />;
+                    }
 
-                        {/* Spacer for Close Button (approx 44px) */}
-                        <View style={{ width: 44 }} />
-                    </View>
-
-                    {/* Category Tabs */}
-                    <View style={{ marginBottom: 16, marginHorizontal: 4, height: 48, backgroundColor: '#1a1109', borderRadius: 12, borderWidth: 1, borderColor: '#5a4025', flexDirection: 'row', padding: 4, overflow: 'hidden' }}>
-                        {categories.map((cat) => {
-                            const isActive = activeCategory === cat.id;
-                            return (
-                                <Pressable
-                                    key={cat.id}
-                                    style={{
-                                        flex: 1,
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        borderRadius: 8,
-                                        backgroundColor: isActive ? '#3d2814' : 'transparent',
-                                        borderWidth: isActive ? 1 : 0,
-                                        borderColor: isActive ? 'rgba(255, 215, 0, 0.5)' : 'transparent',
-                                    }}
-                                    onPress={() => {
-                                        Haptics.selectionAsync().catch(() => { });
-                                        setActiveCategory(cat.id);
-                                    }}
+                    let action: React.ReactNode;
+                    if (isOwned) {
+                        if (['theme', 'skin', 'avatar'].includes(item.category)) {
+                            action = (
+                                <WoodenButton
+                                    size="sm"
+                                    variant={isEquipped ? 'secondary' : 'gold'}
+                                    onPress={() => handleEquip(item)}
+                                    disabled={isEquipped}
                                 >
-                                    <Text
-                                        style={{
-                                            fontWeight: 'bold',
-                                            fontSize: 10,
-                                            textTransform: 'uppercase',
-                                            letterSpacing: 1,
-                                            color: isActive ? '#ffd700' : '#d4b896',
-                                        }}
-                                    >
-                                        {cat.label}
-                                    </Text>
-                                </Pressable>
+                                    {isEquipped ? t.active : t.equip}
+                                </WoodenButton>
                             );
-                        })}
-                    </View>
-
-                    {/* Shop Shelves - Virtualized */}
-                    <FlatList
-                        data={filteredItems}
-                        keyExtractor={(item) => item.id}
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={{ padding: 4, gap: 12, paddingBottom: 20 }}
-                        windowSize={5}
-                        ListEmptyComponent={
-                            <EmptyState
-                                title={t.emptyShelf}
-                                description={t.emptyShelfDesc}
-                            />
+                        } else {
+                            action = <Badge label={t.owned} variant="success" />;
                         }
-                        renderItem={({ item }) => {
-                            const isOwned = inventory.includes(item.id) || item.price === 0;
-                            const isEquipped = activeTheme === item.id || activeSkin === item.id || (item.category === 'avatar' && playerAvatar === item.icon);
-                            const canAfford = coins >= item.price;
-                            const isFreeUnowned = item.price === 0 && !isEquipped;
+                    } else {
+                        action = (
+                            <WoodenButton
+                                size="sm"
+                                variant={canAfford ? 'success' : 'secondary'}
+                                onPress={() => handlePurchase(item)}
+                                disabled={!canAfford}
+                            >
+                                {`💰 ${item.price}`}
+                            </WoodenButton>
+                        );
+                    }
 
-                            return (
+                    return (
+                        <ListRow
+                            icon={
                                 <View
                                     style={{
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        padding: 12,
-                                        borderRadius: 12,
-                                        borderWidth: 2,
-                                        backgroundColor: isEquipped ? '#3d2814' : '#2d1f10',
-                                        borderColor: isEquipped
-                                            ? '#ffd700'
-                                            : (isOwned && !isFreeUnowned)
-                                                ? 'rgba(74, 222, 128, 0.5)'
-                                                : '#4a3015',
-                                        opacity: (!isOwned && !isEquipped) ? 0.9 : 1
-                                    }}
-                                >
-                                    {/* Icon Container */}
-                                    <View style={{
-                                        width: 72,
-                                        height: 72,
-                                        borderRadius: 8,
-                                        borderWidth: 2,
+                                        width: 36,
+                                        height: 36,
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        backgroundColor: 'rgba(0,0,0,0.2)',
-                                        borderColor: isEquipped ? '#ffd700' : '#5a4025'
-                                    }}>
-                                        <ShopItemPreview item={item} />
-                                        {isEquipped && (
-                                            <View style={{
-                                                position: 'absolute',
-                                                top: -6,
-                                                right: -6,
-                                                backgroundColor: '#ffd700',
-                                                borderRadius: 999,
-                                                padding: 3,
-                                                borderWidth: 1,
-                                                borderColor: 'rgba(255,255,255,0.2)',
-                                                shadowColor: '#000',
-                                                shadowOffset: { width: 0, height: 1 },
-                                                shadowOpacity: 0.2,
-                                                shadowRadius: 1
-                                            }}>
-                                                <Check size={10} color="#000" strokeWidth={4} />
-                                            </View>
-                                        )}
-                                    </View>
-
-                                    {/* Info Section */}
-                                    <View style={{ flex: 1, paddingHorizontal: 12, justifyContent: 'center' }}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
-                                            <Text style={{ color: '#f5e6c8', fontWeight: 'bold', fontSize: 16, lineHeight: 20, flexShrink: 1 }} numberOfLines={1}>{item.name}</Text>
-                                            {isEquipped && (
-                                                <View style={{ backgroundColor: 'rgba(255, 215, 0, 0.15)', borderColor: '#ffd700', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
-                                                    <Text style={{ color: '#ffd700', fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.active}</Text>
-                                                </View>
-                                            )}
-                                            {!isEquipped && isOwned && !isFreeUnowned && (
-                                                <View style={{ backgroundColor: 'rgba(74, 222, 128, 0.15)', borderColor: 'rgba(74, 222, 128, 0.5)', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
-                                                    <Text style={{ color: '#4ade80', fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.owned}</Text>
-                                                </View>
-                                            )}
-                                            {isFreeUnowned && (
-                                                <View style={{ backgroundColor: 'rgba(96, 165, 250, 0.15)', borderColor: 'rgba(96, 165, 250, 0.5)', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
-                                                    <Text style={{ color: '#60a5fa', fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.free}</Text>
-                                                </View>
-                                            )}
-                                        </View>
-                                        <Text style={{ color: '#d4b896', fontSize: 11, lineHeight: 14 }} numberOfLines={2}>{item.description}</Text>
-                                    </View>
-
-                                    {/* Action Button */}
-                                    <View style={{ width: 84 }}>
-                                        {isOwned ? (
-                                            ['theme', 'skin', 'avatar'].includes(item.category) ? (
-                                                <TouchableOpacity
-                                                    onPress={() => handleEquip(item)}
-                                                    disabled={isEquipped}
-                                                    style={{
-                                                        width: '100%',
-                                                        paddingVertical: 6,
-                                                        borderRadius: 8,
-                                                        alignItems: 'center',
-                                                        borderWidth: 1,
-                                                        backgroundColor: isEquipped ? 'rgba(255, 215, 0, 0.1)' : '#eab308',
-                                                        borderColor: isEquipped ? 'rgba(255, 215, 0, 0.3)' : '#ca8a04'
-                                                    }}
-                                                >
-                                                    <Text style={{ fontWeight: 'bold', fontSize: 10, textTransform: 'uppercase', color: isEquipped ? '#ffd700' : '#3d2814' }}>
-                                                        {isEquipped ? t.active : t.equip}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            ) : (
-                                                <View style={{ width: '100%', paddingVertical: 6, backgroundColor: '#2d1f10', borderWidth: 1, borderColor: 'rgba(74, 222, 128, 0.3)', borderRadius: 8, alignItems: 'center' }}>
-                                                    <Text style={{ color: '#4ade80', fontWeight: 'bold', fontSize: 10, textTransform: 'uppercase' }}>{t.owned}</Text>
-                                                </View>
-                                            )
-                                        ) : (
-                                            <TouchableOpacity
-                                                onPress={() => handlePurchase(item)}
-                                                disabled={!canAfford}
-                                                style={{
-                                                    width: '100%',
-                                                    paddingVertical: 6,
-                                                    borderRadius: 8,
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    flexDirection: 'row',
-                                                    gap: 4,
-                                                    borderBottomWidth: 2,
-                                                    backgroundColor: canAfford ? '#22c55e' : '#374151',
-                                                    borderColor: canAfford ? '#15803d' : '#1f2937'
-                                                }}
-                                            >
-                                                <Text style={{ fontSize: 12 }}>💰</Text>
-                                                <Text style={{ fontWeight: 'bold', fontSize: 12, color: canAfford ? 'white' : '#9ca3af' }}>
-                                                    {item.price}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
+                                    }}
+                                >
+                                    <ShopItemPreview item={item} />
                                 </View>
-                            );
-                        }}
-                    />
-                </WoodenCard>
-            </View>
-        </AnimatedModal>
+                            }
+                            title={item.name}
+                            subtitle={item.description}
+                            selected={isEquipped}
+                            right={
+                                <View style={{ alignItems: 'flex-end', gap: SPACING.xs }}>
+                                    {badge}
+                                    {action}
+                                </View>
+                            }
+                        />
+                    );
+                }}
+            />
+        </ModalShell>
     );
 };

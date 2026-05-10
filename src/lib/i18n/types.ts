@@ -237,6 +237,54 @@ export interface TranslationKeys {
     rulesPage3Desc: string;
     rulesPage4Title: string;
     rulesPage4Desc: string;
+
+    // Main Menu redesign (StickyHeader, DailyBonusCard, FreeCoinsCTA, ModeCard, BottomTabs)
+    practiceVsBots: string;
+    joinByCode: string;
+    claimNow: string;
+    nextBonusIn: string;
+    freeCoins: string;
+    watchAd: string;
+    availableIn: string;
+    settingsTab: string;
+    levelLabel: string;
+    dailyBonusReady: string;
+
+    // Cozy home redesign
+    playNow: string;
+    tapToChoose: string;
+    chooseGame: string;
+
+    // Modal/feature labels (Wave A)
+    dailyMissionsTitle: string;
+    dailyResetIn: string;
+    leagueStandingsTitle: string;
+    leaguePromoteHint: string;
+    playerRank: string;
+    weeklyWinPoints: string;
+    shareWin: string;
+    coinsLabel: string;
+    xpLabel: string;
+    levelUp: string;
+
+    // Modal sections (Wave A)
+    audioSection: string;
+    profileSection: string;
+    statsSection: string;
+    experience: string;
+    level: string;
+    tapToCycle: string;
+    changeAvatarTitle: string;
+    claimReward: string;
+    missionClaimed: string;
+    allDoneTitle: string;
+    allDoneDesc: string;
+    noCompetitorsTitle: string;
+    noCompetitorsDesc: string;
+    youLabel: string;
+    promote: string;
+    previous: string;
+    rateThanks: string;
 }
 
 /**

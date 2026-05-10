@@ -33,7 +33,7 @@ export function RankBadge({ tier, size = 'md', className, style }: RankBadgeProp
 
     return (
         <View
-            className={`flex-row items-center bg-black/40 border border-[#ffd700]/30 ${className}`}
+            className={`flex-row items-center bg-black/40 border border-gold/30 ${className}`}
             style={{
                 paddingVertical: paddingY,
                 paddingHorizontal: paddingX,

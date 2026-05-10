@@ -20,7 +20,7 @@ export const EmptyState = ({
 }: EmptyStateProps) => {
     return (
         <View className="items-center justify-center p-8 w-full opacity-80">
-            <View className="mb-4 bg-black/10 p-4 rounded-full border border-[#5a4025]">
+            <View className="mb-4 bg-black/10 p-4 rounded-full border border-wood-medium">
                 <Icon size={48} color={iconColor} strokeWidth={1.5} />
             </View>
             <Text className="text-[#a6814c] font-black text-lg uppercase tracking-widest text-center mb-2">
