@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
 import { ModalShell, ListRow, Badge, CoinBadge, WoodenButton, EmptyState } from '@/components/common';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 import { useGameStore } from '@/lib/store';
@@ -84,45 +84,55 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                     borderRadius: RADII.md,
                     borderWidth: 1,
                     borderColor: '#5a4025',
-                    flexDirection: 'row',
-                    padding: 4,
                     overflow: 'hidden',
                 }}
             >
-                {categories.map((cat) => {
-                    const isActive = activeCategory === cat.id;
-                    return (
-                        <Pressable
-                            key={cat.id}
-                            style={{
-                                flex: 1,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: RADII.sm,
-                                backgroundColor: isActive ? '#3d2814' : 'transparent',
-                                borderWidth: isActive ? 1 : 0,
-                                borderColor: isActive ? 'rgba(255, 215, 0, 0.5)' : 'transparent',
-                            }}
-                            onPress={() => {
-                                Haptics.selectionAsync().catch(() => { });
-                                setActiveCategory(cat.id);
-                            }}
-                        >
-                            <Text
-                                numberOfLines={1}
-                                style={[
-                                    TEXT_STYLES.captionUpper,
-                                    {
-                                        paddingHorizontal: SPACING.xs,
-                                        color: isActive ? '#ffd700' : '#d4b896',
-                                    },
-                                ]}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        flexDirection: 'row',
+                        padding: 4,
+                        gap: 4,
+                        alignItems: 'stretch',
+                    }}
+                >
+                    {categories.map((cat) => {
+                        const isActive = activeCategory === cat.id;
+                        return (
+                            <Pressable
+                                key={cat.id}
+                                style={{
+                                    paddingHorizontal: SPACING.md,
+                                    minWidth: 80,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: RADII.sm,
+                                    backgroundColor: isActive ? '#3d2814' : 'transparent',
+                                    borderWidth: isActive ? 1 : 0,
+                                    borderColor: isActive ? 'rgba(255, 215, 0, 0.5)' : 'transparent',
+                                }}
+                                onPress={() => {
+                                    Haptics.selectionAsync().catch(() => { });
+                                    setActiveCategory(cat.id);
+                                }}
                             >
-                                {cat.label}
-                            </Text>
-                        </Pressable>
-                    );
-                })}
+                                <Text
+                                    numberOfLines={1}
+                                    style={[
+                                        TEXT_STYLES.captionUpper,
+                                        {
+                                            color: isActive ? '#ffd700' : '#d4b896',
+                                        },
+                                    ]}
+                                >
+                                    {cat.label}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
+                </ScrollView>
             </View>
 
             {/* Items list — plain map; ModalShell provides ScrollView wrapping */}

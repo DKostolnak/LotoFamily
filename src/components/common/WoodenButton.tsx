@@ -132,8 +132,17 @@ export function WoodenButton({
         onPress?.();
     };
 
+    // Treat children as text content if every child is a primitive (string,
+    // number, null/undefined). Mixed JSX like `{label} +{amount}` becomes an
+    // array of [string, " +", number] which previously fell through to the
+    // "render as-is" branch and triggered "Text strings must be rendered
+    // within a <Text> component". Wrap such collections in a <Text>.
+    const childArray = React.Children.toArray(children);
     const isStringChild =
-        typeof children === 'string' || typeof children === 'number';
+        childArray.length > 0 &&
+        childArray.every(
+            (c) => typeof c === 'string' || typeof c === 'number'
+        );
 
     return (
         <Pressable
