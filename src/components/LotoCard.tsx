@@ -92,13 +92,14 @@ const LotoCell = memo(({
                 {value}
             </Text>
 
-            {/* Animated wooden chip — only rendered when marked (perf). */}
+            {/* Animated wooden chip — only rendered when marked (perf).
+                Sized generously so the wooden texture is clearly readable. */}
             {isMarked && value !== null && (
                 <ChipMarker
                     marked
                     value={value}
                     variant={isCalled ? 'correct' : 'incorrect'}
-                    size={fontSize * 1.9}
+                    size={Math.max(36, fontSize * 2.6)}
                 />
             )}
         </TouchableOpacity>

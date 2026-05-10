@@ -43,6 +43,27 @@ jest.mock('@/lib/config', () => ({
         bg: '#ffd700',
         border: '#b8860b',
     }),
+    TEXT_STYLES: {
+        display: { fontSize: 36 },
+        h1: { fontSize: 26 },
+        h2: { fontSize: 20 },
+        h3: { fontSize: 17 },
+        body: { fontSize: 16 },
+        bodyBold: { fontSize: 16, fontWeight: '700' },
+        bodySmall: { fontSize: 14 },
+        caption: { fontSize: 12 },
+        captionUpper: { fontSize: 12, textTransform: 'uppercase' },
+        button: { fontSize: 16 },
+        buttonLarge: { fontSize: 17 },
+        buttonSmall: { fontSize: 14 },
+    },
+    FONT_WEIGHTS: {
+        regular: '400',
+        medium: '500',
+        semibold: '600',
+        bold: '700',
+        black: '900',
+    },
 }));
 
 const createMockCard = (overrides?: Partial<LotoCardType>): LotoCardType => ({

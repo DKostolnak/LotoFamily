@@ -31,11 +31,15 @@ const GameNumbersDisplayComponent = ({
     const chipSize = compact ? 'sm' : 'sm';
     const chipCount = compact ? 4 : 5;
 
-    // Drop the most recent (it's already shown as hero / current).
-    // Render in oldest-first order so newest is on the right.
-    const historyChips = history
-        .slice(currentNumber !== null && history[0] === currentNumber ? 1 : 0, chipCount + 1)
-        .reverse();
+    // Engine appends to end → last in `history` is newest. Drop the very
+    // last one (it's already shown in the barrel as the current call) and
+    // take the previous N. Result: newest-on-the-right, oldest-on-the-left.
+    const lastIdx = history.length;
+    const skipCurrent =
+        currentNumber !== null && history[lastIdx - 1] === currentNumber ? 1 : 0;
+    const start = Math.max(0, lastIdx - skipCurrent - chipCount);
+    const end = lastIdx - skipCurrent;
+    const historyChips = history.slice(start, end);
 
     return (
         <View style={[styles.container, { gap: compact ? SPACING.sm : SPACING.md }]}>
