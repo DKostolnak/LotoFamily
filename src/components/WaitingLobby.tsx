@@ -7,15 +7,16 @@ import Animated, {
     withSequence,
     withTiming,
     cancelAnimation,
+    Easing,
 } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
-import { WoodenCard, WoodenButton } from '@/components/common';
+import { WoodenCard, HeroCTAButton } from '@/components/common';
 import { PlayerList } from './PlayerList';
 import { Player } from '@/lib/types';
 import { ChatMessage } from '@/hooks/useGameSocket';
-import { Copy, Share2 } from 'lucide-react-native';
+import { Copy, Share2, Clock } from 'lucide-react-native';
 import type { TranslationKeys } from '@/lib/i18n';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 
@@ -40,42 +41,39 @@ export const WaitingLobby = memo(({
     onLeave,
     t,
 }: WaitingLobbyProps) => {
-    const pulseScale = useSharedValue(1);
     const [copied, setCopied] = useState(false);
 
+    // Non-host waiting card — gentle breathing pulse so the layout doesn't
+    // feel collapsed compared to the host's hero CTA.
+    const waitingScale = useSharedValue(1);
     useEffect(() => {
-        if (isHost && players.length > 1) {
-            pulseScale.value = withRepeat(
+        if (!isHost) {
+            waitingScale.value = withRepeat(
                 withSequence(
-                    withTiming(1.04, { duration: 800 }),
-                    withTiming(1, { duration: 800 })
+                    withTiming(1.02, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+                    withTiming(1.0, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
                 ),
                 -1,
-                false
+                false,
             );
         } else {
-            cancelAnimation(pulseScale);
-            pulseScale.value = withTiming(1, { duration: 200 });
+            cancelAnimation(waitingScale);
+            waitingScale.value = withTiming(1, { duration: 200 });
         }
-        return () => {
-            cancelAnimation(pulseScale);
-        };
-    }, [isHost, players.length, pulseScale]);
-
-    const pulseAnimatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: pulseScale.value }],
+        return () => cancelAnimation(waitingScale);
+    }, [isHost, waitingScale]);
+    const waitingAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: waitingScale.value }],
     }));
 
     const handleShare = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         try {
-            // Build a deep link the recipient can tap to open the app pre-filled
-            // in Join mode (handler in src/app/index.tsx parses ?room=).
             const url = Linking.createURL('/', { queryParams: { room: roomCode } });
             const message = `${t.joinMyGame ?? 'Join my Loto game!'} ${url}`;
             await Share.share({
                 message,
-                url, // iOS surfaces this as the rich preview link
+                url,
                 title: 'LOTO Invite',
             });
         } catch {
@@ -95,20 +93,22 @@ export const WaitingLobby = memo(({
         onStart();
     }, [onStart]);
 
+    const canStart = isHost && players.length > 1;
+
     return (
         <View style={{ flex: 1, paddingHorizontal: SPACING.lg, justifyContent: 'center', alignItems: 'center' }}>
             <WoodenCard
                 title={t.lobbyTitle ?? 'Waiting Lobby'}
                 showBackArrow
                 onBack={onLeave}
-                style={{ maxHeight: '92%' }}
+                style={{ maxHeight: '94%' }}
             >
                 {/* Room Code Hero */}
-                <View style={{ alignItems: 'center', marginBottom: SPACING.xl }}>
+                <View style={{ alignItems: 'center', marginBottom: SPACING.lg }}>
                     <Text
                         style={[
                             TEXT_STYLES.captionUpper,
-                            { color: '#d4b896', marginBottom: SPACING.sm, textAlign: 'center' },
+                            { color: '#d4b896', marginBottom: SPACING.sm, textAlign: 'center', letterSpacing: 3 },
                         ]}
                     >
                         {t.roomCodeLabel ?? 'ROOM CODE'}
@@ -121,33 +121,34 @@ export const WaitingLobby = memo(({
                         accessibilityLabel={`${t.roomCodeLabel ?? 'Room code'}: ${roomCode}. ${t.tapToCopy ?? 'Tap to copy'}`}
                         style={{
                             width: '100%',
+                            minHeight: 110,
                             backgroundColor: '#1a1109',
                             borderRadius: RADII.lg,
                             borderWidth: 2,
-                            borderColor: '#5a4025',
-                            paddingVertical: SPACING.lg,
+                            borderColor: 'rgba(255, 215, 0, 0.5)',
+                            paddingVertical: SPACING.xl,
                             paddingHorizontal: SPACING.xl,
                             alignItems: 'center',
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.5,
-                            shadowRadius: 6,
+                            justifyContent: 'center',
+                            shadowColor: '#ffd700',
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 12,
                             elevation: 6,
                         }}
                     >
                         <Text
-                            style={[
-                                TEXT_STYLES.display,
-                                {
-                                    color: '#ffd700',
-                                    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-                                    letterSpacing: 4,
-                                    textAlign: 'center',
-                                    textShadowColor: 'rgba(255,215,0,0.4)',
-                                    textShadowOffset: { width: 0, height: 0 },
-                                    textShadowRadius: 12,
-                                },
-                            ]}
+                            style={{
+                                color: '#ffd700',
+                                fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+                                fontSize: 42,
+                                fontWeight: '900',
+                                letterSpacing: 6,
+                                textAlign: 'center',
+                                textShadowColor: 'rgba(255,215,0,0.55)',
+                                textShadowOffset: { width: 0, height: 0 },
+                                textShadowRadius: 16,
+                            }}
                             numberOfLines={1}
                         >
                             {roomCode}
@@ -160,13 +161,14 @@ export const WaitingLobby = memo(({
                                 marginTop: SPACING.sm,
                             }}
                         >
-                            <Copy size={14} color="#d4b896" />
-                            <Text style={[TEXT_STYLES.caption, { color: '#d4b896' }]}>
+                            <Copy size={12} color="#d4b896" />
+                            <Text style={[TEXT_STYLES.captionUpper, { color: '#d4b896', letterSpacing: 1.5 }]}>
                                 {copied ? (t.copied ?? 'Copied') : (t.tapToCopy ?? 'Tap to copy')}
                             </Text>
                         </View>
                     </TouchableOpacity>
 
+                    {/* Share invite as wooden pill chip */}
                     <TouchableOpacity
                         onPress={handleShare}
                         accessibilityRole="button"
@@ -174,16 +176,21 @@ export const WaitingLobby = memo(({
                         style={{
                             flexDirection: 'row',
                             alignItems: 'center',
-                            gap: SPACING.xs,
+                            gap: SPACING.sm,
                             marginTop: SPACING.md,
-                            paddingVertical: SPACING.xs,
-                            paddingHorizontal: SPACING.md,
+                            paddingVertical: SPACING.sm,
+                            paddingHorizontal: SPACING.lg,
+                            borderRadius: RADII.pill,
+                            borderWidth: 1,
+                            borderColor: 'rgba(255, 215, 0, 0.4)',
+                            backgroundColor: 'rgba(255, 215, 0, 0.06)',
+                            minHeight: 40,
                         }}
                         hitSlop={8}
                     >
-                        <Share2 size={16} color="#d4b896" />
-                        <Text style={[TEXT_STYLES.button, { color: '#d4b896' }]}>
-                            {(t as any).shareInvite ?? t.share ?? 'SHARE'}
+                        <Share2 size={14} color="#ffd700" />
+                        <Text style={[TEXT_STYLES.button, { color: '#ffd700', fontSize: 12 }]}>
+                            {(t as any).shareInvite ?? t.share ?? 'SHARE INVITE'}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -198,18 +205,20 @@ export const WaitingLobby = memo(({
                             marginBottom: SPACING.sm,
                         }}
                     >
-                        <Text style={[TEXT_STYLES.captionUpper, { color: '#d4b896' }]}>
+                        <Text style={[TEXT_STYLES.captionUpper, { color: '#ffd700', letterSpacing: 2 }]}>
                             {t.players ?? 'Players'}
                         </Text>
                         <View
                             style={{
-                                backgroundColor: 'rgba(90, 64, 37, 0.6)',
+                                backgroundColor: 'rgba(255, 215, 0, 0.15)',
+                                borderWidth: 1,
+                                borderColor: 'rgba(255, 215, 0, 0.4)',
                                 paddingHorizontal: SPACING.sm,
                                 paddingVertical: 2,
                                 borderRadius: RADII.pill,
                             }}
                         >
-                            <Text style={[TEXT_STYLES.caption, { color: '#ffd700' }]}>
+                            <Text style={[TEXT_STYLES.caption, { color: '#ffd700', fontWeight: '900' }]}>
                                 {players.length}/10
                             </Text>
                         </View>
@@ -222,8 +231,8 @@ export const WaitingLobby = memo(({
                             borderWidth: 1,
                             borderColor: 'rgba(90, 64, 37, 0.5)',
                             padding: SPACING.sm,
-                            minHeight: 120,
-                            maxHeight: 360,
+                            minHeight: 100,
+                            maxHeight: 280,
                         }}
                     >
                         <ScrollView
@@ -247,41 +256,66 @@ export const WaitingLobby = memo(({
                     </View>
                 </View>
 
-                {/* Action */}
+                {/* Action — Hero CTA */}
                 <View style={{ width: '100%', marginTop: SPACING.xl }}>
                     {isHost ? (
-                        <Animated.View style={pulseAnimatedStyle}>
-                            <WoodenButton
-                                onPress={handleStart}
-                                variant="gold"
-                                size="lg"
-                                fullWidth
-                                accessibilityLabel={t.startGame ?? 'Start the game'}
-                            >
-                                {t.startGame ?? 'START GAME'}
-                            </WoodenButton>
-                        </Animated.View>
+                        <HeroCTAButton
+                            title={t.startGame ?? 'START GAME'}
+                            subtitle={
+                                canStart
+                                    ? ((t as any).beginTheRound ?? 'Begin the round')
+                                    : ((t as any).waitingForPlayers ?? 'Waiting for players…')
+                            }
+                            onPress={handleStart}
+                            variant="gold"
+                            pulse={canStart}
+                            glow={canStart}
+                            disabled={!canStart}
+                            accessibilityLabel={t.startGame ?? 'Start the game'}
+                        />
                     ) : (
-                        <View
-                            style={{
-                                padding: SPACING.lg,
-                                backgroundColor: 'rgba(26, 17, 9, 0.5)',
-                                borderRadius: RADII.lg,
-                                borderWidth: 1,
-                                borderColor: '#5a4025',
-                                alignItems: 'center',
-                            }}
+                        <Animated.View
+                            style={[
+                                waitingAnimatedStyle,
+                                {
+                                    height: 92,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    paddingHorizontal: SPACING.xl,
+                                    backgroundColor: 'rgba(26, 17, 9, 0.65)',
+                                    borderRadius: RADII.xl,
+                                    borderWidth: 2,
+                                    borderColor: 'rgba(255, 215, 0, 0.35)',
+                                    gap: SPACING.md,
+                                },
+                            ]}
                             accessibilityRole="text"
                         >
-                            <Text
-                                style={[
-                                    TEXT_STYLES.body,
-                                    { color: '#d4b896', fontStyle: 'italic', textAlign: 'center' },
-                                ]}
-                            >
-                                {t.waitingForHost ?? 'Waiting for host…'}
-                            </Text>
-                        </View>
+                            <Clock size={28} color="#ffd700" />
+                            <View style={{ flexShrink: 1 }}>
+                                <Text
+                                    style={[
+                                        TEXT_STYLES.buttonLarge,
+                                        { color: '#ffd700', fontSize: 18, letterSpacing: 1 },
+                                    ]}
+                                    numberOfLines={1}
+                                >
+                                    {(t as any).waitingTitle ?? 'WAITING…'}
+                                </Text>
+                                <Text
+                                    style={{
+                                        color: '#d4b896',
+                                        fontSize: 12,
+                                        fontWeight: '600',
+                                        marginTop: 2,
+                                    }}
+                                    numberOfLines={1}
+                                >
+                                    {t.waitingForHost ?? 'Waiting for host to start…'}
+                                </Text>
+                            </View>
+                        </Animated.View>
                     )}
                 </View>
             </WoodenCard>

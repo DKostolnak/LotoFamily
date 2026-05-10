@@ -28,4 +28,5 @@ export * from './PowerUpBar';
 export * from './SeasonPassChip';
 export * from './WoodenBarrel';
 export * from './ChipMarker';
+export * from './HeroCTAButton';
 

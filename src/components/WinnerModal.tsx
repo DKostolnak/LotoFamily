@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, ScrollView, TouchableOpacity } from 'react-native';
 import Reanimated, {
     useSharedValue,
     useAnimatedStyle,
@@ -13,13 +13,14 @@ import Reanimated, {
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
-import { X } from 'lucide-react-native';
+import { X, Share2, ChevronLeft } from 'lucide-react-native';
 
 import {
     WoodenButton,
     AnimatedModal,
     RewardChip,
     CelebrationConfetti,
+    HeroCTAButton,
 } from '@/components/common';
 import { useGameStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
@@ -68,7 +69,7 @@ export const WinnerModal = ({
     const [showShareSheet, setShowShareSheet] = useState(false);
     const shareRef = useRef<View>(null);
 
-    // Reanimated shared values — deterministic, no infinite loops
+    // Reanimated shared values
     const trophyScale = useSharedValue(0);
     const trophyPulse = useSharedValue(1);
     const titleOpacity = useSharedValue(0);
@@ -97,7 +98,6 @@ export const WinnerModal = ({
             return;
         }
 
-        // Reset
         trophyScale.value = 0;
         trophyPulse.value = 1;
         titleOpacity.value = 0;
@@ -107,10 +107,7 @@ export const WinnerModal = ({
         chipOpacity.value = 0;
         buttonsOpacity.value = 0;
 
-        // Mount sequence (deterministic, no withRepeat)
-        // Trophy pop @ 200ms
         trophyScale.value = withDelay(200, withSpring(1, { damping: 8, stiffness: 140 }));
-        // Trophy two-bounce ambient pulse (then settles), no infinite loop
         trophyPulse.value = withDelay(
             1100,
             withSequence(
@@ -120,18 +117,13 @@ export const WinnerModal = ({
                 withTiming(1.0, { duration: 700, easing: Easing.inOut(Easing.ease) }),
             ),
         );
-        // Title @ 400ms
         titleOpacity.value = withDelay(400, withTiming(1, { duration: 350 }));
         titleTranslateY.value = withDelay(400, withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) }));
-        // Winner card @ 600ms
         cardOpacity.value = withDelay(600, withTiming(1, { duration: 350 }));
         cardTranslateY.value = withDelay(600, withTiming(0, { duration: 450, easing: Easing.out(Easing.cubic) }));
-        // Reward chips @ 800ms
         chipOpacity.value = withDelay(800, withTiming(1, { duration: 400 }));
-        // Buttons @ 1200ms
         buttonsOpacity.value = withDelay(1200, withTiming(1, { duration: 400 }));
 
-        // Haptic + sound
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
         audioService.playSound('win').catch(() => { });
 
@@ -194,13 +186,13 @@ export const WinnerModal = ({
     const showLevelUp =
         typeof previousLevel === 'number' && previousLevel > 0 && previousLevel < currentLevel;
 
-    // Localized strings with safe fallbacks
     const victoryLabel = (isMe ? (t as any).victory : (t as any).gameOver) ?? (isMe ? 'VICTORY!' : 'GAME OVER');
     const taglineMe = (t as any).youWon ?? 'You won the Loto!';
     const taglineOther = `${winnerName} ${(t as any).playerWins ?? 'takes the prize!'}`;
-    const playAgainLabel = (t as any).playAgain ?? 'Play Again';
-    const shareLabel = (t as any).shareWin ?? (t as any).share ?? 'Share Win';
-    const backLabel = (t as any).backToMenu ?? (t as any).leaveRoom ?? 'Back to Menu';
+    const playAgainLabel = (t as any).playAgain ?? 'PLAY AGAIN';
+    const playAgainSubtitle = (t as any).startNewRound ?? 'Start a new round';
+    const shareLabel = (t as any).shareWin ?? (t as any).share ?? 'Share my win';
+    const backLabel = (t as any).backToMenu ?? (t as any).leaveRoom ?? 'Back to menu';
     const coinsLabel = (t as any).coinsLabel ?? 'coins';
     const xpLabel = (t as any).xpLabel ?? 'XP';
     const levelUpLabel = (t as any).levelUp ?? 'Level up!';
@@ -217,27 +209,42 @@ export const WinnerModal = ({
                     <CelebrationConfetti fire={visible} />
 
                     <View style={styles.card}>
+                        {/* Subtle radial gradient overlay — top gold, fading down */}
+                        <View pointerEvents="none" style={styles.radialGlow} />
+
+                        {/* Close button top-right */}
+                        <TouchableOpacity
+                            onPress={handleClose}
+                            accessibilityRole="button"
+                            accessibilityLabel={(t as any).close ?? 'Close'}
+                            style={styles.closeBtn}
+                            hitSlop={12}
+                        >
+                            <X size={20} color="rgba(245, 230, 200, 0.7)" />
+                        </TouchableOpacity>
+
                         <ScrollView
                             contentContainerStyle={styles.scroll}
                             showsVerticalScrollIndicator={false}
                             bounces={false}
                         >
-                            {/* Hero zone — trophy + title */}
+                            {/* Hero zone — big trophy + giant title */}
                             <Reanimated.Text style={[styles.trophy, trophyStyle]} accessibilityRole="image">
-                                🏆
+                                {isMe ? '🏆' : '🎉'}
                             </Reanimated.Text>
 
                             <Reanimated.Text style={[styles.title, titleStyle]} numberOfLines={1}>
                                 {victoryLabel}
                             </Reanimated.Text>
 
-                            {/* Winner card (also the share screenshot target) */}
+                            {/* Winner card (share screenshot target) */}
                             <Reanimated.View style={[styles.winnerCardWrap, cardStyle]}>
                                 <View
                                     ref={shareRef}
                                     collapsable={false}
                                     style={styles.winnerCard}
                                 >
+                                    <View style={styles.avatarGlow} />
                                     <View style={styles.avatarRing}>
                                         <Text style={styles.avatarText}>
                                             {playerAvatar || (isMe ? '🐻' : '🎉')}
@@ -252,7 +259,7 @@ export const WinnerModal = ({
                                 </View>
                             </Reanimated.View>
 
-                            {/* Reward chips */}
+                            {/* Reward chips — bigger, chunkier */}
                             <Reanimated.View style={[styles.chipRow, chipStyle]}>
                                 {prize > 0 && (
                                     <RewardChip
@@ -260,6 +267,7 @@ export const WinnerModal = ({
                                         value={prize}
                                         label={coinsLabel}
                                         variant="gold"
+                                        style={styles.bigChip}
                                     />
                                 )}
                                 {typeof xpGained === 'number' && xpGained > 0 && (
@@ -268,6 +276,7 @@ export const WinnerModal = ({
                                         value={xpGained}
                                         label={xpLabel}
                                         variant="info"
+                                        style={styles.bigChip}
                                     />
                                 )}
                                 {showLevelUp && (
@@ -276,41 +285,48 @@ export const WinnerModal = ({
                                         value={`Lv ${previousLevel} → ${currentLevel}`}
                                         label={levelUpLabel}
                                         variant="success"
+                                        style={styles.bigChip}
                                     />
                                 )}
                             </Reanimated.View>
 
-                            {/* Buttons */}
-                            <Reanimated.View style={[styles.buttons, buttonsStyle]}>
-                                <WoodenButton
-                                    variant="gold"
-                                    size="xl"
-                                    fullWidth
+                            {/* Hero CTA */}
+                            <Reanimated.View style={[styles.heroCtaWrap, buttonsStyle]}>
+                                <HeroCTAButton
+                                    title={playAgainLabel}
+                                    subtitle={playAgainSubtitle}
                                     onPress={handlePlayAgain}
+                                    variant="gold"
+                                    pulse
+                                    glow
                                     accessibilityLabel={playAgainLabel}
-                                >
-                                    {playAgainLabel}
-                                </WoodenButton>
+                                />
+                            </Reanimated.View>
+
+                            {/* Secondary text-link actions */}
+                            <Reanimated.View style={[styles.secondaryActions, buttonsStyle]}>
                                 {isMe && (
-                                    <WoodenButton
-                                        variant="secondary"
-                                        size="lg"
-                                        fullWidth
+                                    <TouchableOpacity
                                         onPress={() => setShowShareSheet(true)}
+                                        accessibilityRole="button"
                                         accessibilityLabel={shareLabel}
+                                        style={styles.linkBtn}
+                                        hitSlop={8}
                                     >
-                                        {shareLabel}
-                                    </WoodenButton>
+                                        <Share2 size={16} color="#d4b896" />
+                                        <Text style={styles.linkText}>{shareLabel}</Text>
+                                    </TouchableOpacity>
                                 )}
-                                <WoodenButton
-                                    variant="ghost"
-                                    size="md"
-                                    fullWidth
+                                <TouchableOpacity
                                     onPress={handleClose}
+                                    accessibilityRole="button"
                                     accessibilityLabel={backLabel}
+                                    style={styles.linkBtn}
+                                    hitSlop={8}
                                 >
-                                    {backLabel}
-                                </WoodenButton>
+                                    <ChevronLeft size={16} color="#d4b896" />
+                                    <Text style={styles.linkText}>{backLabel}</Text>
+                                </TouchableOpacity>
                             </Reanimated.View>
                         </ScrollView>
                     </View>
@@ -375,25 +391,52 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.45,
         shadowRadius: 16,
         elevation: 12,
+        overflow: 'hidden',
+    },
+    radialGlow: {
+        position: 'absolute',
+        top: -120,
+        left: -60,
+        right: -60,
+        height: 320,
+        borderRadius: 200,
+        backgroundColor: 'rgba(255, 215, 0, 0.08)',
+    },
+    closeBtn: {
+        position: 'absolute',
+        top: SPACING.sm,
+        right: SPACING.sm,
+        width: 32,
+        height: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: RADII.pill,
+        zIndex: 5,
     },
     scroll: {
         alignItems: 'center',
         paddingBottom: SPACING.sm,
     },
     trophy: {
-        fontSize: 80,
-        lineHeight: 92,
+        fontSize: 100,
+        lineHeight: 116,
         textAlign: 'center',
-        marginBottom: SPACING.sm,
+        marginBottom: SPACING.xs,
+        textShadowColor: 'rgba(255, 215, 0, 0.55)',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 20,
     },
     title: {
         ...TEXT_STYLES.display,
+        fontSize: 48,
+        fontWeight: '900',
+        letterSpacing: 2,
         color: k_colorGold,
         textAlign: 'center',
         marginBottom: SPACING.lg,
-        textShadowColor: 'rgba(0,0,0,0.55)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 4,
+        textShadowColor: 'rgba(255, 215, 0, 0.55)',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 16,
     },
     winnerCardWrap: {
         width: '100%',
@@ -403,22 +446,40 @@ const styles = StyleSheet.create({
         width: '100%',
         backgroundColor: k_colorWoodLight,
         borderRadius: RADII.lg,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 215, 0, 0.3)',
-        paddingVertical: SPACING.lg,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 215, 0, 0.45)',
+        paddingVertical: SPACING.xl,
         paddingHorizontal: SPACING.lg,
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    avatarGlow: {
+        position: 'absolute',
+        top: SPACING.lg,
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        backgroundColor: 'rgba(255, 215, 0, 0.18)',
     },
     avatarRing: {
         width: 80,
         height: 80,
         borderRadius: 40,
         backgroundColor: 'rgba(255, 215, 0, 0.12)',
-        borderWidth: 2,
+        borderWidth: 3,
         borderColor: k_colorGold,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: SPACING.sm,
+        marginBottom: SPACING.md,
+        shadowColor: k_colorGold,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 12,
+        elevation: 6,
     },
     avatarText: {
         fontSize: 44,
@@ -426,6 +487,8 @@ const styles = StyleSheet.create({
     },
     winnerName: {
         ...TEXT_STYLES.h2,
+        fontSize: 24,
+        fontWeight: '900',
         color: k_colorText,
         textAlign: 'center',
         marginBottom: SPACING.xs,
@@ -443,9 +506,35 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: SPACING.lg,
     },
-    buttons: {
+    bigChip: {
+        height: 64,
+        minWidth: 150,
+        paddingHorizontal: SPACING.lg,
+    },
+    heroCtaWrap: {
         width: '100%',
-        gap: SPACING.md,
+        marginTop: SPACING.xs,
+        marginBottom: SPACING.md,
+    },
+    secondaryActions: {
+        width: '100%',
+        alignItems: 'center',
+        gap: SPACING.xs,
+        marginTop: SPACING.sm,
+    },
+    linkBtn: {
+        minHeight: 44,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: SPACING.xs,
+        paddingHorizontal: SPACING.lg,
+        opacity: 0.85,
+    },
+    linkText: {
+        ...TEXT_STYLES.button,
+        color: k_colorTextMuted,
+        fontSize: 13,
     },
     shareBackdrop: {
         flex: 1,
