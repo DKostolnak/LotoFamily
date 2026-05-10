@@ -9,3 +9,4 @@ export { useLocalGame } from './useLocalGame';
 export { useAudio } from './useAudio';
 export { useQuests } from './useQuests';
 export { useResponsive, type ResponsiveValues } from './useResponsive';
+export { useSocketStatus, type SocketBannerStatus, type UseSocketStatusResult } from './useSocketStatus';

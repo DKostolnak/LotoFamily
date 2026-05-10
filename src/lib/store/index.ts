@@ -69,6 +69,7 @@ export const useGameStore = create<GameStore>()(
                 isMuted: state.isMuted,
                 language: state.language,
                 batterySaver: state.batterySaver,
+                tutorialCompleted: state.tutorialCompleted,
             }),
         }
     )
@@ -132,9 +133,11 @@ export const useSettings = () =>
             isMuted: state.isMuted,
             language: state.language,
             batterySaver: state.batterySaver,
+            tutorialCompleted: state.tutorialCompleted,
             setMuted: state.setMuted,
             setLanguage: state.setLanguage,
             setBatterySaver: state.setBatterySaver,
+            setTutorialCompleted: state.setTutorialCompleted,
         }))
     );
 

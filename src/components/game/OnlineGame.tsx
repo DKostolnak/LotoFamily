@@ -8,11 +8,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
 import { useGameStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
-import { useGameSocket, useHapticFeedback, useAudio } from '@/hooks';
+import { useGameSocket, useHapticFeedback, useAudio, useSocketStatus } from '@/hooks';
 import { WaitingLobby } from '@/components/WaitingLobby';
 import { LotoCard } from '@/components/LotoCard';
 import { GameHeader } from '@/components/GameHeader';
-import { WoodenButton, ErrorView } from '@/components/common';
+import { WoodenButton, ErrorView, ConnectionBanner } from '@/components/common';
 import { ChatOverlay } from '@/components/ChatOverlay';
 import { WinnerModal } from '@/components/WinnerModal';
 import GamePausedOverlay from '@/components/GamePausedOverlay';
@@ -63,6 +63,27 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
 
     const [hasJoined, setHasJoined] = useState(false);
     const [showWinner, setShowWinner] = useState(false);
+
+    // Connection banner — surfaces socket lifecycle + offline state to the user
+    // during online play. Hidden when fully connected (with a 2s "Connected"
+    // celebration toast on recovery).
+    const { status: connStatus, retry: retryConnection } = useSocketStatus();
+    const connBannerMessage = useMemo(() => {
+        switch (connStatus) {
+            case 'reconnecting':
+            case 'connecting': return t.connStatusReconnecting;
+            case 'disconnected': return t.connStatusDisconnected;
+            case 'error': return t.connStatusError;
+            case 'offline': return t.connStatusOffline;
+            case 'connected': return t.connStatusConnected;
+            default: return undefined;
+        }
+    }, [connStatus, t]);
+    const handleRetryConnection = () => {
+        retryConnection();
+        // Allow the join/create effect to fire again once reconnected.
+        setHasJoined(false);
+    };
 
     // ========================================================================
     // EFFECTS
@@ -266,6 +287,13 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                     onSendMessage={sendChatMessage}
                     currentPlayerId={myPlayerId || ''}
                 />
+
+                <ConnectionBanner
+                    status={connStatus}
+                    message={connBannerMessage}
+                    retryLabel={t.connRetry}
+                    onRetry={handleRetryConnection}
+                />
             </ImageBackground>
         );
     }
@@ -276,6 +304,13 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
         <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
             <StatusBar barStyle="light-content" />
             <View className="absolute inset-0 bg-black/30" pointerEvents="none" />
+
+            <ConnectionBanner
+                status={connStatus}
+                message={connBannerMessage}
+                retryLabel={t.connRetry}
+                onRetry={handleRetryConnection}
+            />
 
             <GameStatusListener
                 socket={socket}

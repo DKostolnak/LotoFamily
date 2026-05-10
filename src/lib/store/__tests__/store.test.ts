@@ -63,6 +63,10 @@ const baselineState = {
         gamesWon: 0,
         totalEarnings: 0,
         xp: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        currentWinStreak: 0,
+        longestWinStreak: 0,
     },
     tier: 'Bronze',
     isLoading: false,
@@ -71,6 +75,7 @@ const baselineState = {
     isMuted: false,
     language: 'en' as const,
     batterySaver: false,
+    tutorialCompleted: false,
 };
 
 describe('useGameStore', () => {
@@ -210,6 +215,164 @@ describe('useGameStore', () => {
             });
 
             expect(useGameStore.getState().batterySaver).toBe(true);
+        });
+
+        it('defaults tutorialCompleted to false', () => {
+            expect(useGameStore.getState().tutorialCompleted).toBe(false);
+        });
+
+        it('marks tutorial as completed via setTutorialCompleted', () => {
+            const store = useGameStore.getState();
+
+            act(() => {
+                store.setTutorialCompleted(true);
+            });
+
+            expect(useGameStore.getState().tutorialCompleted).toBe(true);
+
+            act(() => {
+                useGameStore.getState().setTutorialCompleted(false);
+            });
+
+            expect(useGameStore.getState().tutorialCompleted).toBe(false);
+        });
+    });
+
+    describe('Daily Streak', () => {
+        const HOUR_MS = 60 * 60 * 1000;
+
+        it('incrementStreak raises currentStreak and longestStreak when surpassed', () => {
+            act(() => {
+                useGameStore.getState().incrementStreak();
+            });
+            let s = useGameStore.getState().stats;
+            expect(s.currentStreak).toBe(1);
+            expect(s.longestStreak).toBe(1);
+
+            act(() => {
+                useGameStore.getState().incrementStreak();
+                useGameStore.getState().incrementStreak();
+            });
+            s = useGameStore.getState().stats;
+            expect(s.currentStreak).toBe(3);
+            expect(s.longestStreak).toBe(3);
+        });
+
+        it('incrementStreak preserves longestStreak when current run is shorter', () => {
+            act(() => {
+                useGameStore.setState({
+                    stats: {
+                        ...useGameStore.getState().stats,
+                        currentStreak: 0,
+                        longestStreak: 5,
+                    },
+                });
+                useGameStore.getState().incrementStreak();
+            });
+            const s = useGameStore.getState().stats;
+            expect(s.currentStreak).toBe(1);
+            expect(s.longestStreak).toBe(5);
+        });
+
+        it('resetStreak sets currentStreak to 1 and keeps longestStreak', () => {
+            act(() => {
+                useGameStore.setState({
+                    stats: {
+                        ...useGameStore.getState().stats,
+                        currentStreak: 7,
+                        longestStreak: 7,
+                    },
+                });
+                useGameStore.getState().resetStreak();
+            });
+            const s = useGameStore.getState().stats;
+            expect(s.currentStreak).toBe(1);
+            expect(s.longestStreak).toBe(7);
+        });
+
+        it('checkDailyBonus returns 0 when last claim was < 24h ago', () => {
+            const now = Date.now();
+            act(() => {
+                useGameStore.setState({ lastDailyBonus: now - 5 * HOUR_MS });
+            });
+            const bonus = useGameStore.getState().checkDailyBonus();
+            expect(bonus).toBe(0);
+            // Streak unchanged.
+            expect(useGameStore.getState().stats.currentStreak).toBe(0);
+        });
+
+        it('checkDailyBonus continues streak in 24-48h window and rewards by table', () => {
+            const now = Date.now();
+            // Day 1 -> Day 2
+            act(() => {
+                useGameStore.setState({
+                    lastDailyBonus: now - 30 * HOUR_MS,
+                    coins: 0,
+                    stats: {
+                        ...useGameStore.getState().stats,
+                        currentStreak: 1,
+                        longestStreak: 1,
+                    },
+                });
+            });
+            const bonus = useGameStore.getState().checkDailyBonus();
+            expect(bonus).toBe(75); // day 2 reward
+            const s = useGameStore.getState();
+            expect(s.stats.currentStreak).toBe(2);
+            expect(s.stats.longestStreak).toBe(2);
+            expect(s.coins).toBe(75);
+        });
+
+        it('checkDailyBonus breaks streak when > 48h gap and rewards 50 (day 1)', () => {
+            const now = Date.now();
+            act(() => {
+                useGameStore.setState({
+                    lastDailyBonus: now - 72 * HOUR_MS,
+                    coins: 0,
+                    stats: {
+                        ...useGameStore.getState().stats,
+                        currentStreak: 5,
+                        longestStreak: 5,
+                    },
+                });
+            });
+            const bonus = useGameStore.getState().checkDailyBonus();
+            expect(bonus).toBe(50);
+            const s = useGameStore.getState();
+            expect(s.stats.currentStreak).toBe(1);
+            // longestStreak preserved.
+            expect(s.stats.longestStreak).toBe(5);
+            expect(s.coins).toBe(50);
+        });
+
+        it('7-day cycle: day 7 rewards 500, day 8 cycles to 50 but longestStreak grows', () => {
+            const now = Date.now();
+            // Set up so the next claim is day 7.
+            act(() => {
+                useGameStore.setState({
+                    lastDailyBonus: now - 30 * HOUR_MS,
+                    coins: 0,
+                    stats: {
+                        ...useGameStore.getState().stats,
+                        currentStreak: 6,
+                        longestStreak: 6,
+                    },
+                });
+            });
+            const day7 = useGameStore.getState().checkDailyBonus();
+            expect(day7).toBe(500);
+            expect(useGameStore.getState().stats.currentStreak).toBe(7);
+            expect(useGameStore.getState().stats.longestStreak).toBe(7);
+
+            // Advance: simulate next day claim (day 8 -> cycle restart reward).
+            act(() => {
+                useGameStore.setState({ lastDailyBonus: Date.now() - 30 * HOUR_MS });
+            });
+            const day8 = useGameStore.getState().checkDailyBonus();
+            expect(day8).toBe(50); // cycles back to index 0
+            const s = useGameStore.getState();
+            expect(s.stats.currentStreak).toBe(8);
+            expect(s.stats.longestStreak).toBe(8);
         });
     });
 

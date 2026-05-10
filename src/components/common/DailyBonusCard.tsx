@@ -13,10 +13,16 @@ interface DailyBonusCardProps {
         claim?: string;
         nextIn?: string;
         amountSuffix?: string;
+        /** "{n}-day streak" template — replaces {n} with currentStreak */
+        streakTemplate?: string;
     };
     style?: ViewStyle;
     /** Compact pill-chip variant (44pt). Renders nothing when bonus not ready. */
     compact?: boolean;
+    /** Current daily login streak (defaults to 0). Used to render streak chip. */
+    currentStreak?: number;
+    /** Reward amount for the next claim (override). Falls back to ECONOMY default. */
+    nextReward?: number;
 }
 
 const formatRemaining = (ms: number) => {
@@ -33,9 +39,14 @@ const formatRemaining = (ms: number) => {
  * triggers store.checkDailyBonus(), which the existing DailyBonusModal
  * picks up (or the parent can open the modal directly).
  */
-export function DailyBonusCard({ lastDailyBonus, onClaim, labels, style, compact = false }: DailyBonusCardProps) {
+export function DailyBonusCard({ lastDailyBonus, onClaim, labels, style, compact = false, currentStreak = 0, nextReward }: DailyBonusCardProps) {
     const intervalMs = ECONOMY.DAILY_BONUS_INTERVAL_MS;
-    const amount = ECONOMY.DAILY_BONUS_AMOUNT;
+    const amount = nextReward ?? ECONOMY.DAILY_BONUS_AMOUNT;
+    // Tomorrow's streak day = currentStreak + 1, but if last claim was >48h
+    // ago the streak will reset, so visualised value is best-effort. We
+    // rely on currentStreak passed by parent (already up to date for the
+    // upcoming claim's reward via REWARD_TABLE in checkDailyBonus).
+    const upcomingDay = currentStreak + 1;
 
     const computeReady = () => Date.now() - lastDailyBonus > intervalMs;
     const [ready, setReady] = useState(computeReady);
@@ -65,15 +76,25 @@ export function DailyBonusCard({ lastDailyBonus, onClaim, labels, style, compact
         onClaim();
     };
 
-    // Compact pill chip variant — only render when ready (avoid stale chrome)
+    // Compact pill chip variant — only render when ready (avoid stale chrome).
+    // When the streak is active we show a flame + "Day N streak" instead of
+    // the generic "Daily bonus" copy to reinforce the retention loop.
     if (compact) {
         if (!ready) return null;
+
+        const showStreak = upcomingDay > 1;
+        const streakTemplate = labels?.streakTemplate ?? '{n}-day streak';
+        const streakLabel = showStreak
+            ? streakTemplate.replace('{n}', String(upcomingDay))
+            : readyLabel;
+        const a11yStreakSuffix = showStreak ? `, day ${upcomingDay}` : '';
+
         return (
             <TouchableOpacity
                 onPress={handlePress}
                 activeOpacity={0.85}
                 accessibilityRole="button"
-                accessibilityLabel={`${readyLabel}, +${amount} coins, claim`}
+                accessibilityLabel={`${streakLabel}, +${amount} coins, claim${a11yStreakSuffix}`}
                 style={[
                     {
                         flexDirection: 'row',
@@ -89,12 +110,12 @@ export function DailyBonusCard({ lastDailyBonus, onClaim, labels, style, compact
                     style,
                 ]}
             >
-                <Text style={{ fontSize: 18, lineHeight: 22 }}>✨</Text>
+                <Text style={{ fontSize: 18, lineHeight: 22 }}>{showStreak ? '🔥' : '✨'}</Text>
                 <Text
                     style={[TEXT_STYLES.bodySmall, { color: '#f5e6c8', flex: 1, fontWeight: '600' }]}
                     numberOfLines={1}
                 >
-                    {readyLabel}
+                    {streakLabel}
                 </Text>
                 <Text style={[TEXT_STYLES.bodyBold, { color: '#ffd700' }]}>+{amount}</Text>
                 <ChevronRight size={16} color="#ffd700" strokeWidth={2.5} />

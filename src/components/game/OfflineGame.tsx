@@ -2,7 +2,7 @@
  * OfflineGame - Single player practice mode
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ImageBackground, StatusBar, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGameStore } from '@/lib/store';
@@ -12,7 +12,7 @@ import { WaitingLobby } from '@/components/WaitingLobby';
 import { LotoCard } from '@/components/LotoCard';
 import { GameHeader } from '@/components/GameHeader';
 import GamePausedOverlay from '@/components/GamePausedOverlay';
-import { WoodenButton } from '@/components/common';
+import { WoodenButton, TutorialOverlay, type TutorialStep } from '@/components/common';
 import { WinnerModal } from '@/components/WinnerModal';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Player } from '@/lib/types';
@@ -22,7 +22,18 @@ const WOOD_TEXTURE = require('../../../assets/wood-seamless.png');
 
 export const OfflineGame = () => {
     const router = useRouter();
-    const { playerName, playerAvatar, coins, language, stats, updateStats, activeSkin, activeTheme } = useGameStore();
+    const {
+        playerName,
+        playerAvatar,
+        coins,
+        language,
+        stats,
+        updateStats,
+        activeSkin,
+        activeTheme,
+        tutorialCompleted,
+        setTutorialCompleted,
+    } = useGameStore();
     const haptics = useHapticFeedback();
     const insets = useSafeAreaInsets();
     const { speak, speakNumber, playSound } = useAudio();
@@ -59,6 +70,52 @@ export const OfflineGame = () => {
 
     // Local UI state
     const [showWinner, setShowWinner] = useState(false);
+
+    // ========================================================================
+    // TUTORIAL (first-time-user coach marks)
+    // ========================================================================
+    // Refs to spotlight target views during the tutorial.
+    const headerRef = useRef<View | null>(null);
+    const cardsRef = useRef<View | null>(null);
+    const bingoButtonRef = useRef<View | null>(null);
+
+    const [tutorialVisible, setTutorialVisible] = useState(false);
+
+    const tutorialSteps = useMemo<TutorialStep[]>(
+        () => [
+            // Step 1: card overview (no spotlight — full intro)
+            {
+                title: t.tutorialStep1Title,
+                body: t.tutorialStep1Body,
+                targetRef: cardsRef,
+            },
+            // Step 2: called numbers (header)
+            {
+                title: t.tutorialStep2Title,
+                body: t.tutorialStep2Body,
+                targetRef: headerRef,
+            },
+            // Step 3: tap a number on the card
+            {
+                title: t.tutorialStep3Title,
+                body: t.tutorialStep3Body,
+                targetRef: cardsRef,
+            },
+            // Step 4: goal — full card
+            {
+                title: t.tutorialStep4Title,
+                body: t.tutorialStep4Body,
+                targetRef: cardsRef,
+            },
+            // Step 5: BINGO button (may not be visible — bubble centers if no target)
+            {
+                title: t.tutorialStep5Title,
+                body: t.tutorialStep5Body,
+                targetRef: bingoButtonRef,
+            },
+        ],
+        [t]
+    );
 
     // ========================================================================
     // DERIVED STATE
@@ -112,6 +169,16 @@ export const OfflineGame = () => {
         }
     }, [currentNumber, playSound, speakNumber]);
 
+    // Show tutorial once gameplay begins, for first-time users.
+    // Slight delay so target views are mounted/laid-out before measure().
+    useEffect(() => {
+        if (tutorialCompleted) return;
+        if (phase !== 'playing') return;
+        if (tutorialVisible) return;
+        const handle = setTimeout(() => setTutorialVisible(true), 400);
+        return () => clearTimeout(handle);
+    }, [tutorialCompleted, phase, tutorialVisible]);
+
     // Show winner modal when game ends and update stats
     // Show winner modal when game ends and update stats
     useEffect(() => {
@@ -125,21 +192,15 @@ export const OfflineGame = () => {
             const newGamesPlayed = stats.gamesPlayed + 1;
             const isWin = winner.isMe;
             const newWins = isWin ? stats.gamesWon + 1 : stats.gamesWon;
-            const newStreak = isWin ? (stats.currentStreak ?? 0) + 1 : 0;
-            const bestStreak = Math.max(newStreak, stats.longestStreak ?? 0);
-
-            // We use the functional update form if available, or just the values
-            // Ideally we shouldn't depend on 'stats' in the effect dependency to avoid loops.
-            // Since we are reading 'stats' inside, we omit it from deps and trust the closure 
-            // OR we move this logic to the place where winner is set.
-            // But 'winner' comes from 'useLocalGame' hook.
+            const newWinStreak = isWin ? (stats.currentWinStreak ?? 0) + 1 : 0;
+            const bestWinStreak = Math.max(newWinStreak, stats.longestWinStreak ?? 0);
 
             updateStats({
                 ...stats,
                 gamesPlayed: newGamesPlayed,
                 gamesWon: newWins,
-                currentStreak: newStreak,
-                longestStreak: bestStreak,
+                currentWinStreak: newWinStreak,
+                longestWinStreak: bestWinStreak,
             });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -250,7 +311,7 @@ export const OfflineGame = () => {
                     or just overlay a Pause button. 
                     Let's use a custom header wrapper or just rely on the existing one but change the logic.
                 */}
-                <View className="relative z-50">
+                <View ref={headerRef} collapsable={false} className="relative z-50">
                     <GameHeader
                         currentNumber={currentNumber}
                         history={calledNumbers}
@@ -375,6 +436,8 @@ export const OfflineGame = () => {
 
                 {/* Cards Container - Responsive bottom padding for safe area */}
                 <View
+                    ref={cardsRef}
+                    collapsable={false}
                     className="flex-1"
                     style={{
                         paddingHorizontal: SPACING.lg,
@@ -402,6 +465,8 @@ export const OfflineGame = () => {
                 {/* Floating BINGO Button (Only when needed) */}
                 {canBingo && (
                     <View
+                        ref={bingoButtonRef}
+                        collapsable={false}
                         style={{
                             position: 'absolute',
                             left: 0,
@@ -446,6 +511,26 @@ export const OfflineGame = () => {
                     prize={100}
                     onClose={() => setShowWinner(false)}
                     onPlayAgain={handlePlayAgain}
+                />
+
+                {/* First-time-user interactive tutorial. Always skippable. */}
+                <TutorialOverlay
+                    visible={tutorialVisible}
+                    steps={tutorialSteps}
+                    labels={{
+                        next: t.tutorialNext,
+                        done: t.tutorialDone,
+                        skip: t.tutorialSkip,
+                        stepCount: t.tutorialStepCount,
+                    }}
+                    onComplete={() => {
+                        setTutorialVisible(false);
+                        setTutorialCompleted(true);
+                    }}
+                    onSkip={() => {
+                        setTutorialVisible(false);
+                        setTutorialCompleted(true);
+                    }}
                 />
             </View>
         </ImageBackground>

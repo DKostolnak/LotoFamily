@@ -22,4 +22,6 @@ export * from './ModalShell';
 export * from './Section';
 export * from './ListRow';
 export * from './Badge';
+export * from './TutorialOverlay';
+export * from './ConnectionBanner';
 

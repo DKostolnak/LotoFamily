@@ -16,10 +16,13 @@ export const createSettingsSlice: StateCreator<GameStore, [], [], SettingsSlice>
     isMuted: false,
     language: 'en' as Language,
     batterySaver: false,
+    tutorialCompleted: false,
 
     setMuted: (muted: boolean) => set({ isMuted: muted }),
 
     setLanguage: (lang: Language) => set({ language: lang }),
 
     setBatterySaver: (enabled: boolean) => set({ batterySaver: enabled }),
+
+    setTutorialCompleted: (done: boolean) => set({ tutorialCompleted: done }),
 });

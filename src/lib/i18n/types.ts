@@ -255,6 +255,24 @@ export interface TranslationKeys {
     tapToChoose: string;
     chooseGame: string;
 
+    // Daily streak (retention)
+    /** "{n}-day streak" — replace {n} with currentStreak */
+    streakDays: string;
+    /** Caption when streak reset (>48h gap) */
+    streakBroken: string;
+    /** "Day 1" label for empty/just-started streak */
+    streakDay1: string;
+    /** "Tomorrow: +{n}" — replace {n} with next reward */
+    tomorrowReward: string;
+    /** Short weekday labels for streak grid */
+    dayMon: string;
+    dayTue: string;
+    dayWed: string;
+    dayThu: string;
+    dayFri: string;
+    daySat: string;
+    daySun: string;
+
     // Modal/feature labels (Wave A)
     dailyMissionsTitle: string;
     dailyResetIn: string;
@@ -285,6 +303,33 @@ export interface TranslationKeys {
     promote: string;
     previous: string;
     rateThanks: string;
+
+    // Tutorial (first-time-user coach marks)
+    tutorialStep1Title: string;
+    tutorialStep1Body: string;
+    tutorialStep2Title: string;
+    tutorialStep2Body: string;
+    tutorialStep3Title: string;
+    tutorialStep3Body: string;
+    tutorialStep4Title: string;
+    tutorialStep4Body: string;
+    tutorialStep5Title: string;
+    tutorialStep5Body: string;
+    tutorialNext: string;
+    tutorialDone: string;
+    tutorialSkip: string;
+    tutorialStepCount: string;
+    resetTutorial: string;
+    resetTutorialDesc: string;
+    reset: string;
+
+    // Connection status banner
+    connStatusReconnecting: string;
+    connStatusDisconnected: string;
+    connStatusConnected: string;
+    connStatusOffline: string;
+    connStatusError: string;
+    connRetry: string;
 }
 
 /**

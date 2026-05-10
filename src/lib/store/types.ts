@@ -55,8 +55,14 @@ export interface PlayerStats {
     totalEarnings: number;
     xp: number;
     fastestWinMs?: number;
-    longestStreak?: number;
-    currentStreak?: number;
+    /** Daily login streak — longest run of consecutive days claimed. */
+    longestStreak: number;
+    /** Daily login streak — current run of consecutive days claimed. */
+    currentStreak: number;
+    /** Win streak — current run of consecutive games won. */
+    currentWinStreak: number;
+    /** Win streak — longest run of consecutive games won. */
+    longestWinStreak: number;
 }
 
 export interface StatsState {
@@ -69,6 +75,10 @@ export interface StatsActions {
     incrementGamesPlayed: () => void;
     incrementGamesWon: () => void;
     addEarnings: (amount: number) => void;
+    /** Daily-streak: continue streak (+1) and update longestStreak. */
+    incrementStreak: () => void;
+    /** Daily-streak: streak broken — reset currentStreak to 1 for today's claim. */
+    resetStreak: () => void;
 }
 
 export type StatsSlice = StatsState & StatsActions;
@@ -81,12 +91,15 @@ export interface SettingsState {
     isMuted: boolean;
     language: Language;
     batterySaver: boolean;
+    /** Has the first-time-user interactive tutorial been completed/skipped? */
+    tutorialCompleted: boolean;
 }
 
 export interface SettingsActions {
     setMuted: (muted: boolean) => void;
     setLanguage: (lang: Language) => void;
     setBatterySaver: (enabled: boolean) => void;
+    setTutorialCompleted: (done: boolean) => void;
 }
 
 export type SettingsSlice = SettingsState & SettingsActions;
@@ -138,6 +151,10 @@ export const DEFAULT_STATS_STATE: StatsState = {
         gamesWon: 0,
         totalEarnings: 0,
         xp: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        currentWinStreak: 0,
+        longestWinStreak: 0,
     },
     tier: 'Bronze',
 };
@@ -146,6 +163,7 @@ export const DEFAULT_SETTINGS_STATE: SettingsState = {
     isMuted: false,
     language: 'en',
     batterySaver: false,
+    tutorialCompleted: false,
 };
 
 export const DEFAULT_APP_STATE: AppState = {

@@ -58,6 +58,8 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
                                 fastestWinMs: current.stats.fastestWinMs,
                                 longestStreak: current.stats.longestStreak,
                                 currentStreak: current.stats.currentStreak,
+                                currentWinStreak: current.stats.currentWinStreak ?? 0,
+                                longestWinStreak: current.stats.longestWinStreak ?? 0,
                             },
                             tier:
                                 serverProfile.tier?.toString() ??

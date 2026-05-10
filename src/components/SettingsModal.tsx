@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, Switch } from 'react-native';
-import { ModalShell, Section, ListRow } from '@/components/common';
+import { ModalShell, Section, ListRow, WoodenButton } from '@/components/common';
 import { useGameStore } from '@/lib/store';
-import { Volume2, VolumeX, Zap, Info, Check } from 'lucide-react-native';
+import { Volume2, VolumeX, Zap, Info, Check, BookOpen } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { ENV, TEXT_STYLES, SPACING } from '@/lib/config';
 import { translations, type Language } from '@/lib/i18n';
@@ -24,6 +24,7 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
         isMuted, setMuted,
         language, setLanguage,
         batterySaver, setBatterySaver,
+        tutorialCompleted, setTutorialCompleted,
     } = useGameStore();
 
     const t = translations[language];
@@ -42,6 +43,12 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
     const handleBatterySaverChange = (value: boolean) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setBatterySaver(value);
+    };
+
+    const handleResetTutorial = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setTutorialCompleted(false);
+        onClose();
     };
 
     const footer = (
@@ -101,6 +108,25 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
                             trackColor={{ false: '#3d2814', true: '#d4b075' }}
                             thumbColor={batterySaver ? '#ffd700' : '#8b7355'}
                         />
+                    }
+                />
+            </Section>
+
+            <Section title={t.howToPlay}>
+                <ListRow
+                    icon={<BookOpen size={20} color="#ffd700" />}
+                    title={t.resetTutorial}
+                    subtitle={t.resetTutorialDesc}
+                    right={
+                        <WoodenButton
+                            size="sm"
+                            variant={tutorialCompleted ? 'gold' : 'secondary'}
+                            onPress={handleResetTutorial}
+                            disabled={!tutorialCompleted}
+                            accessibilityLabel={t.resetTutorial}
+                        >
+                            {t.reset}
+                        </WoodenButton>
                     }
                 />
             </Section>

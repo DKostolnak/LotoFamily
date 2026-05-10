@@ -48,19 +48,32 @@ export const createEconomySlice: StateCreator<GameStore, [], [], EconomySlice> =
 
     checkDailyBonus: () => {
         const now = Date.now();
-        const { lastDailyBonus, coins } = get();
-        const oneDayMs = ECONOMY.DAILY_BONUS_INTERVAL_MS;
+        const { lastDailyBonus } = get();
+        const hours = (now - lastDailyBonus) / (1000 * 60 * 60);
 
-        if (now - lastDailyBonus > oneDayMs) {
-            set({
-                lastDailyBonus: now,
-                coins: coins + ECONOMY.DAILY_BONUS_AMOUNT,
-            });
+        // Not ready yet (< 24h since last claim).
+        if (hours < 24) return 0;
 
-            return ECONOMY.DAILY_BONUS_AMOUNT;
+        // 24-48h: streak continues. >48h: streak broken, reset to day 1.
+        let streakDay: number;
+        if (hours < 48) {
+            get().incrementStreak();
+            streakDay = get().stats.currentStreak;
+        } else {
+            get().resetStreak();
+            streakDay = 1;
         }
 
-        return 0;
+        // 7-day reward cycle. Day 8 cycles back to day 1 reward but
+        // currentStreak/longestStreak keep accumulating.
+        const REWARD_TABLE = [50, 75, 100, 150, 200, 250, 500];
+        const idx = (streakDay - 1) % REWARD_TABLE.length;
+        const reward = REWARD_TABLE[idx];
+
+        get().addCoins(reward);
+        set({ lastDailyBonus: now });
+
+        return reward;
     },
 
     equipItem: (category, id) => {

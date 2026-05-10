@@ -70,6 +70,7 @@ export default function MainMenu() {
     } = useGameStore();
     // Reactive XP read so the level pill / progress bar update on stat changes.
     const xp = useGameStore((s) => s.stats.xp || 0);
+    const currentStreak = useGameStore((s) => s.stats.currentStreak ?? 0);
     const level = Math.floor(xp / 100) + 1;
     const xpProgress = xp % 100;
     const { responsive } = useResponsive();
@@ -310,10 +311,12 @@ export default function MainMenu() {
                     compact
                     lastDailyBonus={lastDailyBonus}
                     onClaim={handleClaimDailyBonus}
+                    currentStreak={currentStreak}
                     labels={{
                         ready: labelDailyBonus,
                         claim: labelClaim,
                         nextIn: labelNextIn,
+                        streakTemplate: t.streakDays,
                     }}
                 />
                 <FreeCoinsCTA
