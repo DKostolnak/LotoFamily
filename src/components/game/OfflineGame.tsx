@@ -37,7 +37,7 @@ export const OfflineGame = () => {
         tutorialCompleted,
         setTutorialCompleted,
         powerUps,
-        usePowerUp,
+        usePowerUp: consumePowerUp,
         addPowerUp,
     } = useGameStore();
     const { showToast } = useToast();
@@ -281,9 +281,9 @@ export const OfflineGame = () => {
 
     const handleUsePowerUp = (type: keyof PowerUpInventory) => {
         // Decrement inventory first; if none, the bar's onUse won't fire
-        // (count===0 routes through onWatchAd). usePowerUp returns false
+        // (count===0 routes through onWatchAd). consumePowerUp returns false
         // defensively if state changed mid-tap.
-        if (!usePowerUp(type)) return;
+        if (!consumePowerUp(type)) return;
         haptics.impactMedium();
 
         if (type === 'peek') {

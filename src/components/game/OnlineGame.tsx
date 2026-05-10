@@ -34,7 +34,7 @@ interface OnlineGameProps {
 export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode = false }: OnlineGameProps) => {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { playerName, playerAvatar, coins, language, activeSkin, activeTheme, powerUps, usePowerUp, addPowerUp } = useGameStore();
+    const { playerName, playerAvatar, coins, language, activeSkin, activeTheme, powerUps, usePowerUp: consumePowerUp, addPowerUp } = useGameStore();
     const { showToast } = useToast();
     const haptics = useHapticFeedback();
     const { speak, speakNumber, playSound } = useAudio();
@@ -213,7 +213,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
             // implemented online — do not consume inventory.
             return;
         }
-        if (!usePowerUp(type)) return;
+        if (!consumePowerUp(type)) return;
         haptics.impactMedium();
         const upcoming = (gameState?.remainingNumbers ?? []).slice(0, 3);
         const text = t.nextNumbersAre.replace('{numbers}', upcoming.join(', '));
