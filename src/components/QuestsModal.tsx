@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text } from 'react-native';
 import { ModalShell, ListRow, Badge, WoodenButton, SkeletonList, QuestSkeleton, EmptyState } from '@/components/common';
 import { Coins, CheckCircle2, Trophy, Target } from 'lucide-react-native';
 import { useGameStore } from '@/lib/store';
@@ -53,28 +53,21 @@ export const QuestsModal = ({ visible, onClose }: QuestsModalProps) => {
             onClose={onClose}
             title={(t as any).dailyMissionsTitle ?? 'Daily Missions'}
             subtitle={`${(t as any).dailyResetIn ?? 'Resets in'} ${timeLeft}`}
-            noScroll
         >
             {loading ? (
                 <View style={{ paddingVertical: SPACING.sm }}>
                     <SkeletonList count={4} ItemSkeleton={QuestSkeleton} />
                 </View>
+            ) : quests.length === 0 ? (
+                <EmptyState
+                    title={(t as any).allDoneTitle ?? 'All Done!'}
+                    description={(t as any).allDoneDesc ?? "You've completed all missions for today. Great job!"}
+                    icon={Trophy}
+                    iconColor="#4ade80"
+                />
             ) : (
-                <FlatList
-                    data={quests}
-                    keyExtractor={(item) => item.id}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ gap: SPACING.md, paddingBottom: SPACING.lg }}
-                    windowSize={5}
-                    ListEmptyComponent={
-                        <EmptyState
-                            title={(t as any).allDoneTitle ?? 'All Done!'}
-                            description={(t as any).allDoneDesc ?? "You've completed all missions for today. Great job!"}
-                            icon={Trophy}
-                            iconColor="#4ade80"
-                        />
-                    }
-                    renderItem={({ item: uq }) => {
+                <View style={{ gap: SPACING.md }}>
+                    {quests.map((uq) => {
                         const isComplete = uq.progress >= uq.quest.target;
                         const right = uq.isClaimed ? (
                             <View
@@ -120,6 +113,7 @@ export const QuestsModal = ({ visible, onClose }: QuestsModalProps) => {
 
                         return (
                             <ListRow
+                                key={uq.id}
                                 icon={
                                     isComplete && !uq.isClaimed ? (
                                         <Trophy size={20} color="#ffd700" />
@@ -133,8 +127,8 @@ export const QuestsModal = ({ visible, onClose }: QuestsModalProps) => {
                                 right={right}
                             />
                         );
-                    }}
-                />
+                    })}
+                </View>
             )}
         </ModalShell>
     );

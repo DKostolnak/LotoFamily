@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text } from 'react-native';
 import { ModalShell, ListRow, Badge, RankBadge, EmptyState, SkeletonList, LeaderboardSkeleton } from '@/components/common';
 import { Trophy, ArrowUpCircle } from 'lucide-react-native';
 import { storageService, STORAGE_KEYS } from '@/lib/services/storage';
@@ -65,33 +65,27 @@ export const LeaderboardModal = ({ visible, onClose }: LeaderboardModalProps) =>
             onClose={onClose}
             title={(t as any).leagueStandingsTitle ?? 'League Standings'}
             subtitle={(t as any).leaguePromoteHint ?? 'Top 20% promote to the next league'}
-            noScroll
         >
             {loading ? (
                 <View style={{ paddingVertical: SPACING.sm }}>
                     <SkeletonList count={8} ItemSkeleton={LeaderboardSkeleton} />
                 </View>
+            ) : leaders.length === 0 ? (
+                <EmptyState
+                    title={(t as any).noCompetitorsTitle ?? 'No Competitors'}
+                    description={(t as any).noCompetitorsDesc ?? 'You are the first one here! Play games to set the bar.'}
+                    icon={Trophy}
+                />
             ) : (
-                <FlatList
-                    data={leaders}
-                    keyExtractor={(item) => item.id}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ gap: SPACING.md, paddingBottom: SPACING.lg }}
-                    windowSize={10}
-                    ListEmptyComponent={
-                        <EmptyState
-                            title={(t as any).noCompetitorsTitle ?? 'No Competitors'}
-                            description={(t as any).noCompetitorsDesc ?? 'You are the first one here! Play games to set the bar.'}
-                            icon={Trophy}
-                        />
-                    }
-                    renderItem={({ item: leader, index }) => {
+                <View style={{ gap: SPACING.md }}>
+                    {leaders.map((leader, index) => {
                         const isPromotionZone = index < Math.max(1, Math.floor(leaders.length * 0.2));
                         const isMe = leader.nickname === playerName;
                         const points = leader.weeklyEarnings?.toLocaleString() || '0';
 
                         return (
                             <ListRow
+                                key={leader.id}
                                 icon={
                                     <View
                                         style={{
@@ -130,8 +124,8 @@ export const LeaderboardModal = ({ visible, onClose }: LeaderboardModalProps) =>
                                 }
                             />
                         );
-                    }}
-                />
+                    })}
+                </View>
             )}
         </ModalShell>
     );

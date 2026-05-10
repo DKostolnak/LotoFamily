@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, FlatList } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { ModalShell, ListRow, Badge, CoinBadge, WoodenButton, EmptyState } from '@/components/common';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 import { useGameStore } from '@/lib/store';
@@ -75,8 +75,6 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
             onClose={onClose}
             title={t.shopTitle}
             headerRight={<CoinBadge coins={coins} size="sm" />}
-            noScroll
-            maxHeight="85%"
         >
             {/* Tab strip */}
             <View
@@ -127,93 +125,89 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                 })}
             </View>
 
-            {/* Items list */}
-            <FlatList
-                data={filteredItems}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                style={{ flex: 1, marginTop: SPACING.md }}
-                contentContainerStyle={{ gap: SPACING.md, paddingBottom: SPACING.lg }}
-                windowSize={5}
-                ListEmptyComponent={
-                    <EmptyState
-                        title={t.emptyShelf}
-                        description={t.emptyShelfDesc}
-                    />
-                }
-                renderItem={({ item }) => {
-                    // Power-up packs are consumable — always purchasable, never "owned".
-                    const isPowerUp = isPowerUpItem(item);
-                    const isOwned = !isPowerUp && (inventory.includes(item.id) || item.price === 0);
-                    const isEquipped = !isPowerUp && (activeTheme === item.id || activeSkin === item.id || (item.category === 'avatar' && playerAvatar === item.icon));
-                    const canAfford = coins >= item.price;
-                    const isFreeUnowned = !isPowerUp && item.price === 0 && !isEquipped;
+            {/* Items list — plain map; ModalShell provides ScrollView wrapping */}
+            {filteredItems.length === 0 ? (
+                <EmptyState title={t.emptyShelf} description={t.emptyShelfDesc} />
+            ) : (
+                <View style={{ gap: SPACING.md }}>
+                    {filteredItems.map((item) => {
+                        const isPowerUp = isPowerUpItem(item);
+                        const isOwned = !isPowerUp && (inventory.includes(item.id) || item.price === 0);
+                        const isEquipped = !isPowerUp && (
+                            activeTheme === item.id ||
+                            activeSkin === item.id ||
+                            (item.category === 'avatar' && playerAvatar === item.icon)
+                        );
+                        const canAfford = coins >= item.price;
+                        const isFreeUnowned = !isPowerUp && item.price === 0 && !isEquipped;
 
-                    let badge: React.ReactNode = null;
-                    if (isEquipped) {
-                        badge = <Badge label={t.active} variant="gold" />;
-                    } else if (isOwned && !isFreeUnowned) {
-                        badge = <Badge label={t.owned} variant="success" />;
-                    } else if (isFreeUnowned) {
-                        badge = <Badge label={t.free} variant="info" />;
-                    }
+                        let badge: React.ReactNode = null;
+                        if (isEquipped) {
+                            badge = <Badge label={t.active} variant="gold" />;
+                        } else if (isOwned && !isFreeUnowned) {
+                            badge = <Badge label={t.owned} variant="success" />;
+                        } else if (isFreeUnowned) {
+                            badge = <Badge label={t.free} variant="info" />;
+                        }
 
-                    let action: React.ReactNode;
-                    if (isOwned) {
-                        if (['theme', 'skin', 'avatar'].includes(item.category)) {
+                        let action: React.ReactNode;
+                        if (isOwned) {
+                            if (['theme', 'skin', 'avatar'].includes(item.category)) {
+                                action = (
+                                    <WoodenButton
+                                        size="sm"
+                                        variant={isEquipped ? 'secondary' : 'gold'}
+                                        onPress={() => handleEquip(item)}
+                                        disabled={isEquipped}
+                                    >
+                                        {isEquipped ? t.active : t.equip}
+                                    </WoodenButton>
+                                );
+                            } else {
+                                action = <Badge label={t.owned} variant="success" />;
+                            }
+                        } else {
                             action = (
                                 <WoodenButton
                                     size="sm"
-                                    variant={isEquipped ? 'secondary' : 'gold'}
-                                    onPress={() => handleEquip(item)}
-                                    disabled={isEquipped}
+                                    variant={canAfford ? 'success' : 'secondary'}
+                                    onPress={() => handlePurchase(item)}
+                                    disabled={!canAfford}
                                 >
-                                    {isEquipped ? t.active : t.equip}
+                                    {`💰 ${item.price}`}
                                 </WoodenButton>
                             );
-                        } else {
-                            action = <Badge label={t.owned} variant="success" />;
                         }
-                    } else {
-                        action = (
-                            <WoodenButton
-                                size="sm"
-                                variant={canAfford ? 'success' : 'secondary'}
-                                onPress={() => handlePurchase(item)}
-                                disabled={!canAfford}
-                            >
-                                {`💰 ${item.price}`}
-                            </WoodenButton>
-                        );
-                    }
 
-                    return (
-                        <ListRow
-                            icon={
-                                <View
-                                    style={{
-                                        width: 36,
-                                        height: 36,
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}
-                                >
-                                    <ShopItemPreview item={item} />
-                                </View>
-                            }
-                            title={item.name}
-                            subtitle={item.description}
-                            selected={isEquipped}
-                            right={
-                                <View style={{ alignItems: 'flex-end', gap: SPACING.xs }}>
-                                    {badge}
-                                    {action}
-                                </View>
-                            }
-                        />
-                    );
-                }}
-            />
+                        return (
+                            <ListRow
+                                key={item.id}
+                                icon={
+                                    <View
+                                        style={{
+                                            width: 36,
+                                            height: 36,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                    >
+                                        <ShopItemPreview item={item} />
+                                    </View>
+                                }
+                                title={item.name}
+                                subtitle={item.description}
+                                selected={isEquipped}
+                                right={
+                                    <View style={{ alignItems: 'flex-end', gap: SPACING.xs }}>
+                                        {badge}
+                                        {action}
+                                    </View>
+                                }
+                            />
+                        );
+                    })}
+                </View>
+            )}
         </ModalShell>
     );
 };
