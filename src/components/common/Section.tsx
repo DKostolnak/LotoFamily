@@ -26,7 +26,8 @@ interface SectionProps {
 }
 
 const TEXT_MUTED = '#d4b896';
-const RULE = 'rgba(90, 64, 37, 0.35)';
+const TEXT_GOLD = '#ffd700';
+const RULE = 'rgba(255, 215, 0, 0.35)';
 
 export function Section({
     title,
@@ -53,7 +54,7 @@ export function Section({
                         <Text
                             style={[
                                 TEXT_STYLES.captionUpper,
-                                { color: TEXT_MUTED, flex: 1 },
+                                { color: TEXT_GOLD, flex: 1, letterSpacing: 1 },
                             ]}
                             numberOfLines={1}
                         >

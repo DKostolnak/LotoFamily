@@ -1,6 +1,6 @@
 import React from 'react';
-import { Text, View, ViewStyle, TextStyle, Pressable } from 'react-native';
-import clsx from 'clsx';
+import { Text, View, ViewStyle, TextStyle, Pressable, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { BUTTON_SIZES, RADII, SPACING } from '@/lib/config';
 
@@ -26,48 +26,77 @@ export interface WoodenButtonProps {
     style?: ViewStyle;
     textStyle?: TextStyle;
     onPress?: () => void;
-    className?: string; // For NativeWind
+    className?: string;
     accessibilityLabel?: string;
     accessibilityHint?: string;
 }
 
-const VARIANT_CONFIG = {
+/**
+ * VARIANT_STYLE — visual identity per variant.
+ *
+ * `gradient` — top → bottom gradient stops, gives the wood/metal sheen.
+ * `border` — outer border color (gold or matching tone).
+ * `bevel` — top inner highlight color (lighter, simulates light source).
+ * `text` — label color.
+ * `shadow` — drop shadow color (used for the press-down 3D effect).
+ */
+const VARIANT_STYLE = {
     primary: {
-        bg: 'bg-[#d4b075]',
-        textColor: 'text-wood-dark',
-        shadowColor: '#5a4025',
+        gradient: ['#d9b67c', '#a37947', '#7c5a36'],
+        border: '#5a4025',
+        bevel: 'rgba(255, 240, 200, 0.55)',
+        text: '#2d1f10',
+        shadow: '#1a1109',
     },
     secondary: {
-        bg: 'bg-[#8b7355]',
-        textColor: 'text-cream',
-        shadowColor: '#3d2814',
+        gradient: ['#5a4025', '#3d2814', '#2d1f10'],
+        border: '#7a5635',
+        bevel: 'rgba(255, 240, 200, 0.18)',
+        text: '#f5e6c8',
+        shadow: '#0d0703',
     },
     danger: {
-        bg: 'bg-[#ef5350]',
-        textColor: 'text-white',
-        shadowColor: '#8b0000',
+        gradient: ['#f87171', '#dc2626', '#991b1b'],
+        border: '#7f1d1d',
+        bevel: 'rgba(255, 255, 255, 0.35)',
+        text: '#ffffff',
+        shadow: '#450a0a',
     },
     gold: {
-        bg: 'bg-gold',
-        textColor: 'text-wood-dark',
-        shadowColor: '#b8860b',
+        gradient: ['#ffe87a', '#ffd700', '#b8860b'],
+        border: '#7a5b08',
+        bevel: 'rgba(255, 255, 255, 0.5)',
+        text: '#2d1f10',
+        shadow: '#5a4205',
     },
     success: {
-        bg: 'bg-[#22c55e]',
-        textColor: 'text-white',
-        shadowColor: '#14532d',
+        gradient: ['#86efac', '#22c55e', '#15803d'],
+        border: '#14532d',
+        bevel: 'rgba(255, 255, 255, 0.3)',
+        text: '#0a3015',
+        shadow: '#052e16',
     },
     info: {
-        bg: 'bg-[#3b82f6]',
-        textColor: 'text-white',
-        shadowColor: '#1e3a8a',
+        gradient: ['#93c5fd', '#3b82f6', '#1e3a8a'],
+        border: '#1e3a8a',
+        bevel: 'rgba(255, 255, 255, 0.3)',
+        text: '#ffffff',
+        shadow: '#0c1e4a',
     },
     ghost: {
-        bg: 'bg-transparent',
-        textColor: 'text-cream',
-        shadowColor: 'transparent',
+        gradient: ['transparent', 'transparent', 'transparent'],
+        border: 'rgba(212, 184, 150, 0.35)',
+        bevel: 'transparent',
+        text: '#d4b896',
+        shadow: 'transparent',
     },
-} as const;
+} as const satisfies Record<WoodenButtonVariant, {
+    gradient: readonly [string, string, string];
+    border: string;
+    bevel: string;
+    text: string;
+    shadow: string;
+}>;
 
 export function WoodenButton({
     children,
@@ -85,8 +114,17 @@ export function WoodenButton({
     accessibilityHint,
 }: WoodenButtonProps) {
     const sizeConfig = BUTTON_SIZES[size];
-    const variantConfig = VARIANT_CONFIG[variant];
-    const shadowHeight = 6;
+    const v = VARIANT_STYLE[variant];
+
+    // Buttons need real visual mass — make sure short labels don't render
+    // as anemic 60pt-wide stubs. Min width scales with size.
+    const minWidth =
+        size === 'xl' ? 200 : size === 'lg' ? 160 : size === 'md' ? 120 : 88;
+
+    // Lift depth — gives the 3D press feedback. Scales with button size so
+    // the small chips don't get a comically deep shadow.
+    const liftDepth =
+        size === 'xl' ? 6 : size === 'lg' ? 5 : size === 'md' ? 4 : 3;
 
     const handlePress = () => {
         if (disabled) return;
@@ -108,29 +146,46 @@ export function WoodenButton({
             }
             accessibilityHint={accessibilityHint}
             accessibilityState={{ disabled }}
-            className={clsx(
-                'items-center justify-center flex-row',
-                fullWidth ? 'w-full' : 'self-start',
-                variantConfig.bg,
-                disabled && 'opacity-60',
-                className
-            )}
-            style={({ pressed }) => ({
-                height: sizeConfig.height,
-                paddingHorizontal: sizeConfig.paddingHorizontal,
-                borderRadius: RADII.lg,
-                transform: [{ translateY: pressed ? 4 : 0 }],
-                shadowColor: variantConfig.shadowColor,
-                shadowOffset: { width: 0, height: pressed ? 0 : shadowHeight },
-                shadowOpacity: variant === 'ghost' ? 0 : 1,
-                shadowRadius: 0,
-                marginBottom: pressed ? 0 : shadowHeight,
-                marginTop: pressed ? shadowHeight : 0,
-                ...style,
-            })}
-            hitSlop={8}
+            className={className}
+            style={({ pressed }) => [
+                {
+                    height: sizeConfig.height,
+                    paddingHorizontal: sizeConfig.paddingHorizontal,
+                    minWidth: fullWidth ? undefined : minWidth,
+                    width: fullWidth ? '100%' : undefined,
+                    borderRadius: RADII.lg,
+                    borderWidth: variant === 'ghost' ? 1 : 2,
+                    borderColor: v.border,
+                    overflow: 'hidden',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'row',
+                    transform: [{ translateY: pressed ? liftDepth : 0 }],
+                    shadowColor: v.shadow,
+                    shadowOffset: { width: 0, height: pressed ? 1 : liftDepth },
+                    shadowOpacity: variant === 'ghost' ? 0 : 0.55,
+                    shadowRadius: variant === 'ghost' ? 0 : 0.5,
+                    elevation: variant === 'ghost' ? 0 : liftDepth,
+                    marginBottom: pressed ? 0 : liftDepth,
+                    marginTop: pressed ? liftDepth : 0,
+                    opacity: disabled ? 0.55 : 1,
+                },
+                style,
+            ]}
+            hitSlop={6}
         >
-            {/* Top bevel highlight (skip on ghost). */}
+            {/* Wood/metal gradient body (skip on ghost). */}
+            {variant !== 'ghost' && (
+                <LinearGradient
+                    pointerEvents="none"
+                    colors={v.gradient as unknown as readonly [string, string, ...string[]]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                />
+            )}
+
+            {/* Top bevel highlight — simulates a light source above. */}
             {variant !== 'ghost' && (
                 <View
                     pointerEvents="none"
@@ -140,26 +195,39 @@ export function WoodenButton({
                         left: 0,
                         right: 0,
                         height: '50%',
-                        borderTopLeftRadius: RADII.lg,
-                        borderTopRightRadius: RADII.lg,
-                        backgroundColor: 'rgba(255,255,255,0.15)',
+                        backgroundColor: v.bevel,
+                        opacity: 0.85,
                     }}
                 />
             )}
 
-            {icon && <View style={{ marginRight: SPACING.sm }}>{icon}</View>}
+            {/* Inner shadow at bottom — depth feel. */}
+            {variant !== 'ghost' && (
+                <View
+                    pointerEvents="none"
+                    style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: '35%',
+                        backgroundColor: 'rgba(0, 0, 0, 0.15)',
+                    }}
+                />
+            )}
+
+            {icon && (
+                <View style={{ marginRight: SPACING.sm }}>{icon}</View>
+            )}
 
             {isStringChild ? (
                 <Text
-                    className={clsx('font-bold', variantConfig.textColor)}
                     style={[
                         sizeConfig.textStyle,
-                        { textAlign: 'center', flexShrink: 1 },
+                        { color: v.text, textAlign: 'center', flexShrink: 1 },
                         textStyle,
                     ]}
                     numberOfLines={multiline ? 2 : 1}
-                    // NOTE: deliberately no adjustsFontSizeToFit / minimumFontScale —
-                    // labels must remain at native size for the 30-70+ audience.
                 >
                     {children}
                 </Text>

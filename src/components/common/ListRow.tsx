@@ -91,11 +91,18 @@ export function ListRow({
                     paddingVertical: SPACING.md,
                     paddingHorizontal: SPACING.md,
                     borderRadius: RADII.md,
-                    borderWidth: 1.5,
+                    borderWidth: 2,
                     borderColor: selected ? SELECTED_BORDER : BORDER,
                     backgroundColor: selected ? SELECTED_BG : SURFACE,
                     gap: SPACING.md,
                     opacity: disabled ? 0.5 : 1,
+                    // Depth — gives the row a tactile, button-like feel
+                    // rather than a flat list item.
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: selected ? 0.5 : 0.3,
+                    shadowRadius: 3,
+                    elevation: selected ? 4 : 2,
                 },
                 style,
             ]}
@@ -103,12 +110,14 @@ export function ListRow({
             {icon ? (
                 <View
                     style={{
-                        width: 36,
-                        height: 36,
+                        width: 44,
+                        height: 44,
                         borderRadius: RADII.sm,
                         alignItems: 'center',
                         justifyContent: 'center',
-                        backgroundColor: 'rgba(0,0,0,0.25)',
+                        backgroundColor: 'rgba(0,0,0,0.35)',
+                        borderWidth: 1,
+                        borderColor: 'rgba(255, 215, 0, 0.25)',
                     }}
                 >
                     {icon}

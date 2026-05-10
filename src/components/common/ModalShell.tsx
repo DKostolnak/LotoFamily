@@ -25,10 +25,13 @@ import {
     ScrollView,
     ViewStyle,
     StyleSheet,
+    ImageBackground,
 } from 'react-native';
 import { X } from 'lucide-react-native';
 import { AnimatedModal } from './AnimatedModal';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
+
+const WOOD_TEXTURE = require('../../../assets/wood-seamless.png');
 
 export interface ModalShellProps {
     visible: boolean;
@@ -83,7 +86,10 @@ export function ModalShell({
 
     return (
         <AnimatedModal visible={visible} onClose={onClose} animation={animation}>
-            <View
+            <ImageBackground
+                source={WOOD_TEXTURE}
+                resizeMode="repeat"
+                imageStyle={{ opacity: 0.18, borderRadius: RADII.lg }}
                 style={[
                     styles.shell,
                     {
@@ -147,7 +153,7 @@ export function ModalShell({
                 )}
 
                 {footer ? <View style={styles.footer}>{footer}</View> : null}
-            </View>
+            </ImageBackground>
         </AnimatedModal>
     );
 }
@@ -157,15 +163,15 @@ const styles = StyleSheet.create({
         width: '100%',
         backgroundColor: SURFACE,
         borderRadius: RADII.lg,
-        borderWidth: 1,
-        borderColor: BORDER,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 215, 0, 0.45)',
         overflow: 'hidden',
         // Modal elevation — depth 12 (highest, modal is on top of everything)
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.5,
-        shadowRadius: 16,
-        elevation: 12,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.65,
+        shadowRadius: 18,
+        elevation: 14,
     },
     header: {
         flexDirection: 'row',
@@ -173,8 +179,9 @@ const styles = StyleSheet.create({
         paddingTop: SPACING.lg,
         paddingBottom: SPACING.md,
         paddingHorizontal: SPACING.lg,
-        borderBottomWidth: 1,
-        borderBottomColor: DIVIDER,
+        borderBottomWidth: 2,
+        borderBottomColor: 'rgba(255, 215, 0, 0.4)',
+        backgroundColor: 'rgba(0, 0, 0, 0.25)',
         gap: SPACING.md,
     },
     headerText: {
