@@ -8,7 +8,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { socketService, type ConnectionStatus, type GameSocket } from '@/lib/services/socket';
 import type { GameState, Player, GameSettings } from '@/lib/types';
-import { k_serverUrl } from '@/lib/constants';
+import { k_serverUrl } from '@/lib/config';
 
 // ============================================================================
 // TYPES

@@ -7,16 +7,15 @@ import { View, ImageBackground, StatusBar, TouchableOpacity, Text, ActivityIndic
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useGameStore } from '@/lib/store';
-import { translations } from '@/lib/translations';
+import { translations } from '@/lib/i18n';
 import { useGameSocket, useHapticFeedback, useAudio } from '@/hooks';
 import { WaitingLobby } from '@/components/WaitingLobby';
 import { LotoCard } from '@/components/LotoCard';
 import { GameHeader } from '@/components/GameHeader';
-import { WoodenButton } from '@/components/common';
+import { WoodenButton, ErrorView } from '@/components/common';
 import { ChatOverlay } from '@/components/ChatOverlay';
 import { WinnerModal } from '@/components/WinnerModal';
 import GameStatusListener from '@/components/GameStatusListener';
-import { TriangleAlert } from 'lucide-react-native';
 
 const WOOD_TEXTURE = require('../../../assets/wood-seamless.png');
 
@@ -184,20 +183,44 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
     // RENDER
     // ========================================================================
 
+    // Error state: socket reported error and we are not connected.
+    if (socketError && !isConnected) {
+        return (
+            <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
+                <StatusBar barStyle="light-content" />
+                <View className="absolute inset-0 bg-black/50" pointerEvents="none" />
+                <ErrorView
+                    message={socketError || t.connectionError}
+                    retryLabel={t.retry}
+                    onRetry={() => {
+                        // Allow the join/create effect to fire again once reconnected.
+                        setHasJoined(false);
+                    }}
+                    secondaryLabel={t.cancel}
+                    onSecondary={handleLeave}
+                />
+            </ImageBackground>
+        );
+    }
+
+    // Loading state: connecting / waiting for first gameState payload.
     if (!isConnected || !gameState) {
         return (
             <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
-                <View className="flex-1 bg-black/60 justify-center items-center">
+                <View
+                    className="flex-1 bg-black/60 justify-center items-center"
+                    accessibilityRole="progressbar"
+                    accessibilityLabel={t.a11yLoadingGame}
+                >
                     <ActivityIndicator size="large" color="#ffd700" />
                     <Text className="text-[#e8d4b8] mt-4 font-bold text-lg">{t.connecting}</Text>
-                    {socketError && (
-                        <View className="mt-4 flex-row items-center bg-red-500/20 p-4 rounded-xl border border-red-500/50">
-                            <TriangleAlert color="#ef4444" size={20} />
-                            <Text className="text-red-400 ml-2 font-bold">{socketError}</Text>
-                        </View>
-                    )}
-                    <TouchableOpacity onPress={handleLeave} className="mt-8 bg-[#5a4025] px-8 py-4 rounded-xl border-b-4 border-[#3d2814]">
-                        <Text className="text-[#e8d4b8] font-bold">Cancel</Text>
+                    <TouchableOpacity
+                        onPress={handleLeave}
+                        className="mt-8 bg-[#5a4025] px-8 py-4 rounded-xl border-b-4 border-[#3d2814]"
+                        accessibilityRole="button"
+                        accessibilityLabel={t.cancel}
+                    >
+                        <Text className="text-[#e8d4b8] font-bold">{t.cancel}</Text>
                     </TouchableOpacity>
                 </View>
             </ImageBackground>
@@ -265,7 +288,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                         </View>
                         <View className="flex-1">
                             <View className="flex-row justify-between mb-1">
-                                <Text className="text-[#8b6b4a] text-[10px] font-bold uppercase tracking-wider">{t.progress}</Text>
+                                <Text className="text-muted text-[10px] font-bold uppercase tracking-wider">{t.progress}</Text>
                                 <Text className="text-[#f5e6c8] text-[10px] font-bold">
                                     {markedNumbers}/{totalNumbers}
                                 </Text>
@@ -282,9 +305,9 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                     <View className="ml-4 items-end">
                         <View className="flex-row items-center gap-1">
                             <View className={`w-2 h-2 rounded-full ${isHost ? 'bg-yellow-500' : 'bg-blue-500'}`} />
-                            <Text className="text-[#8b6b4a] text-[10px] font-bold uppercase tracking-wider">{isHost ? 'HOST' : 'PLAYER'}</Text>
+                            <Text className="text-muted text-[10px] font-bold uppercase tracking-wider">{isHost ? 'HOST' : 'PLAYER'}</Text>
                         </View>
-                        <Text className="text-[#f5e6c8] font-bold">{gameState.players.length} <Text className="text-[#8b6b4a] text-xs">{t.online?.toUpperCase()}</Text></Text>
+                        <Text className="text-[#f5e6c8] font-bold">{gameState.players.length} <Text className="text-muted text-xs">{t.online?.toUpperCase()}</Text></Text>
                     </View>
                 </View>
 

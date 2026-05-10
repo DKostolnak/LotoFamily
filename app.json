@@ -1,55 +1,6 @@
 {
   "expo": {
     "name": "LOTO - Classic Bingo",
-    "slug": "loto-bingo",
-    "version": "1.0.0",
-    "scheme": "loto-bingo",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1a1109"
-    },
-    "ios": {
-      "bundleIdentifier": "com.loto.bingo",
-      "buildNumber": "1",
-      "supportsTablet": true,
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
-    },
-    "android": {
-      "package": "com.loto.bingo",
-      "versionCode": 1,
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a1109"
-      },
-      "edgeToEdgeEnabled": true,
-      "permissions": [
-        "INTERNET",
-        "VIBRATE"
-      ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-router"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "78564da5-2ed9-4f63-ac75-818782594c60"
-      }
-    }
+    "slug": "loto-bingo"
   }
 }

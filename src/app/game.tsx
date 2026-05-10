@@ -9,7 +9,6 @@ import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { OfflineGame } from '@/components/game/OfflineGame';
 import { OnlineGame } from '@/components/game/OnlineGame';
-import { P2PGame } from '@/components/game/P2PGame';
 import { GameErrorBoundary } from '@/components/GameErrorBoundary';
 
 export default function GameScreen() {
@@ -30,15 +29,6 @@ export default function GameScreen() {
         return (
             <GameErrorBoundary onReset={handleErrorReset}>
                 <OfflineGame />
-            </GameErrorBoundary>
-        );
-    }
-
-    // P2P mode (Local WiFi)
-    if (mode === 'p2p') {
-        return (
-            <GameErrorBoundary onReset={handleErrorReset}>
-                <P2PGame />
             </GameErrorBoundary>
         );
     }

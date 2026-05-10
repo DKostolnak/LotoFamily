@@ -35,6 +35,10 @@ export interface TranslationKeys {
     codeError: string;
     createHint: string;
     joinHint: string;
+    public: string;
+    private: string;
+    publicDesc: string;
+    privateDesc: string;
     optionalLabel: string;
     customCodeHelp: string;
     roomCodeHint: string;
@@ -172,6 +176,67 @@ export interface TranslationKeys {
     letsPlay: string;
     next: string;
     skip: string;
+
+    // Accessibility (a11y)
+    a11yNumberLabel: string;     // e.g. "Number {n}"
+    a11yMarkedState: string;     // marked correctly
+    a11yMarkedIncorrect: string; // marked incorrectly
+    a11yCalledTapToMark: string; // called, tap to mark
+    a11yNotCalledYet: string;    // not called yet
+    a11yMarkedState_short: string; // "marked"
+    a11yUnmarkedState: string;   // not marked
+    a11yMissedState: string;     // missed
+    a11yEmptyCell: string;
+    a11yLoadingGame: string;
+    a11yErrorRetry: string;
+    a11yMarkHint: string;        // "Double tap to mark this number"
+
+    // Loading / Error / Empty
+    loadingGame: string;
+    connectionError: string;
+    retry: string;
+    noConnection: string;
+    noPublicRooms: string;
+    noPublicRoomsDesc: string;
+    noChatMessages: string;
+    noChatMessagesDesc: string;
+    browsePublicRooms: string;
+    chatTitle: string;
+    typeMessage: string;
+
+    // Profile Editor
+    editProfile: string;
+    changeName: string;
+    tapToEdit: string;
+    saveChanges: string;
+    nameTooShort: string;
+
+    // Shop
+    shopTitle: string;
+    all: string;
+    avatars: string;
+    themes: string;
+    markers: string;
+    owned: string;
+    equipped: string;
+    equip: string;
+    active: string;
+    buy: string;
+    free: string;
+    emptyShelf: string;
+    emptyShelfDesc: string;
+    tapToCopy: string;
+
+    // Rules Content
+    rulesTitle: string;
+    rulesPage1Title: string;
+    rulesPage1Desc: string;
+    rulesPage2Title: string;
+    rulesPage2Desc: string;
+    rulesPage3Title: string;
+    rulesPage3Desc: string;
+    rulesPage4Title: string;
+    rulesPage4Desc: string;
 }
 
 /**

@@ -71,7 +71,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         supportsTablet: true,
         infoPlist: {
             ITSAppUsesNonExemptEncryption: false,
-            NSMicrophoneUsageDescription: 'LOTO uses speech synthesis for number announcements.',
         },
         privacyManifests: {
             NSPrivacyAccessedAPITypes: [
@@ -94,6 +93,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         permissions: [
             'INTERNET',
             'VIBRATE',
+            'ACCESS_NETWORK_STATE',
+        ],
+        blockedPermissions: [
+            'RECORD_AUDIO',
+            'ACCESS_FINE_LOCATION',
+            'ACCESS_COARSE_LOCATION',
         ],
     },
     
@@ -104,6 +109,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     
     plugins: [
         'expo-router',
+        'expo-updates',
     ],
     
     experiments: {

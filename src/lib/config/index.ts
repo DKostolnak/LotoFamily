@@ -40,3 +40,24 @@ export * from './avatar.config';
 
 // UI constants
 export * from './ui.config';
+
+// ============================================================================
+// Backward compatibility aliases (formerly in lib/constants.ts)
+// ============================================================================
+import { SERVER_URL } from './env.config';
+import { SCORING, ROOM_CONFIG, TIMING } from './game.config';
+
+/** @deprecated Use `SERVER_URL` instead */
+export const k_serverUrl = SERVER_URL;
+
+/** @deprecated Use `SCORING` instead */
+export const POINTS = SCORING;
+
+/** @deprecated Use `ROOM_CONFIG.CODE_CHARS` instead */
+export const ROOM_CODE_CHARS = ROOM_CONFIG.CODE_CHARS;
+
+/** @deprecated Use `ROOM_CONFIG.CODE_LENGTH` instead */
+export const ROOM_CODE_LENGTH = ROOM_CONFIG.CODE_LENGTH;
+
+/** @deprecated Use `TIMING.AUTO_CALL` instead */
+export const AUTO_CALL_INTERVALS = TIMING.AUTO_CALL;

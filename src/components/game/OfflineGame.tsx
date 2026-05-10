@@ -3,10 +3,10 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, ImageBackground, StatusBar, Text } from 'react-native';
+import { View, ImageBackground, StatusBar, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGameStore } from '@/lib/store';
-import { translations } from '@/lib/translations';
+import { translations } from '@/lib/i18n';
 import { useLocalGame, useHapticFeedback, useResponsive, useAudio, useQuests } from '@/hooks';
 import { WaitingLobby } from '@/components/WaitingLobby';
 import { LotoCard } from '@/components/LotoCard';
@@ -190,6 +190,26 @@ export const OfflineGame = () => {
     // RENDER - LOBBY
     // ========================================================================
 
+    // Loading state - while local game is being created
+    if (!gameState) {
+        return (
+            <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
+                <StatusBar barStyle="light-content" />
+                <View className="absolute inset-0 bg-black/40" pointerEvents="none" />
+                <View
+                    className="flex-1 items-center justify-center"
+                    accessibilityRole="progressbar"
+                    accessibilityLabel={t.a11yLoadingGame}
+                >
+                    <ActivityIndicator size="large" color="#ffd700" />
+                    <Text className="text-cream mt-4 font-bold uppercase tracking-widest">
+                        {t.loadingGame}
+                    </Text>
+                </View>
+            </ImageBackground>
+        );
+    }
+
     if (isLobby || phase === 'idle') {
         return (
             <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
@@ -255,7 +275,7 @@ export const OfflineGame = () => {
                         </View>
                         <View className="flex-1">
                             <View className="flex-row justify-between mb-0.5">
-                                <Text className="text-[#8b6b4a] font-bold uppercase" style={{ fontSize: responsive(8, 10) }}>{t.progress}</Text>
+                                <Text className="text-muted font-bold uppercase" style={{ fontSize: responsive(8, 10) }}>{t.progress}</Text>
                                 <Text className="text-[#f5e6c8] font-bold" style={{ fontSize: responsive(8, 10) }}>
                                     {markedNumbers}/{totalNumbers}
                                 </Text>
@@ -279,7 +299,7 @@ export const OfflineGame = () => {
                                 <Text className="text-green-400 font-bold uppercase" style={{ fontSize: responsive(8, 10) }}>{t.autoPlay}</Text>
                             </View>
                         )}
-                        <Text className="text-[#8b6b4a] font-bold uppercase mt-0.5" style={{ fontSize: responsive(8, 10) }}>
+                        <Text className="text-muted font-bold uppercase mt-0.5" style={{ fontSize: responsive(8, 10) }}>
                             {90 - remainingCount} <Text className="text-[#666]">{t.called}</Text>
                         </Text>
                     </View>

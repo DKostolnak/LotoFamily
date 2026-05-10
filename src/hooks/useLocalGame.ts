@@ -20,7 +20,7 @@ import {
 } from '@/engine';
 import { markCell as markCellEngine } from '@/engine';
 import type { GameState, GameSettings, LotoCard } from '@/lib/types';
-import { AUTO_CALL_INTERVALS } from '@/lib/constants';
+import { AUTO_CALL_INTERVALS } from '@/lib/config';
 import { useAudio } from './useAudio';
 
 // ============================================================================

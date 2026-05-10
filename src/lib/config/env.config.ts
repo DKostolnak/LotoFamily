@@ -66,6 +66,39 @@ export const SERVER_URL =
     process.env.EXPO_PUBLIC_SERVER_URL ?? 'http://localhost:3000';
 
 // =============================================================================
+// THIRD-PARTY SERVICE KEYS
+// =============================================================================
+
+/**
+ * AdMob configuration. Set via EXPO_PUBLIC_ADMOB_* env vars.
+ * Leave empty until you have AdMob app + ad unit IDs from the AdMob console.
+ */
+export const ADMOB = {
+    androidAppId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID,
+    iosAppId: process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID,
+    rewardedIdAndroid: process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID,
+    rewardedIdIos: process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID_IOS,
+    interstitialIdAndroid: process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID_ANDROID,
+    interstitialIdIos: process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID_IOS,
+} as const;
+
+/**
+ * RevenueCat configuration. Set via EXPO_PUBLIC_REVENUECAT_* env vars.
+ * Get these keys from app.revenuecat.com -> Project -> API keys.
+ */
+export const REVENUECAT = {
+    apiKeyIos: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS,
+    apiKeyAndroid: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID,
+} as const;
+
+/**
+ * Sentry crash-reporting configuration.
+ */
+export const SENTRY = {
+    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+} as const;
+
+// =============================================================================
 // FEATURE FLAGS
 // =============================================================================
 
@@ -75,18 +108,24 @@ export const SERVER_URL =
 export const FEATURES = {
     /** Enable detailed console logging */
     enableLogging: IS_DEBUG || IS_DEVELOPMENT,
-    
+
     /** Enable performance monitoring */
     enablePerformanceMonitoring: IS_PRODUCTION,
-    
+
     /** Enable crash reporting */
     enableCrashReporting: IS_PRODUCTION || IS_PREVIEW,
-    
+
     /** Show developer tools in UI */
     showDevTools: IS_DEVELOPMENT,
-    
+
     /** Enable analytics */
     enableAnalytics: IS_PRODUCTION,
+
+    /** Whether ads are configured (any AdMob app id present) */
+    enableAds: !!ADMOB.androidAppId || !!ADMOB.iosAppId,
+
+    /** Whether IAP is configured (any RevenueCat key present) */
+    enableIAP: !!REVENUECAT.apiKeyIos || !!REVENUECAT.apiKeyAndroid,
 } as const;
 
 // =============================================================================

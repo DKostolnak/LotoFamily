@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingVi
 import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
 import { MessageSquare, Send, X } from 'lucide-react-native';
 import { ChatMessage } from '@/hooks/useGameSocket';
+import { useGameStore } from '@/lib/store';
+import { translations } from '@/lib/i18n';
 
 interface ChatOverlayProps {
     messages: ChatMessage[];
@@ -14,6 +16,8 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId }: ChatOv
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const scrollViewRef = useRef<ScrollView>(null);
+    const language = useGameStore((s) => s.language);
+    const t = translations[language];
 
     const height = useSharedValue(0);
     const opacity = useSharedValue(0);
@@ -48,8 +52,12 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId }: ChatOv
             >
                 {/* Header */}
                 <View className="bg-[#1a1109] px-4 py-2 border-b border-[#d4b075]/20 flex-row justify-between items-center">
-                    <Text className="text-[#d4b075] font-bold uppercase tracking-widest text-xs">Room Chat</Text>
-                    <TouchableOpacity onPress={toggleChat}>
+                    <Text className="text-[#d4b075] font-bold uppercase tracking-widest text-xs">{t.chatTitle}</Text>
+                    <TouchableOpacity
+                        onPress={toggleChat}
+                        accessibilityRole="button"
+                        accessibilityLabel={t.close}
+                    >
                         <X size={16} color="#d4b075" />
                     </TouchableOpacity>
                 </View>
@@ -60,6 +68,17 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId }: ChatOv
                     className="flex-1 px-3 py-2"
                     onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
                 >
+                    {messages.length === 0 && (
+                        <View className="flex-1 items-center justify-center py-8 px-4">
+                            <MessageSquare size={32} color="#d4b075" strokeWidth={1.5} opacity={0.5} />
+                            <Text className="text-[#d4b075] font-bold uppercase text-xs tracking-widest mt-3 text-center">
+                                {t.noChatMessages}
+                            </Text>
+                            <Text className="text-muted text-[11px] text-center mt-1 max-w-[200px]">
+                                {t.noChatMessagesDesc}
+                            </Text>
+                        </View>
+                    )}
                     {messages.map((msg, i) => (
                         <View
                             key={`${msg.timestamp}-${i}`}
@@ -82,14 +101,17 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId }: ChatOv
                     <TextInput
                         value={inputValue}
                         onChangeText={setInputValue}
-                        placeholder="Type a message..."
+                        placeholder={t.typeMessage}
                         placeholderTextColor="#a6814c80"
                         className="flex-1 bg-[#2d1f10] text-[#f5e6c8] px-3 py-2 rounded-lg text-sm"
                         onSubmitEditing={handleSend}
+                        accessibilityLabel={t.typeMessage}
                     />
                     <TouchableOpacity
                         onPress={handleSend}
                         className="bg-[#d4b075] p-2 rounded-lg"
+                        accessibilityRole="button"
+                        accessibilityLabel={t.share}
                     >
                         <Send size={16} color="#1a1109" />
                     </TouchableOpacity>
@@ -100,6 +122,8 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId }: ChatOv
             {!isOpen && (
                 <TouchableOpacity
                     onPress={toggleChat}
+                    accessibilityRole="button"
+                    accessibilityLabel={t.chatTitle}
                     style={{
                         shadowColor: '#000',
                         shadowOffset: { width: 0, height: 4 },

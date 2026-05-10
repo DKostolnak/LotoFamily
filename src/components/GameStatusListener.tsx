@@ -17,7 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useToast } from '@/components/ToastProvider';
-import { translations } from '@/lib/translations';
+import { translations } from '@/lib/i18n';
 import type { Player } from '@/lib/types';
 
 // ============================================================================

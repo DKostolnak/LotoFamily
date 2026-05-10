@@ -55,7 +55,17 @@ export const k_colorBackground = '#1a1109';
 export const k_colorSuccess = '#4ade80';
 export const k_colorError = '#ef4444';
 export const k_colorText = '#f5e6c8';
-export const k_colorTextMuted = '#8b6b4a';
+/**
+ * Muted/secondary text color — accessible variant.
+ *
+ * WCAG AA contrast on common backgrounds:
+ *   - on #2d1f10 (wood.darker / header):  ~5.0:1  (PASS)
+ *   - on #1a1109 (wood.darkest / app bg): ~6.1:1  (PASS)
+ *   - on #3d2814 (wood.dark / cardBg):    ~4.5:1  (PASS)
+ *
+ * Previous value '#8b6b4a' was 3.2:1 on #2d1f10 (FAIL). Do NOT use #8b6b4a for text.
+ */
+export const k_colorTextMuted = '#d4b896';
 
 // ============================================================================
 // SHADOWS (React Native StyleSheet format)

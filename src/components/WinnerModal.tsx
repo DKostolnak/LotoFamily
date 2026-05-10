@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Animated, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import Reanimated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withRepeat,
+    withTiming,
+    cancelAnimation,
+} from 'react-native-reanimated';
 import { WoodenButton, AnimatedModal } from '@/components/common';
 import * as Haptics from 'expo-haptics';
 import { Trophy, Share2, X } from 'lucide-react-native';
@@ -25,14 +32,18 @@ export const WinnerModal = ({ visible, winnerName, isMe, prize, onClose, onPlayA
 
     // Animation Values
     const scaleAnim = useRef(new Animated.Value(0)).current;
-    const trophyAnim = useRef(new Animated.Value(1)).current;
+    const trophyScale = useSharedValue(1);
     const viewShotRef = useRef<any>(null);
+
+    const trophyAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: trophyScale.value }],
+    }));
 
     useEffect(() => {
         if (visible) {
             // 1. Reset
             scaleAnim.setValue(0);
-            trophyAnim.setValue(1);
+            trophyScale.value = 1;
 
             // 2. Play Entrance
             Animated.spring(scaleAnim, {
@@ -42,20 +53,23 @@ export const WinnerModal = ({ visible, winnerName, isMe, prize, onClose, onPlayA
                 useNativeDriver: true,
             }).start();
 
-            // 3. Loop Trophy Bounce
-            Animated.loop(
-                Animated.sequence([
-                    Animated.timing(trophyAnim, { toValue: 1.2, duration: 600, useNativeDriver: true }),
-                    Animated.timing(trophyAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-                ])
-            ).start();
+            // 3. Loop Trophy Bounce (Reanimated — auto-cancels on unmount/visible change)
+            trophyScale.value = withRepeat(
+                withTiming(1.2, { duration: 600 }),
+                -1,
+                true
+            );
 
             // 4. Haptics
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 400);
             setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 800);
         }
-    }, [visible, scaleAnim, trophyAnim]);
+        return () => {
+            cancelAnimation(trophyScale);
+            trophyScale.value = 1;
+        };
+    }, [visible, scaleAnim, trophyScale]);
 
     const handleShare = async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -93,21 +107,21 @@ export const WinnerModal = ({ visible, winnerName, isMe, prize, onClose, onPlayA
 
                     <Animated.View
                         style={{ transform: [{ scale: scaleAnim }] }}
-                        className="w-full max-w-md bg-[#1a1109] border-[6px] border-[#ffd700] rounded-3xl p-8 items-center shadow-2xl relative overflow-hidden"
+                        className="w-full max-w-md bg-wood-darkest border-[6px] border-gold rounded-3xl p-8 items-center shadow-2xl relative overflow-hidden"
                     >
                         {/* Metal Shine Overlay */}
                         <View className="absolute -top-20 -left-20 w-40 h-40 bg-white/5 rounded-full blur-3xl" />
 
                         {/* Header Icon */}
-                        <Animated.View
-                            style={{ transform: [{ scale: trophyAnim }] }}
-                            className="mb-6 bg-[#ffd700]/10 p-6 rounded-full border-4 border-[#ffd700] shadow-[0_0_30px_#ffd700]"
+                        <Reanimated.View
+                            style={trophyAnimatedStyle}
+                            className="mb-6 bg-gold/10 p-6 rounded-full border-4 border-gold shadow-[0_0_30px_#ffd700]"
                         >
                             <Trophy size={64} color="#ffd700" strokeWidth={2} />
-                        </Animated.View>
+                        </Reanimated.View>
 
                         {/* Title */}
-                        <Text className="text-[#ffd700] text-5xl font-black uppercase tracking-widest text-center mb-2 italic transform -rotate-2"
+                        <Text className="text-gold text-5xl font-black uppercase tracking-widest text-center mb-2 italic transform -rotate-2"
                             style={{ textShadowColor: '#b8860b', textShadowOffset: { width: 2, height: 4 }, textShadowRadius: 0 }}>
                             {isMe ? 'BINGO!' : 'WINNER!'}
                         </Text>
@@ -119,9 +133,9 @@ export const WinnerModal = ({ visible, winnerName, isMe, prize, onClose, onPlayA
 
                         {/* Prize (if any) */}
                         {prize > 0 && (
-                            <View className="bg-gradient-to-r from-black/0 via-black/40 to-black/0 px-8 py-4 rounded-xl border-y border-[#ffd700]/30 flex-row items-center gap-3 mb-8">
+                            <View className="bg-gradient-to-r from-black/0 via-black/40 to-black/0 px-8 py-4 rounded-xl border-y border-gold/30 flex-row items-center gap-3 mb-8">
                                 <Text className="text-3xl">💰</Text>
-                                <Text className="text-[#ffd700] text-4xl font-black tracking-tighter" style={{ textShadowColor: '#b8860b', textShadowRadius: 10 }}>{prize}</Text>
+                                <Text className="text-gold text-4xl font-black tracking-tighter" style={{ textShadowColor: '#b8860b', textShadowRadius: 10 }}>{prize}</Text>
                             </View>
                         )}
 

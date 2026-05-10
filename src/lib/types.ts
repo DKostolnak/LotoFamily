@@ -188,6 +188,33 @@ export interface GameState {
 }
 
 // ============================================================================
+// NETWORK MESSAGE TYPES (used by core engine abstractions)
+// ============================================================================
+
+/**
+ * Generic network message envelope used by the engine layer.
+ * Kept as a transport-agnostic type for engine state synchronization.
+ */
+export interface NetworkMessage<T = unknown> {
+    type: string;
+    payload: T;
+    senderId: string;
+    timestamp: number;
+    metadata?: Record<string, unknown>;
+}
+
+/**
+ * Minimal network player descriptor used by the engine layer.
+ */
+export interface NetworkPlayer {
+    id: string;
+    name: string;
+    avatar?: string;
+    isHost: boolean;
+    [key: string]: unknown;
+}
+
+// ============================================================================
 // SOCKET EVENT TYPES
 // ============================================================================
 

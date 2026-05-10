@@ -14,7 +14,7 @@ import { NumberMedallion } from './NumberMedallion';
 import { PlayerList } from './PlayerList';
 import { WoodenButton } from './common';
 import type { GameState, Player } from '@/lib/types';
-import { translations } from '@/lib/translations';
+import { translations } from '@/lib/i18n';
 
 // ============================================================================
 // TYPES

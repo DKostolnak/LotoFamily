@@ -5,7 +5,7 @@ import { WoodenButton, WoodenCard } from './common';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGameStore } from '@/lib/store';
-import { translations } from '@/lib/translations';
+import { translations } from '@/lib/i18n';
 import { Gamepad2, Users, Trophy, ChevronRight } from 'lucide-react-native';
 import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 
@@ -151,7 +151,7 @@ export function OnboardingModal() {
 
                         {!isLastStep && (
                             <TouchableOpacity onPress={handleSkip} className="py-2 active:opacity-60">
-                                <Text className="text-[#8b6b4a] text-center font-bold uppercase tracking-[3px] text-xs">
+                                <Text className="text-muted text-center font-bold uppercase tracking-[3px] text-xs">
                                     {t.skip || 'Skip Intro'}
                                 </Text>
                             </TouchableOpacity>

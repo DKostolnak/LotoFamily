@@ -1,13 +1,15 @@
 /**
  * Stats Slice
- * 
+ *
  * Handles player statistics and tier calculation.
  * Single Responsibility: Statistics tracking only.
+ *
+ * Persistence is handled automatically by the Zustand `persist` middleware
+ * configured in `../index.ts` — slices only need to call `set(...)`.
  */
 
 import type { StateCreator } from 'zustand';
 import type { GameStore, StatsSlice, PlayerStats } from '../types';
-import { setStats } from '../../services/storage';
 
 /**
  * Calculate tier based on games played
@@ -31,7 +33,6 @@ export const createStatsSlice: StateCreator<GameStore, [], [], StatsSlice> = (se
     updateStats: (newStats: PlayerStats) => {
         const tier = calculateTier(newStats.gamesPlayed);
         set({ stats: newStats, tier });
-        setStats(newStats);
     },
 
     incrementGamesPlayed: () => {
@@ -42,7 +43,6 @@ export const createStatsSlice: StateCreator<GameStore, [], [], StatsSlice> = (se
         };
         const tier = calculateTier(newStats.gamesPlayed);
         set({ stats: newStats, tier });
-        setStats(newStats);
     },
 
     incrementGamesWon: () => {
@@ -57,7 +57,6 @@ export const createStatsSlice: StateCreator<GameStore, [], [], StatsSlice> = (se
             longestStreak,
         };
         set({ stats: newStats });
-        setStats(newStats);
     },
 
     addEarnings: (amount: number) => {
@@ -67,6 +66,5 @@ export const createStatsSlice: StateCreator<GameStore, [], [], StatsSlice> = (se
             totalEarnings: stats.totalEarnings + amount,
         };
         set({ stats: newStats });
-        setStats(newStats);
     },
 });

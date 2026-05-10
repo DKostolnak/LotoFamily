@@ -20,7 +20,7 @@ export const WoodenInput = forwardRef<TextInput, WoodenInputProps>(
             <View style={[fullWidth ? { width: '100%' } : {}, containerStyle]}>
                 {label && (
                     <Text
-                        className="text-[#8b6b4a] font-bold mb-2 uppercase"
+                        className="text-muted font-bold mb-2 uppercase"
                         style={{ fontSize: labelFontSize }}
                     >
                         {label}

@@ -11,7 +11,7 @@ import type {
     ClientToServerEvents,
     GameSettings,
 } from '@/lib/types';
-import { k_serverUrl } from '@/lib/constants';
+import { k_serverUrl } from '@/lib/config';
 
 // ============================================================================
 // TYPES

@@ -7,4 +7,5 @@ export * from './AnimatedModal';
 export * from './Skeleton';
 export * from './WoodBackground';
 export * from './EmptyState';
+export * from './ErrorView';
 

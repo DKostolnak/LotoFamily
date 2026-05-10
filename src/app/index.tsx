@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ImageBackground, StatusBar, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { WoodenCard, WoodenButton, WoodenInput, CoinBadge, RankBadge, MainMenuSkeleton } from '@/components/common';
+import { WoodenCard, WoodenButton, WoodenInput, CoinBadge, RankBadge, MainMenuSkeleton, EmptyState, LeaderboardSkeleton, SkeletonList } from '@/components/common';
 import { useGameStore } from '@/lib/store';
-import { translations } from '@/lib/translations';
+import { translations } from '@/lib/i18n';
 import { getAvailableAvatars, getNextAvatar } from '@/lib/config/avatar.config';
 import { SHOP_ITEMS } from '@/lib/shop';
 import { analytics } from '@/lib/services/analytics';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import * as Haptics from 'expo-haptics';
-import { Settings, Trophy, Users, Gamepad2, UserPlus, Swords, HelpCircle, ChevronRight, Target, Globe } from 'lucide-react-native';
+import { Settings, Trophy, Users, Gamepad2, UserPlus, Swords, HelpCircle, ChevronRight, Target, Inbox } from 'lucide-react-native';
 import { RulesModal } from '@/components/RulesModal';
 import { ShopModal } from '@/components/ShopModal';
-import { LocalGameModal } from '@/components/LocalGameModal';
 import { QuestsModal } from '@/components/QuestsModal';
 import DailyBonusModal from '@/components/DailyBonusModal';
 import { StatsModal } from '@/components/StatsModal';
@@ -44,6 +43,10 @@ export default function MainMenu() {
         setPlayerName, setPlayerAvatar,
         initialize
     } = useGameStore();
+    // Reactive XP read so the level pill / progress bar update on stat changes.
+    const xp = useGameStore((s) => s.stats.xp || 0);
+    const level = Math.floor(xp / 100) + 1;
+    const xpProgress = xp % 100;
     const { scaleIcon, responsive, isSmallScreen, isTablet } = useResponsive();
 
     const [mode, setMode] = useState<'menu' | 'create' | 'join'>('menu');
@@ -52,10 +55,12 @@ export default function MainMenu() {
     const [crazyMode, setCrazyMode] = useState(false);
     const [isPublic, setIsPublic] = useState(true);
     const [publicRooms, setPublicRooms] = useState<any[]>([]);
+    const [publicRoomsState, setPublicRoomsState] = useState<'idle' | 'loading' | 'error' | 'loaded'>('idle');
+    const [publicRoomsError, setPublicRoomsError] = useState<string | null>(null);
+    const [publicRoomsRefreshKey, setPublicRoomsRefreshKey] = useState(0);
 
-    type MenuModal = 'rules' | 'shop' | 'stats' | 'settings' | 'leaderboard' | 'quests' | 'local' | null;
+    type MenuModal = 'rules' | 'shop' | 'stats' | 'settings' | 'leaderboard' | 'quests' | null;
     const [activeModal, setActiveModal] = useState<MenuModal>(null);
-    const [showLocalModal, setShowLocalModal] = useState(false);
 
     const openModal = (modal: Exclude<MenuModal, null>) => setActiveModal(modal);
     const closeModal = () => setActiveModal(null);
@@ -114,13 +119,33 @@ export default function MainMenu() {
 
     useEffect(() => {
         setIsMounted(true);
-        if (mode === 'join') {
-            fetch(`${ENV.server.url}/rooms/public`)
-                .then(res => res.json())
-                .then(data => setPublicRooms(data))
-                .catch(err => console.error('Failed to fetch public rooms:', err));
-        }
-    }, [mode]);
+        if (mode !== 'join') return;
+
+        let cancelled = false;
+        setPublicRoomsState('loading');
+        setPublicRoomsError(null);
+
+        fetch(`${ENV.server.url}/rooms/public`)
+            .then(res => {
+                if (!res.ok) throw new Error(`Server error: ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                if (cancelled) return;
+                setPublicRooms(Array.isArray(data) ? data : []);
+                setPublicRoomsState('loaded');
+            })
+            .catch(err => {
+                if (cancelled) return;
+                console.error('Failed to fetch public rooms:', err);
+                setPublicRoomsError(err?.message ?? 'Unknown error');
+                setPublicRoomsState('error');
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [mode, publicRoomsRefreshKey]);
 
     const t = translations[language];
 
@@ -190,7 +215,7 @@ export default function MainMenu() {
     const QuickAction = ({ icon: Icon, onPress, color = "#e8d4b8", emoji, style }: any) => (
         <TouchableOpacity
             onPress={() => { Haptics.selectionAsync(); onPress(); }}
-            className="flex-1 bg-[#1a1109] rounded-xl border border-[#3d2814] items-center justify-center active:bg-[#2d1f10]"
+            className="flex-1 bg-wood-darkest rounded-xl border border-wood-dark items-center justify-center active:bg-wood-darker"
             style={[
                 {
                     height: responsive(56, 72),
@@ -217,34 +242,37 @@ export default function MainMenu() {
             <Animated.View style={profileAnimatedStyle}>
                 <TouchableOpacity
                     onPress={() => openModal('stats')}
-                    className="flex-row items-center bg-[#2d1f10]/85 p-4 rounded-2xl mb-6 border-2 border-[#5a4025]/40 shadow-xl"
+                    className="flex-row items-center bg-wood-darker/85 p-4 rounded-2xl mb-6 border-2 border-wood-medium/40 shadow-xl"
                     activeOpacity={0.8}
                 >
                     {/* Avatar with glow ring */}
                     <View className="relative mr-4">
-                        <View className="w-14 h-14 rounded-2xl bg-[#3d2814] border-2 border-[#ffd700]/40 items-center justify-center shadow-lg">
+                        <View className="w-14 h-14 rounded-2xl bg-wood-dark border-2 border-gold/40 items-center justify-center shadow-lg">
                             <Text className="text-4xl">{playerAvatar}</Text>
                         </View>
-                        <View className="absolute -bottom-1 -right-1 bg-[#ffd700] w-6 h-6 rounded-full border border-[#3d2814] items-center justify-center">
-                            <Text className="text-[#3d2814] font-black text-[9px]">L{Math.floor((useGameStore.getState().stats.xp || 0) / 100) + 1}</Text>
+                        <View className="absolute -bottom-1 -right-1 bg-gold w-6 h-6 rounded-full border border-wood-dark items-center justify-center">
+                            <Text className="text-[#3d2814] font-black text-[9px]">L{level}</Text>
                         </View>
                     </View>
 
                     <View className="flex-1">
-                        <View className="flex-row items-center gap-1.5 mb-1">
-                            <Text className="text-[#ffd700] font-black text-xl tracking-tight leading-tight">{playerName || 'Player'}</Text>
+                        <View className="flex-row items-center gap-1.5 mb-0.5">
+                            <Text className="text-gold font-black text-xl tracking-tight leading-tight">{playerName || 'Player'}</Text>
                             <ChevronRight size={14} color="#ffd700" opacity={0.5} />
                         </View>
+                        <Text className="text-muted text-[9px] uppercase tracking-widest mb-1 opacity-70">
+                            {t.tapToEdit}
+                        </Text>
 
                         {/* Compact XP Bar */}
-                        <View className="w-24 h-1.5 bg-black/40 rounded-full overflow-hidden border border-[#5a4025]/30">
+                        <View className="w-24 h-1.5 bg-black/40 rounded-full overflow-hidden border border-wood-medium/30">
                             <View
                                 className="h-full bg-blue-500"
-                                style={{ width: `${((useGameStore.getState().stats.xp || 0) % 100)}%` }}
+                                style={{ width: `${xpProgress}%` }}
                             />
                         </View>
-                        <Text className="text-[#8b6b4a] text-[8px] font-bold uppercase mt-1 tracking-widest">
-                            {((useGameStore.getState().stats.xp || 0) % 100)}/100 XP
+                        <Text className="text-muted text-[8px] font-bold uppercase mt-1 tracking-widest">
+                            {xpProgress}/100 XP
                         </Text>
                     </View>
 
@@ -276,25 +304,6 @@ export default function MainMenu() {
                     </View>
                 </WoodenButton>
 
-                <WoodenButton
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                        setShowLocalModal(true);
-                    }}
-                    variant="secondary"
-                    size="lg"
-                    fullWidth
-                    style={{ height: 64, borderRadius: 16, borderStyle: 'dashed' }}
-                >
-                    <View className="flex-row items-center gap-3">
-                        <Globe size={24} color="#f5e6c8" strokeWidth={2.5} />
-                        <View className="items-start">
-                            <Text className="text-[#f5e6c8] font-black text-xl uppercase tracking-widest">WiFi Play</Text>
-                            <Text className="text-[#f5e6c8]/70 text-[9px] font-bold uppercase tracking-widest">No Internet Needed</Text>
-                        </View>
-                    </View>
-                </WoodenButton>
-
                 {/* Secondary Row */}
                 <View className="flex-row gap-3">
                     <WoodenButton
@@ -320,7 +329,7 @@ export default function MainMenu() {
                     >
                         <View className="flex-row items-center gap-2">
                             <Gamepad2 size={22} color="#f5e6c8" strokeWidth={2} />
-                            <Text className="text-[#f5e6c8] font-bold text-lg uppercase tracking-wider">{t.practice}</Text>
+                            <Text className="text-cream font-bold text-lg uppercase tracking-wider">{t.practice}</Text>
                         </View>
                     </WoodenButton>
                 </View>
@@ -361,8 +370,8 @@ export default function MainMenu() {
                 onPress={() => openModal('rules')}
                 className="mt-6 flex-row items-center justify-center gap-2 py-2 opacity-50 active:opacity-100"
             >
-                <HelpCircle size={14} color="#8b6b4a" />
-                <Text className="text-[#8b6b4a] text-[10px] font-bold uppercase tracking-widest">{t.howToPlay}</Text>
+                <HelpCircle size={14} color="#d4b896" />
+                <Text className="text-muted text-[10px] font-bold uppercase tracking-widest">{t.howToPlay}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -373,7 +382,7 @@ export default function MainMenu() {
             <View>
                 <View className="flex-row gap-3 mb-3">
                     <TouchableOpacity
-                        className="w-[70px] h-[70px] rounded-2xl bg-[#3d2814] border-2 border-[#5a4025] items-center justify-center shadow-lg transform active:scale-95"
+                        className="w-[70px] h-[70px] rounded-2xl bg-wood-dark border-2 border-wood-medium items-center justify-center shadow-lg transform active:scale-95"
                         onPress={() => {
                             Haptics.selectionAsync();
                             // Get purchased avatar icons from shop inventory
@@ -417,32 +426,32 @@ export default function MainMenu() {
 
                     <TouchableOpacity
                         onPress={() => setCrazyMode(!crazyMode)}
-                        className={`w-full p-4 rounded-xl border-2 flex-row items-center justify-between ${crazyMode ? 'bg-[#2d1f10] border-[#ffd700]' : 'bg-[#1a1109] border-[#3d2814]'}`}
+                        className={`w-full p-4 rounded-xl border-2 flex-row items-center justify-between ${crazyMode ? 'bg-wood-darker border-gold' : 'bg-wood-darkest border-wood-dark'}`}
                     >
                         <View className="flex-row items-center gap-3">
                             <Text className="text-2xl">🎲</Text>
                             <View>
-                                <Text className={`font-bold ${crazyMode ? 'text-[#ffd700]' : 'text-[#8b6b4a]'}`}>{t.crazyMode}</Text>
+                                <Text className={`font-bold ${crazyMode ? 'text-gold' : 'text-muted'}`}>{t.crazyMode}</Text>
                                 <Text className="text-[#5a4025] text-xs">{t.crazyModeDesc}</Text>
                             </View>
                         </View>
-                        <View className={`w-12 h-7 rounded-full justify-center ${crazyMode ? 'bg-[#ffd700]' : 'bg-[#3d2814]'}`}>
+                        <View className={`w-12 h-7 rounded-full justify-center ${crazyMode ? 'bg-gold' : 'bg-wood-dark'}`}>
                             <View className={`w-6 h-6 rounded-full bg-white absolute ${crazyMode ? 'right-0.5' : 'left-0.5'}`} />
                         </View>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         onPress={() => setIsPublic(!isPublic)}
-                        className={`w-full p-4 rounded-xl border-2 flex-row items-center justify-between ${isPublic ? 'bg-[#2d1f10] border-[#4ade80]' : 'bg-[#1a1109] border-[#3d2814]'}`}
+                        className={`w-full p-4 rounded-xl border-2 flex-row items-center justify-between ${isPublic ? 'bg-wood-darker border-[#4ade80]' : 'bg-wood-darkest border-wood-dark'}`}
                     >
                         <View className="flex-row items-center gap-3">
                             <Text className="text-2xl">{isPublic ? '🌐' : '🔒'}</Text>
                             <View>
-                                <Text className={`font-bold ${isPublic ? 'text-[#4ade80]' : 'text-[#8b6b4a]'}`}>{isPublic ? t.public : t.private}</Text>
+                                <Text className={`font-bold ${isPublic ? 'text-success' : 'text-muted'}`}>{isPublic ? t.public : t.private}</Text>
                                 <Text className="text-[#5a4025] text-xs">{isPublic ? t.publicDesc : t.privateDesc}</Text>
                             </View>
                         </View>
-                        <View className={`w-12 h-7 rounded-full justify-center ${isPublic ? 'bg-[#4ade80]' : 'bg-[#3d2814]'}`}>
+                        <View className={`w-12 h-7 rounded-full justify-center ${isPublic ? 'bg-success' : 'bg-wood-dark'}`}>
                             <View className={`w-6 h-6 rounded-full bg-white absolute ${isPublic ? 'right-0.5' : 'left-0.5'}`} />
                         </View>
                     </TouchableOpacity>
@@ -458,11 +467,41 @@ export default function MainMenu() {
                         style={{ textAlign: 'center', fontSize: 24, letterSpacing: 4 }}
                     />
 
-                    {publicRooms.length > 0 && (
-                        <View className="mt-2">
-                            <Text className="text-[#8b6b4a] text-[10px] font-bold uppercase mb-2 tracking-widest text-center">
-                                or browse public rooms
-                            </Text>
+                    <View className="mt-2">
+                        <Text className="text-muted text-[10px] font-bold uppercase mb-2 tracking-widest text-center">
+                            {t.browsePublicRooms}
+                        </Text>
+
+                        {publicRoomsState === 'loading' && (
+                            <View className="py-2">
+                                <SkeletonList count={3} ItemSkeleton={LeaderboardSkeleton} />
+                            </View>
+                        )}
+
+                        {publicRoomsState === 'error' && (
+                            <View className="py-2 items-center bg-red-500/5 rounded-xl border border-red-500/30 px-4">
+                                <Text className="text-red-400 font-bold text-sm mt-3 mb-1">{t.noConnection}</Text>
+                                <Text className="text-muted text-xs text-center mb-3">{publicRoomsError}</Text>
+                                <WoodenButton
+                                    onPress={() => setPublicRoomsRefreshKey(k => k + 1)}
+                                    variant="secondary"
+                                    size="sm"
+                                    style={{ marginBottom: 12 }}
+                                >
+                                    {t.retry}
+                                </WoodenButton>
+                            </View>
+                        )}
+
+                        {publicRoomsState === 'loaded' && publicRooms.length === 0 && (
+                            <EmptyState
+                                title={t.noPublicRooms}
+                                description={t.noPublicRoomsDesc}
+                                icon={Inbox}
+                            />
+                        )}
+
+                        {publicRoomsState === 'loaded' && publicRooms.length > 0 && (
                             <View className="gap-2">
                                 {publicRooms.map((room) => (
                                     <TouchableOpacity
@@ -471,9 +510,11 @@ export default function MainMenu() {
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                             setRoomCode(room.code);
                                         }}
-                                        className={`flex-row items-center p-3 rounded-xl border ${roomCode === room.code ? 'bg-[#3d2814] border-[#ffd700]' : 'bg-[#1a1109] border-[#3d2814]'}`}
+                                        className={`flex-row items-center p-3 rounded-xl border ${roomCode === room.code ? 'bg-wood-dark border-gold' : 'bg-wood-darkest border-wood-dark'}`}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`${room.code}, ${room.players.length} ${t.players}`}
                                     >
-                                        <View className="w-8 h-8 rounded-lg bg-[#2d1f10] items-center justify-center mr-3">
+                                        <View className="w-8 h-8 rounded-lg bg-wood-darker items-center justify-center mr-3">
                                             <Text className="text-lg">🐙</Text>
                                         </View>
                                         <View className="flex-1">
@@ -481,14 +522,14 @@ export default function MainMenu() {
                                             <Text className="text-[#5a4025] text-[10px]">Host: {room.hostId.substring(0, 8)}...</Text>
                                         </View>
                                         <View className="flex-row items-center gap-1">
-                                            <Users size={12} color="#8b6b4a" />
-                                            <Text className="text-[#8b6b4a] font-bold text-xs">{room.players.length}</Text>
+                                            <Users size={12} color="#d4b896" />
+                                            <Text className="text-muted font-bold text-xs">{room.players.length}</Text>
                                         </View>
                                     </TouchableOpacity>
                                 ))}
                             </View>
-                        </View>
-                    )}
+                        )}
+                    </View>
                 </View>
             )}
 
@@ -548,13 +589,13 @@ export default function MainMenu() {
                                 {/* Glow Effect */}
                                 <Animated.View
                                     style={[glowAnimatedStyle]}
-                                    className="absolute w-32 h-32 rounded-full bg-[#ffd700]/30"
+                                    className="absolute w-32 h-32 rounded-full bg-gold/30"
                                 />
 
                                 <Animated.View style={logoAnimatedStyle} className="items-center">
                                     <Text style={{ fontSize: 64, lineHeight: 80 }}>🎱</Text>
                                     <Text
-                                        className="font-black text-[#ffd700] text-5xl uppercase tracking-[6px] mt-2"
+                                        className="font-black text-gold text-5xl uppercase tracking-[6px] mt-2"
                                         style={{
                                             textShadowColor: '#b8860b',
                                             textShadowOffset: { width: 0, height: 4 },
@@ -564,7 +605,7 @@ export default function MainMenu() {
                                     >
                                         {t.title}
                                     </Text>
-                                    <Text className="text-[#8b6b4a] font-bold text-[10px] tracking-[4px] uppercase mt-1">
+                                    <Text className="text-muted font-bold text-[10px] tracking-[4px] uppercase mt-1">
                                         {t.subtitle}
                                     </Text>
                                 </Animated.View>
@@ -576,7 +617,7 @@ export default function MainMenu() {
                             <View className="flex-row items-center mb-6" style={{ paddingTop: insets.top > 20 ? 0 : 20 }}>
                                 <TouchableOpacity
                                     onPress={() => setMode('menu')}
-                                    className="w-12 h-12 rounded-xl bg-[#2d1f10] border border-[#5a4025] items-center justify-center mr-4"
+                                    className="w-12 h-12 rounded-xl bg-wood-darker border border-wood-medium items-center justify-center mr-4"
                                     style={{
                                         shadowColor: '#000',
                                         shadowOffset: { width: 0, height: 2 },
@@ -587,11 +628,11 @@ export default function MainMenu() {
                                     <ChevronRight size={24} color="#e8d4b8" style={{ transform: [{ rotate: '180deg' }] }} />
                                 </TouchableOpacity>
                                 <View className="flex-1">
-                                    <Text className="text-[#8b6b4a] text-xs font-bold uppercase tracking-wider mb-1">
+                                    <Text className="text-muted text-xs font-bold uppercase tracking-wider mb-1">
                                         {mode === 'create' ? t.hostOnline : 'Enter Room'}
                                     </Text>
                                     <Text
-                                        className="font-black text-[#ffd700] text-2xl uppercase tracking-widest"
+                                        className="font-black text-gold text-2xl uppercase tracking-widest"
                                         style={{
                                             textShadowColor: '#b8860b',
                                             textShadowOffset: { width: 0, height: 2 },
@@ -623,7 +664,6 @@ export default function MainMenu() {
             {activeModal === 'settings' && <SettingsModal visible={true} onClose={closeModal} />}
             {activeModal === 'leaderboard' && <LeaderboardModal visible={true} onClose={closeModal} />}
             {activeModal === 'quests' && <QuestsModal visible={true} onClose={closeModal} />}
-            <LocalGameModal visible={showLocalModal} onClose={() => setShowLocalModal(false)} />
             <DailyBonusModal />
             <OnboardingModal />
         </ImageBackground>

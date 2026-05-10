@@ -54,7 +54,11 @@ function shuffle<T>(array: T[]): T[] {
 /**
  * Generate a valid Loto card
  */
-export function generateLotoCard(playerId: string): LotoCard {
+export function generateLotoCard(playerId: string, attempts = 0): LotoCard {
+    if (attempts > 10) {
+        throw new Error('Failed to generate valid Loto card after 10 attempts');
+    }
+
     const grid: LotoCardGrid = Array.from({ length: k_rows }, () =>
         Array.from({ length: k_columns }, () => ({ value: null, isMarked: false }))
     );
@@ -72,8 +76,13 @@ export function generateLotoCard(playerId: string): LotoCard {
         totalNumbers += count;
     }
 
-    // Adjust to exactly 15 numbers
+    // Adjust to exactly 15 numbers (guard against pathological non-progress)
+    let adjustGuard = 0;
     while (totalNumbers !== 15) {
+        if (++adjustGuard > 100) {
+            // Could not converge — retry full generation.
+            return generateLotoCard(playerId, attempts + 1);
+        }
         const col = Math.floor(Math.random() * 9);
         if (totalNumbers > 15 && columnCounts[col] > 1) {
             columnCounts[col]--;
@@ -121,8 +130,8 @@ export function generateLotoCard(playerId: string): LotoCard {
     for (let row = 0; row < k_rows; row++) {
         const count = grid[row].filter(cell => cell.value !== null).length;
         if (count !== k_numbersPerRow) {
-            // If validation fails, regenerate (rare edge case)
-            return generateLotoCard(playerId);
+            // If validation fails, regenerate (rare edge case) with bounded retries
+            return generateLotoCard(playerId, attempts + 1);
         }
     }
 

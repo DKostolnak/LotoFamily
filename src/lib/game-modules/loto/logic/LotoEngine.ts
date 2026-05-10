@@ -1,15 +1,13 @@
 import { BaseGameEngine } from '../../../core/engine/BaseGameEngine';
-import { NetworkMessage, NetworkPlayer } from '../../../core/network/types';
-import type { GameState, Player, GameSettings, LotoCard, CalledNumber } from '../../../types';
+import type { NetworkMessage, NetworkPlayer, GameState, Player, GameSettings, LotoCard, CalledNumber } from '../../../types';
 import { generateCards } from '@/engine/lotoCardGenerator';
 
 /**
  * LotoGameModule - The source of truth for Loto rules.
- * This can be used by P2P, Offline, or even a local server.
+ * Transport-agnostic: can be driven by Offline, Online (Socket.io), or any local driver.
  */
 export class LotoGameModule extends BaseGameEngine<GameState> {
     private autoCallInterval: ReturnType<typeof setInterval> | null = null;
-    private broadcastCallback: ((message: NetworkMessage) => void) | null = null;
 
     initialize(config: { host: NetworkPlayer, roomCode: string, settings?: Partial<GameSettings> }): GameState {
         const { host, roomCode, settings } = config;
@@ -56,27 +54,29 @@ export class LotoGameModule extends BaseGameEngine<GameState> {
         return initialState;
     }
 
-    setBroadcastCallback(callback: (message: NetworkMessage) => void) {
-        this.broadcastCallback = callback;
-    }
-
     handleMessage(message: NetworkMessage): void {
         const { type, payload, senderId } = message;
 
         switch (type) {
-            case 'GAME:MARK_CELL':
-                this.markCell(senderId, payload.cardId, payload.row, payload.col);
+            case 'GAME:MARK_CELL': {
+                const p = payload as { cardId: string; row: number; col: number };
+                this.markCell(senderId, p.cardId, p.row, p.col);
                 break;
-            case 'GAME:CLAIM_WIN':
-                this.claimWin(senderId, payload.cardId);
+            }
+            case 'GAME:CLAIM_WIN': {
+                const p = payload as { cardId: string };
+                this.claimWin(senderId, p.cardId);
                 break;
+            }
         }
     }
 
     public startGame() {
         if (!this.state || this.state.phase !== 'lobby') return;
-        this.updateState(s => ({ ...s, phase: 'playing', startedAt: Date.now() }));
-        if (this.state.settings.autoCallEnabled) this.startAutoCall();
+        // Guard against re-entrant start: if a timer already exists we are already starting/started.
+        if (this.autoCallInterval) return;
+        this.updateState(s => (s.phase === 'lobby' ? { ...s, phase: 'playing', startedAt: Date.now() } : s));
+        if (this.state?.settings.autoCallEnabled) this.startAutoCall();
     }
 
     public markCell(playerId: string, cardId: string, row: number, col: number) {
@@ -90,10 +90,18 @@ export class LotoGameModule extends BaseGameEngine<GameState> {
             if (!cell || cell.value === null) return s;
 
             const isCalled = s.calledNumbers.some(cn => cn.value === cell.value);
-            if (isCalled) {
-                cell.isMarked = !cell.isMarked;
-            }
-            return { ...s };
+            if (!isCalled) return s;
+
+            // Fully immutable update: rebuild the affected card -> player -> players array.
+            const newGrid = card.grid.map((r, ri) =>
+                r.map((c, ci) => (ri === row && ci === col ? { ...c, isMarked: !c.isMarked } : c))
+            );
+            const newCard = { ...card, grid: newGrid };
+            const newCards = player.cards.map(c => (c.id === cardId ? newCard : c));
+            const newPlayer = { ...player, cards: newCards };
+            const newPlayers = s.players.map(p => (p.id === playerId ? newPlayer : p));
+
+            return { ...s, players: newPlayers };
         });
     }
 
@@ -137,9 +145,12 @@ export class LotoGameModule extends BaseGameEngine<GameState> {
     }
 
     private checkWin(card: LotoCard, called: CalledNumber[]): boolean {
+        // Win = all numbers on the card have actually been CALLED.
+        // isMarked is purely a UI convenience and must not be part of the win rule
+        // (this matches gameModes.classicMode and keeps offline/online behaviour identical).
         const calledSet = new Set(called.map(c => c.value));
         return card.grid.every(row =>
-            row.every(cell => cell.value === null || (cell.isMarked && calledSet.has(cell.value)))
+            row.every(cell => cell.value === null || calledSet.has(cell.value))
         );
     }
 
@@ -167,12 +178,6 @@ export class LotoGameModule extends BaseGameEngine<GameState> {
             calledNumbers: [...s.calledNumbers, { value: nextNumber, timestamp: Date.now() }],
             remainingNumbers: remaining
         }));
-        this.broadcastCallback?.({
-            type: 'GAME:NUMBER_CALLED',
-            payload: nextNumber,
-            senderId: this.state.hostId,
-            timestamp: Date.now()
-        });
     }
 
     public destroy() {

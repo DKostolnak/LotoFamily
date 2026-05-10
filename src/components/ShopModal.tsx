@@ -4,6 +4,7 @@ import { WoodenCard, AnimatedModal, EmptyState } from '@/components/common';
 import { useGameStore } from '@/lib/store';
 import { SHOP_ITEMS, type ShopItem, isThemeItem, isSkinItem } from '@/lib/shop';
 import { getThemeColors, getSkinColors } from '@/lib/config';
+import { translations } from '@/lib/i18n';
 import * as Haptics from 'expo-haptics';
 import { Check } from 'lucide-react-native';
 
@@ -16,7 +17,8 @@ interface ShopModalProps {
 import { ShopItemPreview } from '@/components/shop/ShopItemPreview';
 
 export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
-    const { coins, inventory, purchaseItem, activeTheme, activeSkin, equipItem, playerAvatar, setPlayerAvatar } = useGameStore();
+    const { coins, inventory, purchaseItem, activeTheme, activeSkin, equipItem, playerAvatar, setPlayerAvatar, language } = useGameStore();
+    const t = translations[language];
     type CategoryId = 'all' | 'avatar' | 'theme' | 'skin';
     const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
 
@@ -51,10 +53,10 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
     };
 
     const categories: { id: CategoryId; label: string }[] = [
-        { id: 'all', label: 'All' },
-        { id: 'avatar', label: 'Avatars' },
-        { id: 'theme', label: 'Themes' },
-        { id: 'skin', label: 'Markers' },
+        { id: 'all', label: t.all },
+        { id: 'avatar', label: t.avatars },
+        { id: 'theme', label: t.themes },
+        { id: 'skin', label: t.markers },
     ];
 
     const filteredItems = useMemo(
@@ -88,7 +90,7 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                             // Offset slightly to center visually against the close button space
                             marginRight: 20
                         }}>
-                            Grand Store
+                            {t.shopTitle}
                         </Text>
 
                         {/* Spacer for Close Button (approx 44px) */}
@@ -122,7 +124,7 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                                             fontSize: 10,
                                             textTransform: 'uppercase',
                                             letterSpacing: 1,
-                                            color: isActive ? '#ffd700' : '#8b6b4a',
+                                            color: isActive ? '#ffd700' : '#d4b896',
                                         }}
                                     >
                                         {cat.label}
@@ -141,14 +143,15 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                         windowSize={5}
                         ListEmptyComponent={
                             <EmptyState
-                                title="Empty Shelf"
-                                description="No items available in this category yet. Check back soon!"
+                                title={t.emptyShelf}
+                                description={t.emptyShelfDesc}
                             />
                         }
                         renderItem={({ item }) => {
                             const isOwned = inventory.includes(item.id) || item.price === 0;
                             const isEquipped = activeTheme === item.id || activeSkin === item.id || (item.category === 'avatar' && playerAvatar === item.icon);
                             const canAfford = coins >= item.price;
+                            const isFreeUnowned = item.price === 0 && !isEquipped;
 
                             return (
                                 <View
@@ -159,7 +162,11 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                                         borderRadius: 12,
                                         borderWidth: 2,
                                         backgroundColor: isEquipped ? '#3d2814' : '#2d1f10',
-                                        borderColor: isEquipped ? '#ffd700' : isOwned ? '#5a4025' : '#4a3015',
+                                        borderColor: isEquipped
+                                            ? '#ffd700'
+                                            : (isOwned && !isFreeUnowned)
+                                                ? 'rgba(74, 222, 128, 0.5)'
+                                                : '#4a3015',
                                         opacity: (!isOwned && !isEquipped) ? 0.9 : 1
                                     }}
                                 >
@@ -197,8 +204,25 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
 
                                     {/* Info Section */}
                                     <View style={{ flex: 1, paddingHorizontal: 12, justifyContent: 'center' }}>
-                                        <Text style={{ color: '#f5e6c8', fontWeight: 'bold', fontSize: 16, lineHeight: 20, marginBottom: 2 }} numberOfLines={1}>{item.name}</Text>
-                                        <Text style={{ color: '#8b6b4a', fontSize: 11, lineHeight: 14 }} numberOfLines={2}>{item.description}</Text>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
+                                            <Text style={{ color: '#f5e6c8', fontWeight: 'bold', fontSize: 16, lineHeight: 20, flexShrink: 1 }} numberOfLines={1}>{item.name}</Text>
+                                            {isEquipped && (
+                                                <View style={{ backgroundColor: 'rgba(255, 215, 0, 0.15)', borderColor: '#ffd700', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
+                                                    <Text style={{ color: '#ffd700', fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.active}</Text>
+                                                </View>
+                                            )}
+                                            {!isEquipped && isOwned && !isFreeUnowned && (
+                                                <View style={{ backgroundColor: 'rgba(74, 222, 128, 0.15)', borderColor: 'rgba(74, 222, 128, 0.5)', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
+                                                    <Text style={{ color: '#4ade80', fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.owned}</Text>
+                                                </View>
+                                            )}
+                                            {isFreeUnowned && (
+                                                <View style={{ backgroundColor: 'rgba(96, 165, 250, 0.15)', borderColor: 'rgba(96, 165, 250, 0.5)', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
+                                                    <Text style={{ color: '#60a5fa', fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t.free}</Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                        <Text style={{ color: '#d4b896', fontSize: 11, lineHeight: 14 }} numberOfLines={2}>{item.description}</Text>
                                     </View>
 
                                     {/* Action Button */}
@@ -219,12 +243,12 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                                                     }}
                                                 >
                                                     <Text style={{ fontWeight: 'bold', fontSize: 10, textTransform: 'uppercase', color: isEquipped ? '#ffd700' : '#3d2814' }}>
-                                                        {isEquipped ? 'Active' : 'Equip'}
+                                                        {isEquipped ? t.active : t.equip}
                                                     </Text>
                                                 </TouchableOpacity>
                                             ) : (
                                                 <View style={{ width: '100%', paddingVertical: 6, backgroundColor: '#2d1f10', borderWidth: 1, borderColor: 'rgba(74, 222, 128, 0.3)', borderRadius: 8, alignItems: 'center' }}>
-                                                    <Text style={{ color: '#4ade80', fontWeight: 'bold', fontSize: 10, textTransform: 'uppercase' }}>Owned</Text>
+                                                    <Text style={{ color: '#4ade80', fontWeight: 'bold', fontSize: 10, textTransform: 'uppercase' }}>{t.owned}</Text>
                                                 </View>
                                             )
                                         ) : (

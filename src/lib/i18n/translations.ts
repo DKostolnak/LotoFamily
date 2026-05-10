@@ -21,6 +21,9 @@ export const translations: Record<Language, TranslationKeys> = {
         nameError: 'Name must be at least 2 characters', codeError: 'Room code must be at least 6 characters',
         createHint: 'Gather everyone and set your house rules before launching.',
         joinHint: 'Enter the host code and get ready to play.',
+        public: 'Public', private: 'Private',
+        publicDesc: 'Anyone can find and join your game',
+        privateDesc: 'Only players with your code can join',
         optionalLabel: 'optional',
         customCodeHelp: 'Use 3-8 letters or numbers for a friendly room code, or leave blank.',
         roomCodeHint: 'Ask the host for the 6-letter room code shown on their screen.',
@@ -89,6 +92,54 @@ export const translations: Record<Language, TranslationKeys> = {
         onboardingTitle2: 'Play Together', onboardingDesc2: 'Create a room and invite friends, or practice solo against the machine.',
         onboardingTitle3: 'Win Rewards', onboardingDesc3: 'Complete your card first to win! Earn coins and climb the leaderboard.',
         letsPlay: "Let's Play!", next: 'Next', skip: 'Skip',
+
+        // Profile Editor
+        editProfile: 'Edit Profile', changeName: 'Change Name', tapToEdit: 'Tap to edit',
+        saveChanges: 'Save', nameTooShort: 'Name must be at least 2 characters',
+
+        // Shop
+        shopTitle: 'Grand Store', all: 'All', avatars: 'Avatars', themes: 'Themes', markers: 'Markers',
+        owned: 'Owned', equipped: 'Equipped', equip: 'Equip', active: 'Active', buy: 'Buy', free: 'Free',
+        emptyShelf: 'Empty Shelf', emptyShelfDesc: 'No items available in this category yet. Check back soon!',
+        tapToCopy: 'Tap to copy',
+
+        // Rules Content
+        rulesTitle: 'How to Play',
+        rulesPage1Title: 'The Basics',
+        rulesPage1Desc: '90 balls are drawn randomly. You have 3 cards. Tap any number to mark it with a chip. Be careful: marking the wrong number freezes your card!',
+        rulesPage2Title: 'Winning Big',
+        rulesPage2Desc: 'Claim a LINE! by filling any horizontal row. Win the JACKPOT by filling an entire card (BINGO!). Prize pools are shared among all winners.',
+        rulesPage3Title: 'Economy',
+        rulesPage3Desc: 'Rooms have an entry fee in LCoins. All fees collected form the Prize Pool. The more players, the bigger the reward!',
+        rulesPage4Title: 'Social & Legend',
+        rulesPage4Desc: 'Chat with other players in real-time. Win matches to climb the Global Leaderboard and prove you are the Loto King!',
+
+        // Accessibility (a11y)
+        a11yNumberLabel: 'Number {n}',
+        a11yMarkedState: 'marked correctly',
+        a11yMarkedIncorrect: 'marked incorrectly',
+        a11yCalledTapToMark: 'called, tap to mark',
+        a11yNotCalledYet: 'not called yet',
+        a11yMarkedState_short: 'marked',
+        a11yUnmarkedState: 'not marked',
+        a11yMissedState: 'missed',
+        a11yEmptyCell: 'empty cell',
+        a11yLoadingGame: 'Loading game...',
+        a11yErrorRetry: 'Retry',
+        a11yMarkHint: 'Double tap to mark this number',
+
+        // Loading / Error / Empty
+        loadingGame: 'Loading game...',
+        connectionError: 'Connection failed. Check your internet and try again.',
+        retry: 'Retry',
+        noConnection: 'No connection',
+        noPublicRooms: 'No public rooms',
+        noPublicRoomsDesc: 'Be the first to create one and invite friends!',
+        noChatMessages: 'No messages yet',
+        noChatMessagesDesc: 'Say hello to the room!',
+        browsePublicRooms: 'or browse public rooms',
+        chatTitle: 'Room Chat',
+        typeMessage: 'Type a message...',
     },
     sk: {
         // Menu
@@ -99,6 +150,9 @@ export const translations: Record<Language, TranslationKeys> = {
         nameError: 'Meno musí mať aspoň 2 znaky', codeError: 'Kód musí mať aspoň 6 znakov',
         createHint: 'Pripravte rodinu a nastavte pravidlá pred štartom.',
         joinHint: 'Zadajte kód hostiteľa a môžete hrať.',
+        public: 'Verejná', private: 'Súkromná',
+        publicDesc: 'Hru môže nájsť a pripojiť sa ktokoľvek',
+        privateDesc: 'Pripojiť sa môžu len hráči s vaším kódom',
         optionalLabel: 'voliteľné',
         customCodeHelp: 'Použite 3–8 písmen alebo číslic, ak chcete vlastný kód.',
         roomCodeHint: 'Požiadajte hostiteľa o šesťmiestny kód z jeho obrazovky.',
@@ -167,6 +221,54 @@ export const translations: Record<Language, TranslationKeys> = {
         onboardingTitle2: 'Hrajte Spolu', onboardingDesc2: 'Vytvor miestnosť a pozvi priateľov, alebo trénuj sám proti stroju.',
         onboardingTitle3: 'Získaj Odmeny', onboardingDesc3: 'Dokonči svoju kartu ako prvý a vyhraj! Získavaj mince a stúpaj v rebríčku.',
         letsPlay: 'Poďme na to!', next: 'Ďalej', skip: 'Preskočiť',
+
+        // Profile Editor
+        editProfile: 'Upraviť profil', changeName: 'Zmeniť meno', tapToEdit: 'Klepni pre úpravu',
+        saveChanges: 'Uložiť', nameTooShort: 'Meno musí mať aspoň 2 znaky',
+
+        // Shop
+        shopTitle: 'Obchod', all: 'Všetko', avatars: 'Avatary', themes: 'Témy', markers: 'Žetóny',
+        owned: 'Vlastnené', equipped: 'Aktívne', equip: 'Použiť', active: 'Aktívne', buy: 'Kúpiť', free: 'Zadarmo',
+        emptyShelf: 'Prázdny regál', emptyShelfDesc: 'V tejto kategórii zatiaľ nič nie je. Pozri sa neskôr!',
+        tapToCopy: 'Klepni pre skopírovanie',
+
+        // Rules Content
+        rulesTitle: 'Ako hrať',
+        rulesPage1Title: 'Základy',
+        rulesPage1Desc: 'Náhodne sa vyžrebuje 90 loptičiek. Máte 3 karty. Poklepaním na číslo ho označíte žetónom. Pozor: označenie nesprávneho čísla kartu na chvíľu zmrazí!',
+        rulesPage2Title: 'Veľké výhry',
+        rulesPage2Desc: 'Získajte RIADOK! vyplnením ktoréhokoľvek vodorovného riadku. Vyhrajte JACKPOT vyplnením celej karty (BINGO!). Výhry sa delia medzi všetkých víťazov.',
+        rulesPage3Title: 'Ekonomika',
+        rulesPage3Desc: 'Miestnosti majú vstupný poplatok v LCoinov. Všetky vyzbierané poplatky tvoria banku. Čím viac hráčov, tým väčšia odmena!',
+        rulesPage4Title: 'Sociálne a Legendy',
+        rulesPage4Desc: 'Chatujte s ostatnými hráčmi v reálnom čase. Vyhrávajte zápasy, stúpajte v globálnom rebríčku a dokážte, že ste kráľom Lota!',
+
+        // Accessibility (a11y)
+        a11yNumberLabel: 'Číslo {n}',
+        a11yMarkedState: 'správne označené',
+        a11yMarkedIncorrect: 'nesprávne označené',
+        a11yCalledTapToMark: 'vyvolané, ťuknutím označíte',
+        a11yNotCalledYet: 'zatiaľ nevyvolané',
+        a11yMarkedState_short: 'označené',
+        a11yUnmarkedState: 'neoznačené',
+        a11yMissedState: 'zmeškané',
+        a11yEmptyCell: 'prázdne pole',
+        a11yLoadingGame: 'Načítavam hru...',
+        a11yErrorRetry: 'Skúsiť znova',
+        a11yMarkHint: 'Dvojitým ťuknutím označíte toto číslo',
+
+        // Loading / Error / Empty
+        loadingGame: 'Načítavam hru...',
+        connectionError: 'Spojenie zlyhalo. Skontrolujte internet a skúste znova.',
+        retry: 'Skúsiť znova',
+        noConnection: 'Žiadne spojenie',
+        noPublicRooms: 'Žiadne verejné miestnosti',
+        noPublicRoomsDesc: 'Vytvorte prvú a pozvite kamarátov!',
+        noChatMessages: 'Zatiaľ žiadne správy',
+        noChatMessagesDesc: 'Pozdravte miestnosť!',
+        browsePublicRooms: 'alebo si prezrite verejné miestnosti',
+        chatTitle: 'Chat miestnosti',
+        typeMessage: 'Napíšte správu...',
     },
     ru: {
         // Menu
@@ -177,6 +279,9 @@ export const translations: Record<Language, TranslationKeys> = {
         nameError: 'Имя должно быть не менее 2 символов', codeError: 'Код должен быть не короче 6 символов',
         createHint: 'Подготовьте семью и настройте правила перед стартом.',
         joinHint: 'Введите код ведущего и будьте готовы играть.',
+        public: 'Публичная', private: 'Приватная',
+        publicDesc: 'Любой может найти и присоединиться к вашей игре',
+        privateDesc: 'Только игроки с вашим кодом могут присоединиться',
         optionalLabel: 'необязательно',
         customCodeHelp: 'Используйте 3–8 букв или цифр, чтобы задать свой код.',
         roomCodeHint: 'Попросите ведущего поделиться шестью символами кода.',
@@ -245,6 +350,54 @@ export const translations: Record<Language, TranslationKeys> = {
         onboardingTitle2: 'Играйте Вместе', onboardingDesc2: 'Создайте комнату и пригласите друзей или тренируйтесь в одиночку против компьютера.',
         onboardingTitle3: 'Получайте Награды', onboardingDesc3: 'Заполните карточку первым, чтобы выиграть! Зарабатывайте монеты и поднимайтесь в рейтинге.',
         letsPlay: 'Поехали!', next: 'Далее', skip: 'Пропустить',
+
+        // Profile Editor
+        editProfile: 'Изменить профиль', changeName: 'Изменить имя', tapToEdit: 'Нажмите для изменения',
+        saveChanges: 'Сохранить', nameTooShort: 'Имя должно быть не менее 2 символов',
+
+        // Shop
+        shopTitle: 'Магазин', all: 'Все', avatars: 'Аватары', themes: 'Темы', markers: 'Фишки',
+        owned: 'Куплено', equipped: 'Активно', equip: 'Выбрать', active: 'Активно', buy: 'Купить', free: 'Бесплатно',
+        emptyShelf: 'Пустая полка', emptyShelfDesc: 'В этой категории пока ничего нет. Загляните позже!',
+        tapToCopy: 'Нажмите чтобы скопировать',
+
+        // Rules Content
+        rulesTitle: 'Как играть',
+        rulesPage1Title: 'Основы',
+        rulesPage1Desc: '90 шаров выпадают случайно. У вас 3 карточки. Нажмите на число, чтобы отметить его фишкой. Осторожно: ошибка временно замораживает карточку!',
+        rulesPage2Title: 'Крупные выигрыши',
+        rulesPage2Desc: 'Соберите ЛИНИЮ!, заполнив любой горизонтальный ряд. Выиграйте ДЖЕКПОТ, заполнив всю карточку (БИНГО!). Призовой фонд делится между победителями.',
+        rulesPage3Title: 'Экономика',
+        rulesPage3Desc: 'Вход в комнаты платный (в LCoins). Все взносы формируют призовой фонд. Чем больше игроков, тем больше награда!',
+        rulesPage4Title: 'Социальный мир',
+        rulesPage4Desc: 'Общайтесь с другими игроками в чате. Побеждайте, чтобы подняться в глобальном рейтинге и стать легендой Лото!',
+
+        // Accessibility (a11y)
+        a11yNumberLabel: 'Число {n}',
+        a11yMarkedState: 'правильно отмечено',
+        a11yMarkedIncorrect: 'отмечено ошибочно',
+        a11yCalledTapToMark: 'выпало, нажмите чтобы отметить',
+        a11yNotCalledYet: 'ещё не выпало',
+        a11yMarkedState_short: 'отмечено',
+        a11yUnmarkedState: 'не отмечено',
+        a11yMissedState: 'пропущено',
+        a11yEmptyCell: 'пустая клетка',
+        a11yLoadingGame: 'Загрузка игры...',
+        a11yErrorRetry: 'Повторить',
+        a11yMarkHint: 'Двойное нажатие для отметки числа',
+
+        // Loading / Error / Empty
+        loadingGame: 'Загрузка игры...',
+        connectionError: 'Не удалось подключиться. Проверьте интернет и повторите.',
+        retry: 'Повторить',
+        noConnection: 'Нет соединения',
+        noPublicRooms: 'Нет публичных комнат',
+        noPublicRoomsDesc: 'Создайте первую и пригласите друзей!',
+        noChatMessages: 'Сообщений пока нет',
+        noChatMessagesDesc: 'Поздоровайтесь с комнатой!',
+        browsePublicRooms: 'или просмотрите публичные комнаты',
+        chatTitle: 'Чат комнаты',
+        typeMessage: 'Напишите сообщение...',
     },
     uk: {
         // Menu
@@ -255,6 +408,9 @@ export const translations: Record<Language, TranslationKeys> = {
         nameError: 'Ім\'я має бути не менше 2 символів', codeError: 'Код має бути щонайменше з 6 символів',
         createHint: 'Підготуйте родину й налаштуйте правила перед стартом.',
         joinHint: 'Введіть код ведучого і будьте готові до гри.',
+        public: 'Публічна', private: 'Приватна',
+        publicDesc: 'Будь-хто може знайти вашу гру та приєднатися до неї',
+        privateDesc: 'Тільки гравці з вашим кодом можуть приєднатися',
         optionalLabel: 'необов\'язково',
         customCodeHelp: 'Використайте 3–8 літер або цифр для власного коду.',
         roomCodeHint: 'Попросіть ведучого поділитися шістьма символами коду.',
@@ -323,6 +479,54 @@ export const translations: Record<Language, TranslationKeys> = {
         onboardingTitle2: 'Грайте Разом', onboardingDesc2: 'Створіть кімнату та запросіть друзів або тренуйтеся наодинці проти комп\'ютера.',
         onboardingTitle3: 'Отримуйте Нагороди', onboardingDesc3: 'Заповніть картку першим, щоб виграти! Заробляйте монети та піднімайтеся в рейтингу.',
         letsPlay: 'Поїхали!', next: 'Далі', skip: 'Пропустити',
+
+        // Profile Editor
+        editProfile: 'Редагувати профіль', changeName: 'Змінити ім\'я', tapToEdit: 'Натисніть для редагування',
+        saveChanges: 'Зберегти', nameTooShort: 'Ім\'я має містити щонайменше 2 символи',
+
+        // Shop
+        shopTitle: 'Магазин', all: 'Усі', avatars: 'Аватари', themes: 'Теми', markers: 'Фішки',
+        owned: 'Придбано', equipped: 'Активно', equip: 'Обрати', active: 'Активно', buy: 'Купити', free: 'Безкоштовно',
+        emptyShelf: 'Порожня полиця', emptyShelfDesc: 'У цій категорії поки нічого немає. Завітайте пізніше!',
+        tapToCopy: 'Натисніть, щоб скопіювати',
+
+        // Rules Content
+        rulesTitle: 'Як грати',
+        rulesPage1Title: 'Основи',
+        rulesPage1Desc: '90 куль випадають випадково. У вас є 3 картки. Натисніть на число, щоб позначити його фішкою. Обережно: помилка тимчасово заморожує картку!',
+        rulesPage2Title: 'Великі виграші',
+        rulesPage2Desc: 'Зберіть ЛІНІЮ!, заповнивши будь-який горизонтальний ряд. Виграйте ДЖЕКПОТ, заповнивши всю картку (БІНГО!). Призовий фонд ділиться між усіма переможцями.',
+        rulesPage3Title: 'Економіка',
+        rulesPage3Desc: 'Вхід у кімнати платний (в LCoins). Усі внески формують призовий фонд. Чим більше гравців, тим більша нагорода!',
+        rulesPage4Title: 'Соціальний світ',
+        rulesPage4Desc: 'Спілкуйтеся з іншими гравцями в чаті в реальному часі. Перемагайте, щоб піднятися в глобальному рейтингу і стати королем Лото!',
+
+        // Accessibility (a11y)
+        a11yNumberLabel: 'Число {n}',
+        a11yMarkedState: 'правильно позначено',
+        a11yMarkedIncorrect: 'позначено помилково',
+        a11yCalledTapToMark: 'випало, торкніться щоб позначити',
+        a11yNotCalledYet: 'ще не випало',
+        a11yMarkedState_short: 'позначено',
+        a11yUnmarkedState: 'не позначено',
+        a11yMissedState: 'пропущено',
+        a11yEmptyCell: 'порожня клітинка',
+        a11yLoadingGame: 'Завантаження гри...',
+        a11yErrorRetry: 'Повторити',
+        a11yMarkHint: 'Подвійне торкання, щоб позначити число',
+
+        // Loading / Error / Empty
+        loadingGame: 'Завантаження гри...',
+        connectionError: 'Не вдалося підключитися. Перевірте інтернет та спробуйте ще раз.',
+        retry: 'Повторити',
+        noConnection: 'Немає з\'єднання',
+        noPublicRooms: 'Немає публічних кімнат',
+        noPublicRoomsDesc: 'Створіть першу та запросіть друзів!',
+        noChatMessages: 'Повідомлень ще немає',
+        noChatMessagesDesc: 'Привітайтеся з кімнатою!',
+        browsePublicRooms: 'або перегляньте публічні кімнати',
+        chatTitle: 'Чат кімнати',
+        typeMessage: 'Напишіть повідомлення...',
     }
 };
 

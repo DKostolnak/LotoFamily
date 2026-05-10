@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     nameLabel: {
-        color: '#8b6b4a',
+        color: '#d4b896',
         fontSize: 10,
         fontWeight: 'bold',
         letterSpacing: 3,
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     dateText: {
-        color: '#8b6b4a',
+        color: '#d4b896',
         fontSize: 11,
         fontWeight: 'bold',
         opacity: 0.8,
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
         letterSpacing: 2,
     },
     version: {
-        color: '#8b6b4a',
+        color: '#d4b896',
         fontSize: 8,
         fontWeight: 'bold',
         letterSpacing: 1,

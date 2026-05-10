@@ -1,19 +1,15 @@
 /**
  * Economy Slice
- * 
+ *
  * Handles coins, inventory, purchases, and equipped items.
  * Single Responsibility: Economic transactions only.
+ *
+ * Persistence is handled automatically by the Zustand `persist` middleware
+ * configured in `../index.ts` — slices only need to call `set(...)`.
  */
 
 import type { StateCreator } from 'zustand';
 import type { GameStore, EconomySlice } from '../types';
-import {
-    setCoins,
-    setInventory,
-    setLastDailyBonus,
-    setActiveTheme,
-    setActiveSkin,
-} from '../../services/storage';
 import { ECONOMY } from '../../config';
 
 export const createEconomySlice: StateCreator<GameStore, [], [], EconomySlice> = (set, get) => ({
@@ -23,46 +19,30 @@ export const createEconomySlice: StateCreator<GameStore, [], [], EconomySlice> =
     activeTheme: 'theme_classic',
     activeSkin: 'skin_classic',
 
-    addCoins: (amount: number) => {
-        set((state) => {
-            const newCoins = state.coins + amount;
-            setCoins(newCoins);
-            return { coins: newCoins };
-        });
-    },
+    addCoins: (amount: number) =>
+        set((state) => ({ coins: state.coins + amount })),
 
     removeCoins: (amount: number) => {
         const { coins } = get();
         if (coins < amount) return false;
-        
-        set((state) => {
-            const newCoins = state.coins - amount;
-            setCoins(newCoins);
-            return { coins: newCoins };
-        });
+
+        set((state) => ({ coins: state.coins - amount }));
         return true;
     },
 
     purchaseItem: (itemId: string, cost: number) => {
         const state = get();
-        
+
         // Validation
         if (state.coins < cost) return false;
         if (state.inventory.includes(itemId)) return false;
-        
+
         // Execute purchase
-        const newInventory = [...state.inventory, itemId];
-        const newCoins = state.coins - cost;
-        
         set({
-            coins: newCoins,
-            inventory: newInventory,
+            coins: state.coins - cost,
+            inventory: [...state.inventory, itemId],
         });
-        
-        // Persist
-        setCoins(newCoins);
-        setInventory(newInventory);
-        
+
         return true;
     },
 
@@ -72,34 +52,27 @@ export const createEconomySlice: StateCreator<GameStore, [], [], EconomySlice> =
         const oneDayMs = ECONOMY.DAILY_BONUS_INTERVAL_MS;
 
         if (now - lastDailyBonus > oneDayMs) {
-            const newCoins = coins + ECONOMY.DAILY_BONUS_AMOUNT;
-            
             set({
                 lastDailyBonus: now,
-                coins: newCoins,
+                coins: coins + ECONOMY.DAILY_BONUS_AMOUNT,
             });
-            
-            setLastDailyBonus(now);
-            setCoins(newCoins);
-            
+
             return ECONOMY.DAILY_BONUS_AMOUNT;
         }
-        
+
         return 0;
     },
 
     equipItem: (category, id) => {
         const { inventory } = get();
-        
+
         // Can only equip owned items
         if (!inventory.includes(id)) return;
-        
+
         if (category === 'theme') {
             set({ activeTheme: id });
-            setActiveTheme(id);
         } else if (category === 'skin') {
             set({ activeSkin: id });
-            setActiveSkin(id);
         }
     },
 });

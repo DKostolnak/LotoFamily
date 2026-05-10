@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     roomCodeLabel: {
-        color: '#8b6b4a',
+        color: '#d4b896',
         fontSize: 12,
         fontWeight: 'bold',
         textTransform: 'uppercase',
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     waitingText: {
-        color: '#8b6b4a',
+        color: '#d4b896',
         fontSize: 15,
         fontStyle: 'italic',
     },

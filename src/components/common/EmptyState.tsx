@@ -16,7 +16,7 @@ export const EmptyState = ({
     title,
     description,
     icon: Icon = Ghost,
-    iconColor = '#8b6b4a'
+    iconColor = '#d4b896'
 }: EmptyStateProps) => {
     return (
         <View className="items-center justify-center p-8 w-full opacity-80">
@@ -26,7 +26,7 @@ export const EmptyState = ({
             <Text className="text-[#a6814c] font-black text-lg uppercase tracking-widest text-center mb-2">
                 {title}
             </Text>
-            <Text className="text-[#8b6b4a] text-sm text-center font-medium max-w-[250px] leading-5">
+            <Text className="text-muted text-sm text-center font-medium max-w-[250px] leading-5">
                 {description}
             </Text>
         </View>

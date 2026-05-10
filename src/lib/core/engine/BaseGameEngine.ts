@@ -1,4 +1,4 @@
-import { NetworkMessage, NetworkPlayer } from '../network/types';
+import { NetworkMessage, NetworkPlayer } from '../../types';
 
 /**
  * Base Game Engine Class

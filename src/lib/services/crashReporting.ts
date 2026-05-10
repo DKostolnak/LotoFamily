@@ -17,8 +17,11 @@
  */
 
 import { FEATURES, IS_DEBUG } from '@/lib/config';
+import { SENTRY } from '@/lib/config/env.config';
 
 type Severity = 'fatal' | 'error' | 'warning' | 'info' | 'debug';
+
+type CrashProvider = 'sentry' | 'mock';
 
 interface ErrorContext {
     [key: string]: string | number | boolean | null | undefined;
@@ -41,6 +44,7 @@ interface Breadcrumb {
 class CrashReportingService {
     private static instance: CrashReportingService;
     private initialized = false;
+    private provider: CrashProvider = 'mock';
     private userContext: UserContext | null = null;
     private breadcrumbs: Breadcrumb[] = [];
     private readonly maxBreadcrumbs = 50;
@@ -68,18 +72,30 @@ class CrashReportingService {
             return;
         }
 
-        // TODO: Initialize real provider here
-        // Example for Sentry:
+        // REPLACE WHEN SENTRY CONFIGURED:
+        // import * as Sentry from '@sentry/react-native';
         // Sentry.init({
-        //     dsn: 'YOUR_SENTRY_DSN',
+        //     dsn: SENTRY.dsn,
         //     environment: APP_VARIANT,
         //     release: `${APP_VERSION}+${APP_BUILD_NUMBER}`,
         //     enableAutoSessionTracking: true,
         //     tracesSampleRate: 0.2,
         // });
+        // this.provider = 'sentry';
+
+        if (IS_DEBUG && !SENTRY.dsn) {
+            console.log('[CrashReporting] No Sentry DSN configured (mock).');
+        }
 
         this.initialized = true;
         console.log('[CrashReporting] Initialized');
+    }
+
+    /**
+     * Read-only provider name (useful for analytics tagging).
+     */
+    public getProvider(): CrashProvider {
+        return this.provider;
     }
 
     /**
@@ -171,6 +187,35 @@ class CrashReportingService {
     public setExtra(key: string, value: unknown): void {
         // TODO: Set on real provider
         // Example: Sentry.setExtra(key, value);
+    }
+
+    /**
+     * Convenience shortcut for `addBreadcrumb({ category, message, data })`.
+     */
+    public logBreadcrumb(
+        category: string,
+        message: string,
+        data?: Record<string, unknown>
+    ): void {
+        this.addBreadcrumb({ category, message, data, level: 'info' });
+    }
+
+    /**
+     * Wrap an async function so that any thrown / rejected error is captured
+     * automatically (and re-thrown so call-site behavior is unchanged).
+     */
+    public wrapAsync<T extends (...args: unknown[]) => Promise<unknown>>(
+        fn: T,
+        context?: ErrorContext
+    ): T {
+        return (async (...args: Parameters<T>) => {
+            try {
+                return await fn(...args);
+            } catch (error) {
+                this.captureException(error, context);
+                throw error;
+            }
+        }) as T;
     }
 
     /**

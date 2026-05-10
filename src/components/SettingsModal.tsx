@@ -5,7 +5,7 @@ import { useGameStore } from '@/lib/store';
 import { Volume2, VolumeX, Globe, Zap, Info } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { ENV } from '@/lib/config';
-import { translations, type Language } from '@/lib/translations';
+import { translations, type Language } from '@/lib/i18n';
 
 interface SettingsModalProps {
     visible: boolean;

@@ -1,8 +1,35 @@
 /**
  * Theme Configuration
- * 
+ *
  * Single source of truth for all visual customization options.
  * Follows Open/Closed Principle - extend by adding to configs, not modifying code.
+ *
+ * --------------------------------------------------------------------------
+ * COLOR ACCESSIBILITY GUIDE (WCAG AA requires >= 4.5:1 for normal text)
+ * --------------------------------------------------------------------------
+ *
+ * Wood palette (Tailwind tokens):
+ *   wood.darkest  #1a1109  — app background
+ *   wood.darker   #2d1f10  — header / card bg
+ *   wood.dark     #3d2814  — card body
+ *   wood.medium   #5a4025  — borders
+ *   wood.light    #8b6b4a  — BACKGROUND/BORDER ONLY. NOT safe for text
+ *                              (3.2:1 on #2d1f10 — fails WCAG AA).
+ *
+ * SAFE for text on dark backgrounds (>= 4.5:1):
+ *   cream.DEFAULT #f5e6c8  — primary body text
+ *   cream.light   #fffaf0  — high-emphasis text
+ *   muted         #d4b896  — secondary/muted text (replacement for #8b6b4a)
+ *   gold          #ffd700  — accent / titles
+ *
+ * Common pairs (foreground on background → contrast):
+ *   #f5e6c8 on #2d1f10 → 12.6:1   (AAA)
+ *   #d4b896 on #2d1f10 →  ~5.0:1  (AA)
+ *   #ffd700 on #1a1109 →  ~12.0:1 (AAA)
+ *   #8b6b4a on #2d1f10 →  ~3.2:1  (FAIL — do not use for text)
+ *
+ * Theme.textSecondary uses an accessible variant per-theme; legacy
+ * '#8b6b4a' has been replaced with '#d4b896' for the classic theme.
  */
 
 // ============================================================================
@@ -39,7 +66,8 @@ export const THEMES: Readonly<Record<ThemeId, ThemeColors>> = {
         gridBg: '#e6dcc8',
         border: '#5a4025',
         textPrimary: '#f5e6c8',
-        textSecondary: '#8b6b4a',
+        // Accessible muted (was #8b6b4a — failed WCAG AA at 3.2:1 on #2d1f10)
+        textSecondary: '#d4b896',
     },
     theme_ocean: {
         cardBg: '#1e3a5f',

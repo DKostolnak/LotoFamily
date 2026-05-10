@@ -36,7 +36,7 @@ const GameNumbersDisplayComponent = ({ currentNumber, history, compact = false }
                     ]}>
                         {history.slice(0, compact ? 2 : 4).map((num, idx) => (
                             <Animated.View
-                                key={`${num}-${history.length}-${idx}`}
+                                key={`history-${num}`}
                                 entering={FadeInRight.delay(idx * 50).duration(300)}
                                 exiting={FadeOutRight.duration(200)}
                                 layout={Layout.springify().damping(15)}

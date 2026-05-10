@@ -51,9 +51,9 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "1234567890",
-        "appleTeamId": "XXXXXXXXXX"
+        "_TODO_appleId": "your-apple-id@example.com",
+        "_TODO_ascAppId": "1234567890",
+        "_TODO_appleTeamId": "XXXXXXXXXX"
       },
       "android": {
         "serviceAccountKeyPath": "./play-store-credentials.json",

@@ -73,7 +73,7 @@ const GameHeaderComponent = ({ currentNumber, history, coins, isConnected, onLea
     const ButtonBox = ({ children, onPress }: any) => (
         <TouchableOpacity
             onPress={onPress}
-            className="rounded-lg bg-[#2d1f10] border border-[#5a4025] items-center justify-center active:bg-[#3d2814]"
+            className="rounded-lg bg-wood-darker border border-wood-medium items-center justify-center active:bg-wood-dark"
             style={{
                 width: buttonSize,
                 height: buttonSize,
@@ -137,12 +137,12 @@ const GameHeaderComponent = ({ currentNumber, history, coins, isConnected, onLea
                 {/* Right: Status & Coins */}
                 <View className="flex-row items-center gap-3">
                     {/* Connection Status Pill */}
-                    <View className="flex-row items-center gap-1.5 bg-[#2d1f10]/90 px-2 py-1 rounded-full border border-[#5a4025]/50 shadow-sm">
+                    <View className="flex-row items-center gap-1.5 bg-wood-darker/90 px-2 py-1 rounded-full border border-wood-medium/50 shadow-sm">
                         <View
-                            className={`w-2 h-2 rounded-full ${isConnected ? 'bg-[#4ade80]' : 'bg-[#ef4444]'}`}
+                            className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success' : 'bg-danger'}`}
                             style={{ elevation: 2, shadowColor: isConnected ? '#4ade80' : '#ef4444', shadowOpacity: 1, shadowRadius: 4 }}
                         />
-                        <Text className="text-[10px] font-bold text-[#8b6b4a] uppercase">
+                        <Text className="text-[10px] font-bold text-muted uppercase">
                             {isConnected ? 'LIVE' : 'OFF'}
                         </Text>
                     </View>

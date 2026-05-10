@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Animated } from 'react-native';
 import { AnimatedModal, WoodenButton, WoodenCard } from '@/components/common';
 import { useGameStore } from '@/lib/store';
-import { translations } from '@/lib/translations';
+import { translations } from '@/lib/i18n';
 import * as Haptics from 'expo-haptics';
 
 const DailyBonusModal = () => {

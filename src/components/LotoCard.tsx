@@ -1,15 +1,14 @@
-import React, { memo, useCallback, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { LotoCard as LotoCardType } from '@/lib/types';
 import { useResponsive } from '@/hooks';
 import { getThemeColors, getSkinColors } from '@/lib/config';
 
-/** 
- * Translation interface - accepts both new TranslationKeys type 
- * and legacy Record<string, string> for backward compatibility 
- */
-type TranslationProp = Record<string, string>;
+import type { TranslationKeys } from '@/lib/i18n';
+
+/** Translation prop type - partial for flexibility (test fixtures, partial dicts) */
+type TranslationProp = Partial<TranslationKeys>;
 
 interface LotoCardProps {
     card: LotoCardType;
@@ -27,7 +26,7 @@ interface LotoCardProps {
 }
 
 const LotoCell = memo(({
-    value, isMarked, row, col, isCalled, isMissed, isMistake, onPress, fontSize = 18, activeSkin = 'skin_classic'
+    value, isMarked, row, col, isCalled, isMissed, isMistake, onPress, fontSize = 18, activeSkin = 'skin_classic', t
 }: {
     value: number | null,
     isMarked: boolean,
@@ -38,7 +37,8 @@ const LotoCell = memo(({
     isMistake: boolean,
     onPress: (r: number, c: number) => void,
     fontSize?: number,
-    activeSkin?: string
+    activeSkin?: string,
+    t: TranslationProp
 }) => {
     const isEmpty = value === null;
 
@@ -56,17 +56,19 @@ const LotoCell = memo(({
         textClass = "text-[#991b1b] opacity-50";
     }
     if (isMistake) {
-        bgClass = "bg-[#ef4444]";
+        bgClass = "bg-danger";
         textClass = "text-white";
     }
 
-    // Accessibility state description
+    // Accessibility state description (localized with English fallback for test fixtures)
     const getAccessibilityState = () => {
-        if (isMarked && isCalled) return 'marked correctly';
-        if (isMarked && !isCalled) return 'marked incorrectly';
-        if (isCalled && !isMarked) return 'called, tap to mark';
-        return 'not called yet';
+        if (isMarked && isCalled) return t.a11yMarkedState ?? 'marked correctly';
+        if (isMarked && !isCalled) return t.a11yMarkedIncorrect ?? 'marked incorrectly';
+        if (isCalled && !isMarked) return t.a11yCalledTapToMark ?? 'called, tap to mark';
+        return t.a11yNotCalledYet ?? 'not called yet';
     };
+
+    const numberLabel = (t.a11yNumberLabel ?? 'Number {n}').replace('{n}', String(value));
 
     return (
         <TouchableOpacity
@@ -74,8 +76,8 @@ const LotoCell = memo(({
             onPress={() => onPress(row, col)}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel={`Number ${value}, ${getAccessibilityState()}`}
-            accessibilityHint={isMarked ? undefined : 'Double tap to mark this number'}
+            accessibilityLabel={`${numberLabel}, ${getAccessibilityState()}`}
+            accessibilityHint={isMarked ? undefined : (t.a11yMarkHint ?? 'Double tap to mark this number')}
             accessibilityState={{
                 selected: isMarked,
                 disabled: isMarked && isCalled
@@ -139,6 +141,13 @@ const LotoCardComponent = ({
     // Get theme colors from config
     const theme = getThemeColors(activeTheme);
 
+    // O(1) lookup map: number -> index in calledNumbers (avoids O(N²) per-cell scan)
+    const calledMap = useMemo(() => {
+        const map = new Map<number, number>();
+        calledNumbers.forEach((n, idx) => map.set(n, idx));
+        return map;
+    }, [calledNumbers]);
+
     // Responsive sizing
     const cellFontSize = compact ? scaleFont(14, 12) : scaleFont(18, 14);
     const headerPadY = Math.max(2, scale(4));
@@ -149,7 +158,7 @@ const LotoCardComponent = ({
         const cell = card.grid[row][col];
         if (cell.value === null || !onCellPress) return;
 
-        const isCalled = calledNumbers.includes(cell.value);
+        const isCalled = calledMap.has(cell.value);
 
         if (!isCalled) {
             setMistakeCell(`${row}-${col}`);
@@ -162,7 +171,7 @@ const LotoCardComponent = ({
 
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         onCellPress(row, col);
-    }, [card.grid, calledNumbers, onCellPress]);
+    }, [card.grid, calledMap, onCellPress]);
 
     const remainingOnCard = card.grid.flat().filter(c => c.value !== null && !c.isMarked).length;
 
@@ -177,14 +186,14 @@ const LotoCardComponent = ({
                 style={{ paddingVertical: headerPadY, paddingHorizontal: headerPadX, backgroundColor: theme.headerBg, borderColor: theme.border + '80' }}
             >
                 <Text
-                    className="text-[#8b6b4a] font-bold uppercase tracking-widest"
+                    className="text-muted font-bold uppercase tracking-widest"
                     style={{ fontSize: headerTextFontSize }}
                 >
                     CARD #{card.id.slice(-3)}
                 </Text>
                 <View className="bg-black/20 px-1.5 py-0.5 rounded-md border" style={{ borderColor: theme.border }}>
                     <Text
-                        className={`font-bold uppercase tracking-widest ${remainingOnCard === 0 ? 'text-[#4ade80]' : 'text-[#f5e6c8]'}`}
+                        className={`font-bold uppercase tracking-widest ${remainingOnCard === 0 ? 'text-success' : 'text-cream'}`}
                         style={{ fontSize: headerTextFontSize }}
                     >
                         {remainingOnCard === 0 ? 'COMPLETE' : `${remainingOnCard} LEFT`}
@@ -197,8 +206,9 @@ const LotoCardComponent = ({
                 {card.grid.map((row, rIdx) => (
                     <View key={rIdx} className="flex-row flex-1">
                         {row.map((cell, cIdx) => {
-                            const isCalled = cell.value !== null && calledNumbers.includes(cell.value);
-                            const isMissed = isCalled && !cell.isMarked && (calledNumbers.length - 1 - calledNumbers.indexOf(cell.value!) >= 2);
+                            const isCalled = cell.value !== null && calledMap.has(cell.value);
+                            const calledIdx = isCalled ? calledMap.get(cell.value!)! : -1;
+                            const isMissed = isCalled && !cell.isMarked && (calledNumbers.length - 1 - calledIdx >= 2);
 
                             // Custom Grid Borders
                             const borderRight = cIdx < 8 ? `border-r` : '';
@@ -222,6 +232,7 @@ const LotoCardComponent = ({
                                         onPress={handlePress}
                                         fontSize={cellFontSize}
                                         activeSkin={activeSkin}
+                                        t={t}
                                     />
                                 </View>
                             );

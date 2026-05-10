@@ -38,7 +38,7 @@ export {
 export { audioService } from './audio';
 
 // Analytics
-export { analytics } from './analytics';
+export { analytics, ANALYTICS_EVENTS, type AnalyticsEvent } from './analytics';
 
 // Crash Reporting
 export {
@@ -47,3 +47,25 @@ export {
     captureMessage,
     addBreadcrumb,
 } from './crashReporting';
+
+// Ads
+export {
+    adsService,
+    AdsService,
+    AD_PLACEMENTS,
+    type AdProvider,
+    type AdType,
+    type AdPlacement,
+    type RewardedAdResult,
+} from './ads';
+
+// In-App Purchases
+export {
+    purchasesService,
+    PurchasesService,
+    PRODUCT_IDS,
+    type PurchaseProvider,
+    type ProductPackage,
+    type ProductId,
+    type PurchaseResult,
+} from './purchases';

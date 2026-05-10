@@ -94,7 +94,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                 <Text className="text-[#ffd700] text-3xl font-black mb-2 uppercase tracking-wide text-center">
                                     OOPS!
                                 </Text>
-                                <Text className="text-[#8b6b4a] text-center mb-6 font-medium">
+                                <Text className="text-muted text-center mb-6 font-medium">
                                     The game got confused. Don't worry, your coins are safe!
                                 </Text>
 

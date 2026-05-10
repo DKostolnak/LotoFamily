@@ -6,7 +6,7 @@ import { WoodenButton, WoodenCard } from './common';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGameStore } from '@/lib/store';
-import { translations } from '@/lib/translations';
+import { translations } from '@/lib/i18n';
 import { APP_STORE_ID, PLAY_STORE_ID } from '@/lib/config';
 
 const STORAGE_KEY = '@loto_rate_app';
@@ -124,7 +124,7 @@ export function RateAppModal() {
                     <Text className="text-[#ffd700] font-black text-2xl uppercase tracking-wider text-center mb-2">
                         {t.rateTitle || 'Enjoying LOTO?'}
                     </Text>
-                    <Text className="text-[#8b6b4a] text-center mb-6">
+                    <Text className="text-muted text-center mb-6">
                         {t.rateMessage || 'If you\'re having fun, please rate us! It helps others discover the game.'}
                     </Text>
 

@@ -37,7 +37,7 @@ const QuestItem = ({ uq, onClaim, visible }: { uq: any, onClaim: (id: string) =>
                     <Text className="text-[#f5e6c8] font-black text-lg leading-tight uppercase">
                         {uq.quest.title}
                     </Text>
-                    <Text className="text-[#8b6b4a] text-xs font-medium mt-1">
+                    <Text className="text-muted text-xs font-medium mt-1">
                         {uq.quest.description}
                     </Text>
                 </View>

@@ -1,11 +1,19 @@
 /**
  * Game Store
- * 
+ *
  * Main store that composes all slices following the Open/Closed Principle.
  * Each slice is responsible for its own domain (SRP).
+ *
+ * Persistence: state is automatically persisted to AsyncStorage via the
+ * Zustand `persist` middleware. Slice actions only need to call `set(...)` —
+ * the middleware writes the (partialized) state to AsyncStorage on change
+ * and rehydrates on app start.
  */
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { GameStore } from './types';
 import {
     createPlayerSlice,
@@ -16,93 +24,132 @@ import {
 } from './slices';
 
 /**
- * Main game store - composes all slices
- * 
+ * Main game store - composes all slices, persisted via Zustand middleware.
+ *
  * Benefits of this architecture:
  * 1. Single Responsibility: Each slice handles one concern
  * 2. Open/Closed: Add new features via new slices without modifying existing ones
  * 3. Dependency Inversion: Components depend on store interface, not implementation
  * 4. Testability: Each slice can be tested in isolation
  */
-export const useGameStore = create<GameStore>()((...args) => ({
-    // Player identity management
-    ...createPlayerSlice(...args),
-    
-    // Economy & inventory management
-    ...createEconomySlice(...args),
-    
-    // Player statistics tracking
-    ...createStatsSlice(...args),
-    
-    // App settings/preferences
-    ...createSettingsSlice(...args),
-    
-    // App lifecycle management
-    ...createAppSlice(...args),
-}));
+export const useGameStore = create<GameStore>()(
+    persist(
+        (...args) => ({
+            // Player identity management
+            ...createPlayerSlice(...args),
+
+            // Economy & inventory management
+            ...createEconomySlice(...args),
+
+            // Player statistics tracking
+            ...createStatsSlice(...args),
+
+            // App settings/preferences
+            ...createSettingsSlice(...args),
+
+            // App lifecycle management
+            ...createAppSlice(...args),
+        }),
+        {
+            name: 'loto-game-storage',
+            storage: createJSONStorage(() => AsyncStorage),
+            version: 1,
+            // Persist domain data only — never transient flags like
+            // isLoading / error / isInitialized.
+            partialize: (state) => ({
+                playerName: state.playerName,
+                playerAvatar: state.playerAvatar,
+                coins: state.coins,
+                inventory: state.inventory,
+                lastDailyBonus: state.lastDailyBonus,
+                activeTheme: state.activeTheme,
+                activeSkin: state.activeSkin,
+                stats: state.stats,
+                tier: state.tier,
+                isMuted: state.isMuted,
+                language: state.language,
+                batterySaver: state.batterySaver,
+            }),
+        }
+    )
+);
 
 // ============================================================================
 // Selector Hooks (for optimized re-renders)
 // ============================================================================
+//
+// All composite selectors return a fresh object every call, so we wrap them
+// with `useShallow` to ensure components re-render only when one of the
+// selected fields actually changes.
 
 /**
  * Select player profile data
  */
 export const usePlayerProfile = () =>
-    useGameStore((state) => ({
-        playerName: state.playerName,
-        playerAvatar: state.playerAvatar,
-        setPlayerName: state.setPlayerName,
-        setPlayerAvatar: state.setPlayerAvatar,
-    }));
+    useGameStore(
+        useShallow((state) => ({
+            playerName: state.playerName,
+            playerAvatar: state.playerAvatar,
+            setPlayerName: state.setPlayerName,
+            setPlayerAvatar: state.setPlayerAvatar,
+        }))
+    );
 
 /**
  * Select economy data
  */
 export const useEconomy = () =>
-    useGameStore((state) => ({
-        coins: state.coins,
-        inventory: state.inventory,
-        activeTheme: state.activeTheme,
-        activeSkin: state.activeSkin,
-        addCoins: state.addCoins,
-        purchaseItem: state.purchaseItem,
-        equipItem: state.equipItem,
-    }));
+    useGameStore(
+        useShallow((state) => ({
+            coins: state.coins,
+            inventory: state.inventory,
+            activeTheme: state.activeTheme,
+            activeSkin: state.activeSkin,
+            addCoins: state.addCoins,
+            purchaseItem: state.purchaseItem,
+            equipItem: state.equipItem,
+        }))
+    );
 
 /**
  * Select player stats
  */
 export const usePlayerStats = () =>
-    useGameStore((state) => ({
-        stats: state.stats,
-        tier: state.tier,
-        updateStats: state.updateStats,
-    }));
+    useGameStore(
+        useShallow((state) => ({
+            stats: state.stats,
+            tier: state.tier,
+            updateStats: state.updateStats,
+        }))
+    );
 
 /**
  * Select app settings
  */
 export const useSettings = () =>
-    useGameStore((state) => ({
-        isMuted: state.isMuted,
-        language: state.language,
-        batterySaver: state.batterySaver,
-        setMuted: state.setMuted,
-        setLanguage: state.setLanguage,
-        setBatterySaver: state.setBatterySaver,
-    }));
+    useGameStore(
+        useShallow((state) => ({
+            isMuted: state.isMuted,
+            language: state.language,
+            batterySaver: state.batterySaver,
+            setMuted: state.setMuted,
+            setLanguage: state.setLanguage,
+            setBatterySaver: state.setBatterySaver,
+        }))
+    );
 
 /**
  * Select app state (loading, errors)
  */
 export const useAppState = () =>
-    useGameStore((state) => ({
-        isLoading: state.isLoading,
-        error: state.error,
-        isInitialized: state.isInitialized,
-        initialize: state.initialize,
-    }));
+    useGameStore(
+        useShallow((state) => ({
+            isLoading: state.isLoading,
+            error: state.error,
+            isInitialized: state.isInitialized,
+            initialize: state.initialize,
+        }))
+    );
 
 // Re-export types for convenience
 export type { GameStore, PlayerStats } from './types';

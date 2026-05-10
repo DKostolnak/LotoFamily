@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ViewStyle } from 'react-native';
-import { k_colorGold } from '@/lib/constants';
+import { k_colorGold } from '@/lib/config';
 import { useResponsive } from '@/hooks';
 
 interface CoinBadgeProps {

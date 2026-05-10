@@ -45,3 +45,10 @@ yarn-error.*
 /ios
 /android
 *.bak
+
+# Vim swap files
+*.swp
+*.swo
+
+# Claude Code session data
+.claude/

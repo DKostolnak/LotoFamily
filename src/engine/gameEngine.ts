@@ -18,7 +18,7 @@ import {
     type Player,
     type CalledNumber,
 } from '@/lib/types';
-import { ROOM_CODE_CHARS, ROOM_CODE_LENGTH, POINTS } from '@/lib/constants';
+import { ROOM_CODE_CHARS, ROOM_CODE_LENGTH, POINTS } from '@/lib/config';
 import { generateCards, markCell } from './lotoCardGenerator';
 import { checkPlayerWin } from './gameModes';
 
@@ -159,16 +159,24 @@ export function addPlayer(
 export function removePlayer(state: GameState, playerId: string): GameState {
     const updatedPlayers = state.players.filter(p => p.id !== playerId);
 
-    // Assign new host if needed
-    let newHostId = state.hostId;
-    if (playerId === state.hostId && updatedPlayers.length > 0) {
-        newHostId = updatedPlayers[0].id;
-        updatedPlayers[0] = { ...updatedPlayers[0], isHost: true };
+    if (updatedPlayers.length === 0) {
+        return { ...state, players: [], hostId: state.hostId };
     }
+
+    let newHostId = state.hostId;
+    if (playerId === state.hostId) {
+        newHostId = updatedPlayers[0].id;
+    }
+
+    // Defensive: ensure exactly one player has isHost=true and it matches hostId.
+    const playersWithCorrectHost = updatedPlayers.map(p => ({
+        ...p,
+        isHost: p.id === newHostId,
+    }));
 
     return {
         ...state,
-        players: updatedPlayers,
+        players: playersWithCorrectHost,
         hostId: newHostId,
     };
 }
@@ -230,25 +238,23 @@ export function autoMarkBots(state: GameState): GameState {
     const updatedPlayers = state.players.map(player => {
         if (!player.isBot) return player;
 
-        let playerUpdated = false;
         const newCards = player.cards.map(card => {
-            for (let r = 0; r < card.grid.length; r++) {
-                for (let c = 0; c < card.grid[r].length; c++) {
-                    const cell = card.grid[r][c];
+            let newCard = card;
+            for (let r = 0; r < newCard.grid.length; r++) {
+                for (let c = 0; c < newCard.grid[r].length; c++) {
+                    const cell = newCard.grid[r][c];
                     if (cell.value === currentNum && !cell.isMarked) {
-                        playerUpdated = true;
+                        // Apply mark on the latest version of the card so multiple
+                        // matches inside the same card (e.g. duplicate column) all stick.
+                        newCard = markCell(newCard, r, c);
                         hasUpdates = true;
-                        return markCell(card, r, c);
                     }
                 }
             }
-            return card;
+            return newCard;
         });
 
-        if (playerUpdated) {
-            return { ...player, cards: newCards };
-        }
-        return player;
+        return newCards === player.cards ? player : { ...player, cards: newCards };
     });
 
     if (!hasUpdates) {
@@ -257,7 +263,7 @@ export function autoMarkBots(state: GameState): GameState {
 
     return {
         ...state,
-        players: updatedPlayers
+        players: updatedPlayers,
     };
 }
 
