@@ -1,10 +1,14 @@
 import React from 'react';
 import { View, Text, ImageBackground, StyleSheet, Dimensions } from 'react-native';
-import { Trophy, Medal, Star, Crown } from 'lucide-react-native';
+import { Trophy, Star, Crown } from 'lucide-react-native';
 
 // Corrected path to assets (2 levels up from src/components)
 const WOOD_TEXTURE = require('../../assets/wood-seamless.png');
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Responsive card dimensions — fits every screen from iPhone SE to iPad
+const CARD_WIDTH  = Math.min(SCREEN_WIDTH - 48, 340);
+const CARD_HEIGHT = Math.round(CARD_WIDTH * (520 / 340));
 
 interface VictoryCardProps {
     playerName: string;
@@ -16,7 +20,11 @@ interface VictoryCardProps {
 
 export const VictoryCard = ({ playerName, playerAvatar, prize, level, date }: VictoryCardProps) => {
     return (
-        <View style={styles.container}>
+        <View
+            style={styles.container}
+            accessibilityRole="image"
+            accessibilityLabel={`Victory card for ${playerName} — ${prize.toLocaleString()} coins prize`}
+        >
             <ImageBackground source={WOOD_TEXTURE} style={styles.card} resizeMode="repeat">
                 <View style={styles.overlay} />
 
@@ -97,8 +105,8 @@ export const VictoryCard = ({ playerName, playerAvatar, prize, level, date }: Vi
 
 const styles = StyleSheet.create({
     container: {
-        width: 340,
-        height: 520,
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
         backgroundColor: '#000',
         borderRadius: 32,
         overflow: 'hidden',
@@ -219,7 +227,7 @@ const styles = StyleSheet.create({
     },
     nameLabel: {
         color: '#d4b896',
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: 'bold',
         letterSpacing: 3,
         marginBottom: 4,
@@ -301,13 +309,13 @@ const styles = StyleSheet.create({
     },
     gameTitle: {
         color: '#ffd700',
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '900',
         letterSpacing: 2,
     },
     version: {
         color: '#d4b896',
-        fontSize: 8,
+        fontSize: 10,
         fontWeight: 'bold',
         letterSpacing: 1,
     }

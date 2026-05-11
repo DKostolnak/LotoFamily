@@ -1,5 +1,5 @@
 import React, { memo, useEffect } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -9,73 +9,62 @@ import Animated, {
     cancelAnimation,
     Easing,
 } from 'react-native-reanimated';
-import { TEXT_STYLES, FONT_WEIGHTS } from '@/lib/config';
-
-const CHIP_LARGE = require('../../../assets/wooden-chip-large.png');
-const CHIP_SMALL = require('../../../assets/wooden-chip-small.png');
+import { getSkin, DEFAULT_SKIN_ID } from '@/lib/config/theme.config';
 
 export type ChipMarkerVariant = 'correct' | 'incorrect' | 'missed';
 
 interface ChipMarkerProps {
-    /** Whether the chip should be shown. Toggling triggers drop / lift animation. */
     marked: boolean;
-    /** Optional value to print on the chip (for the "correct" state). */
     value?: number | null;
-    /** Visual variant — 'correct' (default), 'incorrect' (wrong tap), 'missed' (faded). */
     variant?: ChipMarkerVariant;
-    /** Pixel size of the chip (assumed square). Default 36. */
     size?: number;
+    /** Aktívny skin z obchodu — určuje farby žetóna. Default: skin_classic */
+    activeSkin?: string;
 }
 
 /**
- * ChipMarker — a wooden-token marker that drops onto a Loto card cell when
- * the player marks a number, and lifts away when unmarked.
+ * ChipMarker — okrúhly farebný žetón (disc) ktorý padne na bunku keď
+ * hráč označí číslo. Čisto RN render — žiadne image assets.
  *
- * Uses the real `wooden-chip-large.png` / `wooden-chip-small.png` assets
- * for an authentic wooden look. The "incorrect" and "missed" variants
- * recolor the chip via a subtle red / muted overlay.
- *
- * Animation:
- *   - Drop in (~340ms): translateY -90 → 0, scale 0.55 → 1.12 → 1, random ±25° → 0.
- *   - Lift out (~260ms): scale 1 → 1.18 → 0, opacity 1 → 0.
- *   - cancelAnimation on unmount and on mark toggle.
- *
- * Conditional render in the parent (only mount when `marked === true`)
- * keeps the per-cell animation footprint at zero for unmarked cells.
+ * correct  → červeno-bordový disc (výrazný na cream bunke)
+ * incorrect → červený s priehľadnosťou
+ * missed   → sivý s priehľadnosťou
  */
 const ChipMarkerComponent = ({
     marked,
     value,
     variant = 'correct',
     size = 36,
+    activeSkin = DEFAULT_SKIN_ID,
 }: ChipMarkerProps) => {
-    const translateY = useSharedValue(marked ? 0 : -90);
-    const scale = useSharedValue(marked ? 1 : 0);
+    const skin = getSkin(activeSkin);
+    const translateY = useSharedValue(-60);
+    const scale = useSharedValue(0.4);
     const rotation = useSharedValue(0);
-    const opacity = useSharedValue(marked ? 1 : 0);
+    const opacity = useSharedValue(0);
 
     useEffect(() => {
         if (marked) {
-            translateY.value = -90;
-            scale.value = 0.55;
-            rotation.value = (Math.random() - 0.5) * 50; // ±25°
+            translateY.value = -60;
+            scale.value = 0.4;
+            rotation.value = (Math.random() - 0.5) * 40;
             opacity.value = 1;
 
             translateY.value = withTiming(0, {
-                duration: 340,
-                easing: Easing.bezier(0.5, 1, 0.6, 1),
+                duration: 300,
+                easing: Easing.bezier(0.22, 1, 0.36, 1),
             });
             scale.value = withSequence(
-                withTiming(1.12, { duration: 240, easing: Easing.out(Easing.cubic) }),
-                withSpring(1, { damping: 9, stiffness: 220 })
+                withTiming(1.15, { duration: 220, easing: Easing.out(Easing.cubic) }),
+                withSpring(1, { damping: 10, stiffness: 240 })
             );
-            rotation.value = withTiming(0, { duration: 340 });
+            rotation.value = withTiming(0, { duration: 300 });
         } else {
             scale.value = withSequence(
-                withTiming(1.18, { duration: 100, easing: Easing.out(Easing.cubic) }),
-                withTiming(0, { duration: 200, easing: Easing.in(Easing.cubic) })
+                withTiming(1.15, { duration: 80 }),
+                withTiming(0, { duration: 180, easing: Easing.in(Easing.cubic) })
             );
-            opacity.value = withTiming(0, { duration: 220 });
+            opacity.value = withTiming(0, { duration: 200 });
         }
 
         return () => {
@@ -95,78 +84,53 @@ const ChipMarkerComponent = ({
         ],
     }));
 
-    // Pick chip asset: large for >32pt, small for ≤32pt.
-    const chipAsset = size > 32 ? CHIP_LARGE : CHIP_SMALL;
+    // Farby žetóna podľa variantu + aktívneho skinu
+    const discColor =
+        variant === 'incorrect' ? skin.incorrectBg
+            : variant === 'missed' ? 'rgba(80, 60, 40, 0.55)'
+                : skin.chipBg;
 
-    // Per-variant tint overlay (subtle — keeps the wood texture readable).
-    const variantTint =
-        variant === 'incorrect'
-            ? 'rgba(239, 68, 68, 0.45)'
-            : variant === 'missed'
-                ? 'rgba(0, 0, 0, 0.35)'
-                : null;
+    const rimColor =
+        variant === 'incorrect' ? skin.incorrectBorder
+            : variant === 'missed' ? '#6b5340'
+                : skin.chipBorder;
 
-    const labelColor =
-        variant === 'incorrect'
-            ? '#fca5a5'
-            : variant === 'missed'
-                ? '#a8916b'
-                : '#3d2814';
+    const textColor =
+        variant === 'missed' ? 'rgba(255,255,255,0.6)' : '#fff';
+
+    const fontSize = size <= 28 ? size * 0.38 : size * 0.36;
 
     return (
         <View pointerEvents="none" style={styles.wrapper}>
-            <Animated.View
-                style={[
-                    styles.chip,
-                    {
-                        width: size,
-                        height: size,
-                    },
-                    animatedStyle,
-                ]}
-            >
-                <Image
-                    source={chipAsset}
-                    style={{ width: size, height: size }}
-                    resizeMode="contain"
-                />
-
-                {/* Variant tint overlay */}
-                {variantTint && (
-                    <View
-                        pointerEvents="none"
-                        style={[
-                            styles.tint,
-                            {
-                                width: size * 0.78,
-                                height: size * 0.78,
-                                borderRadius: (size * 0.78) / 2,
-                                backgroundColor: variantTint,
-                            },
-                        ]}
-                    />
-                )}
-
-                {/* Number label */}
-                {value !== null && value !== undefined && (
-                    <View pointerEvents="none" style={styles.label}>
-                        <Text
-                            style={[
-                                size > 32 ? TEXT_STYLES.bodyBold : TEXT_STYLES.captionUpper,
-                                {
-                                    color: labelColor,
-                                    fontWeight: FONT_WEIGHTS.black,
-                                    textShadowColor: 'rgba(255, 235, 200, 0.5)',
-                                    textShadowOffset: { width: 0, height: 1 },
-                                    textShadowRadius: 1,
-                                },
-                            ]}
-                            numberOfLines={1}
-                        >
-                            {value}
-                        </Text>
+            <Animated.View style={[animatedStyle, styles.shadow]}>
+                {/* Outer rim */}
+                <View style={[styles.disc, {
+                    width: size,
+                    height: size,
+                    borderRadius: size / 2,
+                    backgroundColor: rimColor,
+                }]}>
+                    {/* Inner disc */}
+                    <View style={[styles.inner, {
+                        width: size * 0.82,
+                        height: size * 0.82,
+                        borderRadius: (size * 0.82) / 2,
+                        backgroundColor: discColor,
+                    }]}>
+                        {/* Shine highlight */}
+                        <View style={[styles.shine, {
+                            width: size * 0.35,
+                            height: size * 0.18,
+                            borderRadius: size * 0.1,
+                            top: size * 0.08,
+                        }]} />
+                        {value !== null && value !== undefined && (
+                            <Text style={[styles.label, { fontSize, color: textColor }]} numberOfLines={1}>
+                                {value}
+                            </Text>
+                        )}
                     </View>
-                )}
+                </View>
             </Animated.View>
         </View>
     );
@@ -180,22 +144,34 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         alignItems: 'center',
         justifyContent: 'center',
+        zIndex: 10,
     },
-    chip: {
-        alignItems: 'center',
-        justifyContent: 'center',
+    shadow: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
-        elevation: 6,
+        shadowOpacity: 0.55,
+        shadowRadius: 5,
+        elevation: 8,
     },
-    tint: {
-        position: 'absolute',
-    },
-    label: {
-        ...StyleSheet.absoluteFillObject,
+    disc: {
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    inner: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    shine: {
+        position: 'absolute',
+        backgroundColor: 'rgba(255,255,255,0.28)',
+    },
+    label: {
+        fontWeight: '900',
+        textAlign: 'center',
+        textShadowColor: 'rgba(0,0,0,0.4)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
+        letterSpacing: -0.5,
     },
 });

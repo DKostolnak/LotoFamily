@@ -218,7 +218,13 @@ export function useSupabaseGame(): UseSupabaseGameReturn {
         avatar: string,
         settings?: Partial<GameSettings>,
     ) => {
-        const userId = myPlayerId;
+        // myPlayerId may not be set yet (async init race) — resolve directly
+        let userId = myPlayerId;
+        if (!userId) {
+            const { data: { session } } = await getSession();
+            userId = session?.user?.id ?? null;
+            if (userId) setMyPlayerId(userId);
+        }
         if (!userId) { setError('Not authenticated'); return; }
 
         setStatus('connecting');
@@ -236,6 +242,13 @@ export function useSupabaseGame(): UseSupabaseGameReturn {
                 settings,
             });
             engineRef.current = engine;
+
+            // Subscrib na všetky zmeny stavu enginu (autoCall, markCell, atď.)
+            // Bez tohto auto-call nikdy neupraví React state ani nebroadcastuje.
+            engine.onStateChange((newState) => {
+                setGameState({ ...newState });
+                if (isHostRef.current) broadcastState(newState);
+            });
 
             // Ulož miestnosť do Supabase DB
             await (supabase.from('game_rooms') as any).insert({
@@ -275,7 +288,13 @@ export function useSupabaseGame(): UseSupabaseGameReturn {
         playerName: string,
         avatar: string,
     ) => {
-        const userId = myPlayerId;
+        // myPlayerId may not be set yet (async init race) — resolve directly
+        let userId = myPlayerId;
+        if (!userId) {
+            const { data: { session } } = await getSession();
+            userId = session?.user?.id ?? null;
+            if (userId) setMyPlayerId(userId);
+        }
         if (!userId) { setError('Not authenticated'); return; }
 
         setStatus('connecting');

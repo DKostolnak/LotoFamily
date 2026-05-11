@@ -40,7 +40,7 @@ import { OnboardingModal } from '@/components/OnboardingModal';
 import { BattlePassModal } from '@/components/BattlePassModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useResponsive } from '@/hooks';
-import ENV from '@/lib/config/env.config';
+import { supabase } from '@/lib/services/supabase';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 import Animated, {
     useSharedValue,
@@ -70,6 +70,8 @@ export default function MainMenu() {
         setPlayerAvatar,
         initialize,
     } = useGameStore();
+    const pendingDeepLink = useGameStore((s) => s.pendingDeepLink);
+    const setPendingDeepLink = useGameStore((s) => s.setPendingDeepLink);
     // Reactive XP read so the level pill / progress bar update on stat changes.
     const xp = useGameStore((s) => s.stats.xp || 0);
     const currentStreak = useGameStore((s) => s.stats.currentStreak ?? 0);
@@ -123,6 +125,16 @@ export default function MainMenu() {
         setActiveModal(null);
     }, [mode]);
 
+    // Handle deep-links from push notification taps
+    useEffect(() => {
+        if (!pendingDeepLink) return;
+        if (pendingDeepLink === 'season_ending') {
+            setActiveModal('seasonPass');
+        }
+        // 'daily_bonus' is handled automatically by DailyBonusModal on mount
+        setPendingDeepLink(null);
+    }, [pendingDeepLink, setPendingDeepLink]);
+
     useEffect(() => {
         const handleDeepLink = (event: { url: string }) => {
             const { queryParams } = Linking.parse(event.url);
@@ -154,19 +166,29 @@ export default function MainMenu() {
         setPublicRoomsState('loading');
         setPublicRoomsError(null);
 
-        fetch(`${ENV.server.url}/rooms/public`)
-            .then((res) => {
-                if (!res.ok) throw new Error(`Server error: ${res.status}`);
-                return res.json();
-            })
-            .then((data) => {
+        (supabase.from('game_rooms') as any)
+            .select('id, room_code, host_id, players, settings, created_at')
+            .eq('phase', 'lobby')
+            .order('created_at', { ascending: false })
+            .limit(20)
+            .then(({ data, error }: { data: any[] | null; error: any }) => {
                 if (cancelled) return;
-                setPublicRooms(Array.isArray(data) ? data : []);
+                if (error) throw new Error(error.message ?? 'Supabase error');
+                const rooms = (data ?? [])
+                    // Exclude rooms the host explicitly marked private
+                    .filter((r: any) => r.settings?.isPublic !== false)
+                    .map((r: any) => ({
+                        id: r.id,
+                        code: r.room_code,
+                        hostId: r.host_id ?? '',
+                        players: Array.isArray(r.players) ? r.players : [],
+                    }));
+                setPublicRooms(rooms);
                 setPublicRoomsState('loaded');
             })
-            .catch((err) => {
+            .catch((err: Error) => {
                 if (cancelled) return;
-                console.error('Failed to fetch public rooms:', err);
+                console.error('[PublicRooms] fetch failed:', err);
                 setPublicRoomsError(err?.message ?? 'Unknown error');
                 setPublicRoomsState('error');
             });
@@ -272,18 +294,18 @@ export default function MainMenu() {
 
     const renderMenu = () => (
         <View style={{ width: '100%' }}>
-            {/* Hero zone — atmospheric, centered */}
+            {/* Hero zone — compact so SE screen fits without scrolling */}
             <Animated.View
                 style={[
                     logoAnimatedStyle,
                     {
                         alignItems: 'center',
-                        paddingTop: SPACING.xl,
-                        paddingBottom: SPACING.xxl,
+                        paddingTop: SPACING.md,
+                        paddingBottom: SPACING.lg,
                     },
                 ]}
             >
-                <Text style={{ fontSize: 56, lineHeight: 64 }}>🎲</Text>
+                <Text style={{ fontSize: 48, lineHeight: 56 }}>🎲</Text>
                 <Text
                     style={[
                         TEXT_STYLES.display,
@@ -311,7 +333,7 @@ export default function MainMenu() {
             </Animated.View>
 
             {/* Primary CTA */}
-            <Animated.View style={[buttonsAnimatedStyle, { marginBottom: SPACING.xl }]}>
+            <Animated.View style={[buttonsAnimatedStyle, { marginBottom: SPACING.md }]}>
                 <PlayNowButton
                     onPress={() => setModePickerOpen(true)}
                     title={labelPlayNow}
@@ -320,7 +342,7 @@ export default function MainMenu() {
             </Animated.View>
 
             {/* Inline chips — daily bonus only when ready, free coins always */}
-            <Animated.View style={[footerAnimatedStyle, { gap: SPACING.sm, marginBottom: SPACING.lg }]}>
+            <Animated.View style={[footerAnimatedStyle, { gap: SPACING.sm, marginBottom: SPACING.sm }]}>
                 <DailyBonusCard
                     compact
                     lastDailyBonus={lastDailyBonus}
@@ -698,16 +720,17 @@ export default function MainMenu() {
                     )}
 
                     <ScrollView
+                        style={{ flex: 1 }}
                         contentContainerStyle={{
                             flexGrow: 1,
                             padding: SPACING.lg,
                             paddingTop:
                                 mode === 'menu'
-                                    ? insets.top + 76 // compact sticky header + breathing room
+                                    ? insets.top + 72 // compact sticky header height
                                     : insets.top + SPACING.lg,
                             paddingBottom:
                                 mode === 'menu'
-                                    ? SPACING.lg // footer renders below the scroll
+                                    ? SPACING.sm
                                     : insets.bottom + SPACING.xxl,
                         }}
                         showsVerticalScrollIndicator={false}

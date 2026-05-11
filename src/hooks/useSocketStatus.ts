@@ -19,8 +19,16 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import * as Network from 'expo-network';
 import { socketService, type ConnectionStatus } from '@/lib/services';
+
+// Lazy require — expo-network native module may not be present in Expo Go.
+// If unavailable, offline detection is disabled and socket status is used as-is.
+let Network: typeof import('expo-network') | null = null;
+try {
+    Network = require('expo-network');
+} catch {
+    console.warn('[useSocketStatus] expo-network unavailable — offline detection disabled');
+}
 
 export type SocketBannerStatus = ConnectionStatus | 'offline';
 
@@ -73,6 +81,7 @@ export function useSocketStatus(): UseSocketStatusResult {
         let cancelled = false;
 
         const check = async () => {
+            if (!Network) return; // Native module unavailable — skip offline check
             try {
                 const state = await Network.getNetworkStateAsync();
                 if (cancelled) return;

@@ -105,14 +105,18 @@ export const translations: Record<Language, TranslationKeys> = {
 
         // Rules Content
         rulesTitle: 'How to Play',
-        rulesPage1Title: 'The Basics',
-        rulesPage1Desc: '90 balls are drawn randomly. You have 3 cards. Tap any number to mark it with a chip. Be careful: marking the wrong number freezes your card!',
-        rulesPage2Title: 'Winning Big',
-        rulesPage2Desc: 'Claim a LINE! by filling any horizontal row. Win the JACKPOT by filling an entire card (BINGO!). Prize pools are shared among all winners.',
-        rulesPage3Title: 'Economy',
-        rulesPage3Desc: 'Rooms have an entry fee in LCoins. All fees collected form the Prize Pool. The more players, the bigger the reward!',
-        rulesPage4Title: 'Social & Legend',
-        rulesPage4Desc: 'Chat with other players in real-time. Win matches to climb the Global Leaderboard and prove you are the Loto King!',
+        rulesPage1Title: 'Your Cards',
+        rulesPage1Desc: 'You play with 3 cards per game\nEach card is a 3×9 grid with random numbers 1–90\nEmpty cells are blank spaces — completely normal!',
+        rulesPage2Title: 'The Drum Calls',
+        rulesPage2Desc: 'A random number is drawn every few seconds\nIt appears in the big drum at the top of the screen\nThe last 4 called numbers are shown as smaller chips',
+        rulesPage3Title: 'Mark Your Numbers',
+        rulesPage3Desc: 'When a number appears in the drum, tap it on your card\nA colored chip marks it — matches your skin from the shop!\n⚠️ Tapping a number NOT yet called freezes your card for 1 second!',
+        rulesPage4Title: 'Win: LINE',
+        rulesPage4Desc: 'Fill all numbers in any complete horizontal row\nA row has 5 numbers (empty cells don\'t count)\nPress the BINGO! button to claim your LINE prize 🏆',
+        rulesPage5Title: 'Win: BINGO!',
+        rulesPage5Desc: 'Fill every number on an entire card\nPress the BINGO! button that appears at the bottom\nWin the JACKPOT 🎉 — the faster you finish, the bigger the prize!',
+        rulesPage6Title: 'Power-ups',
+        rulesPage6Desc: '🔮 Peek — preview the next 3 called numbers\n⭐ Lucky Mark — auto-marks one correct number for you\n⏱️ Slow Time — extends the call interval temporarily',
 
         // Accessibility (a11y)
         a11yNumberLabel: 'Number {n}',
@@ -212,6 +216,8 @@ export const translations: Record<Language, TranslationKeys> = {
         notificationsDesc: 'Daily bonus reminders, friend invites',
         dailyBonusNotifTitle: '🎁 Daily bonus is ready!',
         dailyBonusNotifBody: 'Open LOTO and claim your reward.',
+        seasonEndingNotifTitle: '⏳ Season ending soon!',
+        seasonEndingNotifBody: 'Claim your Battle Pass rewards before they expire.',
         shareInvite: 'Share invite',
         invitedToJoin: "You're joining via invite",
 
@@ -273,6 +279,7 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusOffline: 'No connection',
         connStatusError: 'Connection error',
         connRetry: 'Retry',
+        errorReport: 'Report',
 
         // Voice announcer
         announcerMode: 'Folk Nicknames',
@@ -384,14 +391,18 @@ export const translations: Record<Language, TranslationKeys> = {
 
         // Rules Content
         rulesTitle: 'Ako hrať',
-        rulesPage1Title: 'Základy',
-        rulesPage1Desc: 'Náhodne sa vyžrebuje 90 loptičiek. Máte 3 karty. Poklepaním na číslo ho označíte žetónom. Pozor: označenie nesprávneho čísla kartu na chvíľu zmrazí!',
-        rulesPage2Title: 'Veľké výhry',
-        rulesPage2Desc: 'Získajte RIADOK! vyplnením ktoréhokoľvek vodorovného riadku. Vyhrajte JACKPOT vyplnením celej karty (BINGO!). Výhry sa delia medzi všetkých víťazov.',
-        rulesPage3Title: 'Ekonomika',
-        rulesPage3Desc: 'Miestnosti majú vstupný poplatok v LCoinov. Všetky vyzbierané poplatky tvoria banku. Čím viac hráčov, tým väčšia odmena!',
-        rulesPage4Title: 'Sociálne a Legendy',
-        rulesPage4Desc: 'Chatujte s ostatnými hráčmi v reálnom čase. Vyhrávajte zápasy, stúpajte v globálnom rebríčku a dokážte, že ste kráľom Lota!',
+        rulesPage1Title: 'Tvoje karty',
+        rulesPage1Desc: 'Hráš s 3 kartami v každej hre\nKaždá karta je mriežka 3×9 s náhodnými číslami 1–90\nPrázdne bunky sú prázdne miesta — to je úplne normálne!',
+        rulesPage2Title: 'Bubon volá čísla',
+        rulesPage2Desc: 'Každých pár sekúnd sa vyžrebuje náhodné číslo\nZobrazí sa vo veľkom bubne hore na obrazovke\nPosledné 4 vyvolané čísla sú viditeľné ako menšie žetóny',
+        rulesPage3Title: 'Označ svoje čísla',
+        rulesPage3Desc: 'Keď sa číslo objaví v bubne, ťukni naň na svojej karte\nFarebný žetón ho označí — farba závisí od tvojho skinu!\n⚠️ Ťuknutie na číslo ktoré NEBOLO vyvolané zmrazí kartu na 1 sekundu!',
+        rulesPage4Title: 'Výhra: RIADOK',
+        rulesPage4Desc: 'Vyplň všetky čísla v ľubovoľnom celom vodorovnom riadku\nRiadok má 5 čísel (prázdne bunky sa nerátajú)\nStlač tlačidlo BINGO! pre nárok na cenu za RIADOK 🏆',
+        rulesPage5Title: 'Výhra: BINGO!',
+        rulesPage5Desc: 'Vyplň každé číslo na celej karte\nStlač tlačidlo BINGO! ktoré sa zobrazí dole\nVyhraj JACKPOT 🎉 — čím rýchlejšie, tým väčšia výhra!',
+        rulesPage6Title: 'Špeciálne schopnosti',
+        rulesPage6Desc: '🔮 Pohľad — ukáže ďalšie 3 čísla vopred\n⭐ Šťastné označenie — automaticky označí jedno správne číslo\n⏱️ Pomalý čas — predĺži interval volania čísel',
 
         // Accessibility (a11y)
         a11yNumberLabel: 'Číslo {n}',
@@ -491,6 +502,8 @@ export const translations: Record<Language, TranslationKeys> = {
         notificationsDesc: 'Pripomenutia na denný bonus, pozvánky',
         dailyBonusNotifTitle: '🎁 Denný bonus je pripravený!',
         dailyBonusNotifBody: 'Otvor LOTO a vyzdvihni odmenu.',
+        seasonEndingNotifTitle: '⏳ Sezóna sa blíži ku koncu!',
+        seasonEndingNotifBody: 'Vyzdvihni odmeny z Battle Passu kým je čas.',
         shareInvite: 'Zdieľaj pozvánku',
         invitedToJoin: 'Pripájaš sa cez pozvánku',
 
@@ -552,6 +565,7 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusOffline: 'Žiadne pripojenie',
         connStatusError: 'Chyba pripojenia',
         connRetry: 'Skúsiť znova',
+        errorReport: 'Nahlásiť',
 
         // Voice announcer
         announcerMode: 'Tradičné prezývky',
@@ -663,14 +677,18 @@ export const translations: Record<Language, TranslationKeys> = {
 
         // Rules Content
         rulesTitle: 'Как играть',
-        rulesPage1Title: 'Основы',
-        rulesPage1Desc: '90 шаров выпадают случайно. У вас 3 карточки. Нажмите на число, чтобы отметить его фишкой. Осторожно: ошибка временно замораживает карточку!',
-        rulesPage2Title: 'Крупные выигрыши',
-        rulesPage2Desc: 'Соберите ЛИНИЮ!, заполнив любой горизонтальный ряд. Выиграйте ДЖЕКПОТ, заполнив всю карточку (БИНГО!). Призовой фонд делится между победителями.',
-        rulesPage3Title: 'Экономика',
-        rulesPage3Desc: 'Вход в комнаты платный (в LCoins). Все взносы формируют призовой фонд. Чем больше игроков, тем больше награда!',
-        rulesPage4Title: 'Социальный мир',
-        rulesPage4Desc: 'Общайтесь с другими игроками в чате. Побеждайте, чтобы подняться в глобальном рейтинге и стать легендой Лото!',
+        rulesPage1Title: 'Ваши карточки',
+        rulesPage1Desc: 'Вы играете с 3 карточками в каждой игре\nКаждая карточка — сетка 3×9 с числами от 1 до 90\nПустые клетки — это абсолютно нормально!',
+        rulesPage2Title: 'Барабан вызывает числа',
+        rulesPage2Desc: 'Каждые несколько секунд выпадает случайное число\nОно появляется в большом барабане вверху экрана\nПоследние 4 числа видны как маленькие фишки',
+        rulesPage3Title: 'Отмечай числа',
+        rulesPage3Desc: 'Когда число появилось в барабане — нажми на него на карточке\nЦветная фишка отметит его — цвет зависит от твоего скина!\n⚠️ Нажатие на НЕ вызванное число замораживает карточку на 1 секунду!',
+        rulesPage4Title: 'Победа: ЛИНИЯ',
+        rulesPage4Desc: 'Заполни все числа в любой горизонтальной строке\nСтрока содержит 5 чисел (пустые клетки не считаются)\nНажми БИНГО! чтобы получить приз за ЛИНИЮ 🏆',
+        rulesPage5Title: 'Победа: БИНГО!',
+        rulesPage5Desc: 'Заполни все числа на целой карточке\nНажми кнопку БИНГО! которая появится внизу\nВыиграй ДЖЕКПОТ 🎉 — чем быстрее, тем больше приз!',
+        rulesPage6Title: 'Способности',
+        rulesPage6Desc: '🔮 Взгляд — покажет следующие 3 числа заранее\n⭐ Удачная отметка — авто-отметит одно правильное число\n⏱️ Медленное время — увеличит интервал вызова чисел',
 
         // Accessibility (a11y)
         a11yNumberLabel: 'Число {n}',
@@ -770,6 +788,8 @@ export const translations: Record<Language, TranslationKeys> = {
         notificationsDesc: 'Напоминания о бонусе, приглашения друзей',
         dailyBonusNotifTitle: '🎁 Ежедневный бонус готов!',
         dailyBonusNotifBody: 'Откройте ЛОТО и заберите награду.',
+        seasonEndingNotifTitle: '⏳ Сезон скоро заканчивается!',
+        seasonEndingNotifBody: 'Забери награды Battle Pass, пока не истёк срок.',
         shareInvite: 'Поделиться',
         invitedToJoin: 'Вы присоединяетесь по приглашению',
 
@@ -831,6 +851,7 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusOffline: 'Нет соединения',
         connStatusError: 'Ошибка подключения',
         connRetry: 'Повторить',
+        errorReport: 'Сообщить',
 
         // Voice announcer
         announcerMode: 'Народные прозвища',
@@ -942,14 +963,18 @@ export const translations: Record<Language, TranslationKeys> = {
 
         // Rules Content
         rulesTitle: 'Як грати',
-        rulesPage1Title: 'Основи',
-        rulesPage1Desc: '90 куль випадають випадково. У вас є 3 картки. Натисніть на число, щоб позначити його фішкою. Обережно: помилка тимчасово заморожує картку!',
-        rulesPage2Title: 'Великі виграші',
-        rulesPage2Desc: 'Зберіть ЛІНІЮ!, заповнивши будь-який горизонтальний ряд. Виграйте ДЖЕКПОТ, заповнивши всю картку (БІНГО!). Призовий фонд ділиться між усіма переможцями.',
-        rulesPage3Title: 'Економіка',
-        rulesPage3Desc: 'Вхід у кімнати платний (в LCoins). Усі внески формують призовий фонд. Чим більше гравців, тим більша нагорода!',
-        rulesPage4Title: 'Соціальний світ',
-        rulesPage4Desc: 'Спілкуйтеся з іншими гравцями в чаті в реальному часі. Перемагайте, щоб піднятися в глобальному рейтингу і стати королем Лото!',
+        rulesPage1Title: 'Твої картки',
+        rulesPage1Desc: 'Ти граєш з 3 картками у кожній грі\nКожна картка — сітка 3×9 із числами від 1 до 90\nПорожні клітинки — це абсолютно нормально!',
+        rulesPage2Title: 'Барабан викликає числа',
+        rulesPage2Desc: 'Кожні кілька секунд випадає випадкове число\nВоно з\'являється у великому барабані вгорі екрана\nОстанні 4 числа видно як маленькі фішки',
+        rulesPage3Title: 'Позначай числа',
+        rulesPage3Desc: 'Коли число з\'явилось у барабані — натисни на нього на картці\nКольорова фішка позначить його — колір залежить від твого скіну!\n⚠️ Натискання на НЕ викликане число заморожує картку на 1 секунду!',
+        rulesPage4Title: 'Перемога: ЛІНІЯ',
+        rulesPage4Desc: 'Заповни всі числа в будь-якому горизонтальному рядку\nРядок містить 5 чисел (порожні клітинки не рахуються)\nНатисни БІНГО! щоб отримати приз за ЛІНІЮ 🏆',
+        rulesPage5Title: 'Перемога: БІНГО!',
+        rulesPage5Desc: 'Заповни всі числа на цілій картці\nНатисни кнопку БІНГО! яка з\'явиться внизу\nВиграй ДЖЕКПОТ 🎉 — чим швидше, тим більший приз!',
+        rulesPage6Title: 'Здібності',
+        rulesPage6Desc: '🔮 Погляд — покаже наступні 3 числа заздалегідь\n⭐ Щасливе позначення — авто-позначить одне правильне число\n⏱️ Повільний час — збільшить інтервал виклику чисел',
 
         // Accessibility (a11y)
         a11yNumberLabel: 'Число {n}',
@@ -1049,6 +1074,8 @@ export const translations: Record<Language, TranslationKeys> = {
         notificationsDesc: 'Нагадування про бонус, запрошення друзів',
         dailyBonusNotifTitle: '🎁 Щоденний бонус готовий!',
         dailyBonusNotifBody: 'Відкрий ЛОТО і забери нагороду.',
+        seasonEndingNotifTitle: '⏳ Сезон скоро закінчується!',
+        seasonEndingNotifBody: 'Забери нагороди Battle Pass, поки не минув термін.',
         shareInvite: 'Поділитися',
         invitedToJoin: 'Ти приєднуєшся за запрошенням',
 
@@ -1110,6 +1137,7 @@ export const translations: Record<Language, TranslationKeys> = {
         connStatusOffline: 'Немає з\'єднання',
         connStatusError: 'Помилка підключення',
         connRetry: 'Повторити',
+        errorReport: 'Повідомити',
 
         // Voice announcer
         announcerMode: 'Народні назви',

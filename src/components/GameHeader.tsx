@@ -1,6 +1,6 @@
 import React, { memo, useEffect } from 'react';
 import { View, TouchableOpacity, ImageBackground, Text } from 'react-native';
-import { ChevronLeft, Volume2, VolumeX } from 'lucide-react-native';
+import { ChevronLeft, Volume2, VolumeX, Pause, Play } from 'lucide-react-native';
 import { GameNumbersDisplay } from './GameNumbersDisplay';
 import { CoinBadge } from './common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +28,10 @@ interface GameHeaderProps {
     statusLabel?: string;
     /** Hide the connection status pill entirely (e.g. offline practice). */
     hideConnectionStatus?: boolean;
+    /** Show pause/resume button (host only). Omit to hide it. */
+    onTogglePause?: () => void;
+    /** Current paused state — determines which icon is shown. */
+    isPaused?: boolean;
 }
 
 const BUTTON_BOX_SIZE = 44; // Apple HIG min tap target.
@@ -40,6 +44,8 @@ const GameHeaderComponent = ({
     onLeave,
     statusLabel,
     hideConnectionStatus = false,
+    onTogglePause,
+    isPaused = false,
 }: GameHeaderProps) => {
     const insets = useSafeAreaInsets();
     const { isMuted, setMuted } = useGameStore();
@@ -137,7 +143,7 @@ const GameHeaderComponent = ({
                     gap: SPACING.md,
                 }}
             >
-                {/* Left: Back & Sound */}
+                {/* Left: Back, Sound, Pause (optional) */}
                 <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
                     <ButtonBox onPress={onLeave} accessibilityLabel="Back">
                         <ChevronLeft color="#e8d4b8" size={24} strokeWidth={2.5} />
@@ -154,6 +160,17 @@ const GameHeaderComponent = ({
                             )}
                         </Animated.View>
                     </ButtonBox>
+                    {onTogglePause && (
+                        <ButtonBox
+                            onPress={onTogglePause}
+                            accessibilityLabel={isPaused ? 'Resume game' : 'Pause game'}
+                        >
+                            {isPaused
+                                ? <Play color="#4ade80" size={20} />
+                                : <Pause color="#fbbf24" size={20} />
+                            }
+                        </ButtonBox>
+                    )}
                 </View>
 
                 {/* Right: Status pill + Coins */}

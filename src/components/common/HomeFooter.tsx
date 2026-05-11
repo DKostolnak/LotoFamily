@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Trophy, ShoppingCart, Settings as SettingsIcon, HelpCircle } from 'lucide-react-native';
-import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
+import { SPACING, RADII } from '@/lib/config';
 
 interface HomeFooterProps {
     onStatsPress: () => void;
@@ -19,9 +19,9 @@ interface HomeFooterProps {
 }
 
 /**
- * HomeFooter — minimalist 3-icon row beneath the hero. Holds secondary
- * destinations (Stats, Shop, Settings) plus a tertiary "How to play"
- * link. Replaces the noisier 4-tab BottomTabs on the home screen.
+ * HomeFooter — single compact row of 4 icon tabs.
+ * No second row — keeps total height ≤ 72pt so short screens (SE) can fit
+ * all home content without scrolling.
  */
 export function HomeFooter({
     onStatsPress,
@@ -31,80 +31,62 @@ export function HomeFooter({
     bottomInset = 0,
     labels,
 }: HomeFooterProps) {
-    const items: Array<{ key: string; icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>; label: string; onPress: () => void }> = [
-        { key: 'stats', icon: Trophy, label: labels?.stats ?? 'Stats', onPress: onStatsPress },
-        { key: 'shop', icon: ShoppingCart, label: labels?.shop ?? 'Shop', onPress: onShopPress },
-        { key: 'settings', icon: SettingsIcon, label: labels?.settings ?? 'Settings', onPress: onSettingsPress },
-    ];
-
-    const handlePress = (fn: () => void) => {
-        Haptics.selectionAsync();
-        fn();
-    };
+    const items = [
+        { key: 'stats',    Icon: Trophy,         label: labels?.stats    ?? 'Stats',    onPress: onStatsPress    },
+        { key: 'shop',     Icon: ShoppingCart,    label: labels?.shop     ?? 'Shop',     onPress: onShopPress     },
+        { key: 'settings', Icon: SettingsIcon,    label: labels?.settings ?? 'Settings', onPress: onSettingsPress },
+        { key: 'help',     Icon: HelpCircle,      label: labels?.help     ?? 'Rules',    onPress: onHelpPress     },
+    ] as const;
 
     return (
         <View
             style={{
-                paddingHorizontal: SPACING.lg,
-                paddingTop: SPACING.md,
-                paddingBottom: bottomInset + SPACING.sm,
-                backgroundColor: 'rgba(26, 17, 9, 0.85)',
+                flexDirection: 'row',
+                alignItems: 'stretch',
+                paddingHorizontal: SPACING.md,
+                paddingTop: SPACING.sm,
+                paddingBottom: Math.max(SPACING.sm, bottomInset),
+                backgroundColor: 'rgba(18, 12, 6, 0.92)',
                 borderTopWidth: 1,
-                borderTopColor: 'rgba(90, 64, 37, 0.45)',
+                borderTopColor: 'rgba(90, 64, 37, 0.35)',
+                gap: SPACING.xs,
             }}
         >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' }}>
-                {items.map(({ key, icon: Icon, label, onPress }) => (
-                    <TouchableOpacity
-                        key={key}
-                        onPress={() => handlePress(onPress)}
-                        activeOpacity={0.7}
-                        accessibilityRole="button"
-                        accessibilityLabel={label}
+            {items.map(({ key, Icon, label, onPress }) => (
+                <TouchableOpacity
+                    key={key}
+                    onPress={() => {
+                        Haptics.selectionAsync();
+                        onPress();
+                    }}
+                    activeOpacity={0.65}
+                    accessibilityRole="button"
+                    accessibilityLabel={label}
+                    style={{
+                        flex: 1,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingVertical: SPACING.sm,
+                        gap: 3,
+                        borderRadius: RADII.md,
+                        minHeight: 52,
+                    }}
+                >
+                    <Icon size={22} color="#c9a87a" strokeWidth={2} />
+                    <Text
                         style={{
-                            flex: 1,
-                            minHeight: 60,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            paddingVertical: SPACING.sm,
-                            gap: SPACING.xs,
-                            borderRadius: RADII.md,
+                            fontSize: 10,
+                            fontWeight: '700',
+                            color: '#8a6a40',
+                            textTransform: 'uppercase',
+                            letterSpacing: 0.4,
                         }}
+                        numberOfLines={1}
                     >
-                        <Icon size={26} color="#d4b896" strokeWidth={2.2} />
-                        <Text
-                            style={[
-                                TEXT_STYLES.captionUpper,
-                                { color: '#d4b896' },
-                            ]}
-                            numberOfLines={1}
-                        >
-                            {label}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-
-            <TouchableOpacity
-                onPress={() => handlePress(onHelpPress)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel={labels?.help ?? 'How to play'}
-                style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: SPACING.xs,
-                    minHeight: 36,
-                    marginTop: SPACING.xs,
-                    opacity: 0.55,
-                }}
-            >
-                <HelpCircle size={14} color="#d4b896" />
-                <Text style={[TEXT_STYLES.caption, { color: '#d4b896' }]}>
-                    {labels?.help ?? 'How to play'}
-                </Text>
-            </TouchableOpacity>
+                        {label}
+                    </Text>
+                </TouchableOpacity>
+            ))}
         </View>
     );
 }

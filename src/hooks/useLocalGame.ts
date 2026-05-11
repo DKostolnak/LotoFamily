@@ -8,10 +8,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
     createGame,
+    addPlayer,
     callNextNumber,
     startGame as startGameEngine,
     checkForWinners,
     setWinner,
+    autoMarkBots,
     claimFlat,
     pauseGame as pauseGameEngine,
     resumeGame as resumeGameEngine,
@@ -33,6 +35,8 @@ interface UseLocalGameOptions {
     settings?: Partial<GameSettings>;
     autoCallEnabled?: boolean;
     autoCallSpeed?: 'slow' | 'normal' | 'fast';
+    /** Number of AI bot opponents to add to the practice game (0 = solo). */
+    botCount?: number;
 }
 
 interface UseLocalGameReturn {
@@ -87,6 +91,7 @@ export function useLocalGame(options: UseLocalGameOptions): UseLocalGameReturn {
         playerAvatar,
         autoCallEnabled: initialAutoCall = false,
         autoCallSpeed: initialSpeed = 'normal',
+        botCount = 0,
     } = options;
 
     const { speakNumber, speak } = useAudio();
@@ -111,6 +116,9 @@ export function useLocalGame(options: UseLocalGameOptions): UseLocalGameReturn {
     // Player ID (stable across renders)
     const playerIdRef = useRef<string>(generatePlayerId());
 
+    // Bot player IDs — populated in createLocalGame when botCount > 0
+    const botIdsRef = useRef<string[]>([]);
+
     // ========================================================================
     // DERIVED STATE
     // ========================================================================
@@ -129,7 +137,7 @@ export function useLocalGame(options: UseLocalGameOptions): UseLocalGameReturn {
     // ========================================================================
 
     const createLocalGame = useCallback(() => {
-        const newGame = createGame(
+        let game = createGame(
             playerIdRef.current,
             playerName,
             playerAvatar,
@@ -138,9 +146,35 @@ export function useLocalGame(options: UseLocalGameOptions): UseLocalGameReturn {
                 gameMode: 'classic',
             }
         );
-        setGameState(newGame);
+
+        // Add AI bot opponents when requested
+        if (botCount > 0) {
+            const BOT_NAMES  = ['🤖 Bot Alice', '👾 Bot Bob', '🦾 Bot Charlie', '🎮 Bot Dora'];
+            const BOT_AVATARS = ['🤖', '👾', '🦾', '🎮'];
+            const newBotIds: string[] = [];
+
+            for (let i = 0; i < Math.min(botCount, BOT_NAMES.length); i++) {
+                const botId = generatePlayerId();
+                const withBot = addPlayer(game, botId, BOT_NAMES[i], BOT_AVATARS[i]);
+                if (withBot) {
+                    // Mark as bot so autoMarkBots() can identify them
+                    game = {
+                        ...withBot,
+                        players: withBot.players.map(p =>
+                            p.id === botId ? { ...p, isBot: true } : p
+                        ),
+                    };
+                    newBotIds.push(botId);
+                }
+            }
+            botIdsRef.current = newBotIds;
+        } else {
+            botIdsRef.current = [];
+        }
+
+        setGameState(game);
         setWinnerInfo(null);
-    }, [playerName, playerAvatar]);
+    }, [playerName, playerAvatar, botCount]);
 
     const startGame = useCallback(() => {
         if (!gameState) return;
@@ -362,6 +396,61 @@ export function useLocalGame(options: UseLocalGameOptions): UseLocalGameReturn {
             }
         };
     }, []);
+
+    // ========================================================================
+    // BOT AI — auto-mark called numbers for bot players
+    // ========================================================================
+
+    /**
+     * Fires whenever a new number is added to `calledNumbers`.
+     * Each bot "thinks" for a random 400–1 500 ms, then marks the number on
+     * its cards. If a bot completes all its cards it wins the game.
+     */
+    const calledNumbersLength = gameState?.calledNumbers.length ?? 0;
+    useEffect(() => {
+        if (botIdsRef.current.length === 0) return;
+        if (gameState?.phase !== 'playing') return;
+        if (calledNumbersLength === 0) return;
+
+        // Random human-like delay per tick (all bots share the same delay for
+        // this number — staggering by bot would require N timers and adds noise)
+        const delay = 400 + Math.random() * 1100;
+
+        const timer = setTimeout(() => {
+            let botWinnerName: string | null = null;
+            let botWinnerId: string | null = null;
+
+            setGameState(prev => {
+                if (!prev || prev.phase !== 'playing') return prev;
+
+                // Let the engine mark the current number on all bot cards
+                const marked = autoMarkBots(prev);
+
+                // Check if any bot now has a winning card
+                if (!marked.winnerId) {
+                    const win = checkForWinners(marked);
+                    if (win && botIdsRef.current.includes(win.winnerId)) {
+                        const winner = marked.players.find(p => p.id === win.winnerId);
+                        botWinnerName = winner?.name ?? 'Bot';
+                        botWinnerId   = win.winnerId;
+                        return setWinner(marked, win.winnerId);
+                    }
+                }
+
+                return marked;
+            });
+
+            // Update winner info outside the state updater (avoids side-effects
+            // inside a pure updater function — React guarantees these run
+            // synchronously in the same batch as the setGameState above).
+            if (botWinnerId && botWinnerName) {
+                setWinnerInfo({ name: botWinnerName, isMe: false });
+            }
+        }, delay);
+
+        return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [calledNumbersLength, gameState?.phase]);
 
     return {
         // State

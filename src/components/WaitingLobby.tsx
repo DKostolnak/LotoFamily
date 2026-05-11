@@ -93,7 +93,7 @@ export const WaitingLobby = memo(({
         onStart();
     }, [onStart]);
 
-    const canStart = isHost && players.length > 1;
+    const canStart = isHost && players.length >= 1;
 
     return (
         <View style={{ flex: 1, paddingHorizontal: SPACING.lg, justifyContent: 'center', alignItems: 'center' }}>

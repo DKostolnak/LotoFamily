@@ -12,7 +12,7 @@
  *  - Claimed cells get a static gold border + check mark.
  */
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -27,7 +27,9 @@ import Animated, {
     useAnimatedStyle,
     withRepeat,
     withTiming,
+    withDelay,
     cancelAnimation,
+    Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { ModalShell, WoodenButton } from './common';
@@ -69,7 +71,8 @@ export function BattlePassModal({ visible, onClose }: BattlePassModalProps) {
     const purchasePremium = useGameStore((s) => s.purchasePremium);
     const checkSeasonRollover = useGameStore((s) => s.checkSeasonRollover);
 
-    const t = translations[language] as any;
+    const t = translations[language];
+    const [purchasingPremium, setPurchasingPremium] = useState(false);
 
     // Bootstrap the season on first open if needed.
     useEffect(() => {
@@ -99,12 +102,18 @@ export function BattlePassModal({ visible, onClose }: BattlePassModalProps) {
     const labelPremiumTrack = t.premiumTrack ?? 'Premium';
 
     const handlePurchase = async () => {
+        if (purchasingPremium) return;
+        setPurchasingPremium(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        const ok = await purchasePremium();
-        if (ok) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } else {
-            Alert.alert('Purchase failed', 'Could not unlock premium. Please try again.');
+        try {
+            const ok = await purchasePremium();
+            if (ok) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else {
+                Alert.alert(t.errorTitle, 'Could not unlock premium. Please try again.');
+            }
+        } finally {
+            setPurchasingPremium(false);
         }
     };
 
@@ -118,6 +127,23 @@ export function BattlePassModal({ visible, onClose }: BattlePassModalProps) {
     };
 
     const progressPct = xpForNextLevel > 0 ? Math.min(1, xpIntoLevel / xpForNextLevel) : 1;
+
+    // Animate XP fill from 0 → progressPct each time the modal opens
+    const progressAnim = useSharedValue(0);
+    useEffect(() => {
+        if (visible) {
+            progressAnim.value = 0;
+            progressAnim.value = withDelay(
+                350,
+                withTiming(progressPct, { duration: 900, easing: Easing.out(Easing.cubic) })
+            );
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [visible, progressPct]);
+
+    const xpBarStyle = useAnimatedStyle(() => ({
+        width: `${Math.round(progressAnim.value * 100)}%` as any,
+    }));
 
     return (
         <ModalShell
@@ -138,8 +164,13 @@ export function BattlePassModal({ visible, onClose }: BattlePassModalProps) {
                             {`${labelPremiumTrack} • ${SEASON_PREMIUM_PRICE_USD}`}
                         </Text>
                     </View>
-                    <WoodenButton onPress={handlePurchase} variant="gold" size="md">
-                        {labelGetPremium}
+                    <WoodenButton
+                        onPress={handlePurchase}
+                        variant="gold"
+                        size="md"
+                        disabled={purchasingPremium}
+                    >
+                        {purchasingPremium ? '...' : labelGetPremium}
                     </WoodenButton>
                 </View>
             )}
@@ -151,12 +182,7 @@ export function BattlePassModal({ visible, onClose }: BattlePassModalProps) {
                 </Text>
                 <View style={styles.xpRow}>
                     <View style={styles.xpTrack}>
-                        <View
-                            style={[
-                                styles.xpFill,
-                                { width: `${Math.round(progressPct * 100)}%` },
-                            ]}
-                        />
+                        <Animated.View style={[styles.xpFill, xpBarStyle]} />
                     </View>
                     <Text style={[TEXT_STYLES.caption, { color: TEXT_LIGHT, fontWeight: '700' }]}>
                         {xpForNextLevel > 0
@@ -260,7 +286,14 @@ function LevelCell({
                 disabled={!freeClaimable}
                 onPress={() => onClaim(slot.level, 'free')}
                 accessibilityRole="button"
-                accessibilityLabel={`${labels.freeTrack} ${slot.level}`}
+                accessibilityLabel={
+                    claimedFree
+                        ? `${labels.freeTrack} level ${slot.level} — ${labels.claimed}`
+                        : freeClaimable
+                            ? `${labels.freeTrack} level ${slot.level} — ${labels.claim}`
+                            : `${labels.freeTrack} level ${slot.level} — ${reached ? labels.locked : labels.locked}`
+                }
+                accessibilityState={{ disabled: !freeClaimable }}
             >
                 <RewardIcon reward={slot.freeReward} dim={!reached} />
                 <RewardLabel reward={slot.freeReward} />
@@ -284,7 +317,16 @@ function LevelCell({
                 disabled={!premiumClaimable}
                 onPress={() => onClaim(slot.level, 'premium')}
                 accessibilityRole="button"
-                accessibilityLabel={`${labels.premiumTrack} ${slot.level}`}
+                accessibilityLabel={
+                    !hasPremium
+                        ? `${labels.premiumTrack} level ${slot.level} — ${labels.locked}`
+                        : claimedPremium
+                            ? `${labels.premiumTrack} level ${slot.level} — ${labels.claimed}`
+                            : premiumClaimable
+                                ? `${labels.premiumTrack} level ${slot.level} — ${labels.claim}`
+                                : `${labels.premiumTrack} level ${slot.level} — ${labels.locked}`
+                }
+                accessibilityState={{ disabled: !premiumClaimable }}
             >
                 <RewardIcon reward={slot.premiumReward} dim={!reached || !hasPremium} />
                 <RewardLabel reward={slot.premiumReward} />

@@ -23,6 +23,33 @@ import {
     type SeasonReward,
 } from '../../config/season.config';
 import { purchasesService } from '../../services/purchases';
+import { notificationsService } from '../../services/notifications';
+import { translations } from '../../i18n';
+
+/**
+ * Schedule a "season ending soon" notification 3 days before season end.
+ * Only schedules if 3 days are still in the future.
+ */
+function scheduleSeasonEndingNotif(
+    seasonEndsAt: number,
+    now: number,
+    get: () => GameStore,
+): void {
+    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+    const notifAt = seasonEndsAt - THREE_DAYS_MS;
+    const secondsUntilNotif = Math.floor((notifAt - now) / 1000);
+    if (secondsUntilNotif < 60) return; // too soon or already past
+
+    const notifEnabled = (get() as GameStore).notificationsEnabled ?? true;
+    if (!notifEnabled) return;
+
+    const t = translations[(get() as GameStore).language ?? 'en'];
+    notificationsService.scheduleSeasonEndingReminder(
+        secondsUntilNotif,
+        t.seasonEndingNotifTitle,
+        t.seasonEndingNotifBody,
+    ).catch(() => {});
+}
 
 /** Build a fresh season starting now. */
 function freshSeason(now = Date.now()): SeasonState {
@@ -100,6 +127,9 @@ export const createSeasonSlice: StateCreator<GameStore, [], [], SeasonSlice> = (
             set({ claimedPremium: [...state.claimedPremium, level] });
         }
 
+        // Persist immediately — reward claim must survive reinstall/device switch
+        get().syncToSupabase().catch(() => {});
+
         return reward;
     },
 
@@ -107,6 +137,8 @@ export const createSeasonSlice: StateCreator<GameStore, [], [], SeasonSlice> = (
         const result = await purchasesService.purchase(SEASON_PREMIUM_PRODUCT_ID);
         if (result.success) {
             set({ hasPremium: true });
+            // Critical: sync immediately so premium survives reinstall/device switch
+            get().syncToSupabase().catch(() => {});
             return true;
         }
         return false;
@@ -118,14 +150,22 @@ export const createSeasonSlice: StateCreator<GameStore, [], [], SeasonSlice> = (
 
         // Bootstrap if never started
         if (state.seasonStartedAt === 0) {
-            set(freshSeason(now));
+            const newSeason = freshSeason(now);
+            set(newSeason);
+            scheduleSeasonEndingNotif(newSeason.seasonEndsAt, now, get);
             return;
         }
 
         // Past end + grace → start a new season, fresh progress.
         if (now > state.seasonEndsAt + SEASON_GRACE_MS) {
-            set(freshSeason(now));
+            const newSeason = freshSeason(now);
+            set(newSeason);
+            scheduleSeasonEndingNotif(newSeason.seasonEndsAt, now, get);
+            return;
         }
+
+        // Existing season — ensure the ending reminder is scheduled
+        scheduleSeasonEndingNotif(state.seasonEndsAt, now, get);
     },
 });
 
