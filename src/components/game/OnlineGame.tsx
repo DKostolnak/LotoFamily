@@ -1,5 +1,6 @@
 /**
- * OnlineGame - Multiplayer mode using Socket.io
+ * OnlineGame - Multiplayer mode using Supabase Realtime
+ * (migrated from Socket.io — useSupabaseGame má rovnaký interface)
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -8,7 +9,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
 import { useGameStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
-import { useGameSocket, useHapticFeedback, useAudio, useSocketStatus } from '@/hooks';
+import { useHapticFeedback, useAudio } from '@/hooks';
+import { useSupabaseGame } from '@/hooks/useSupabaseGame';
 import { WaitingLobby } from '@/components/WaitingLobby';
 import { LotoCard } from '@/components/LotoCard';
 import { GameHeader } from '@/components/GameHeader';
@@ -40,11 +42,12 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
     const { speak, speakNumber, playSound } = useAudio();
     const t = translations[language];
 
-    // Socket game hook
+    // Supabase Realtime game hook (nahradil Socket.io useGameSocket)
     const {
         socket,
         gameState,
         isConnected,
+        status: connStatus,
         error: socketError,
         isHost,
         roomCode,
@@ -61,30 +64,24 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
         claimWin,
         pauseGame,
         resumeGame,
-    } = useGameSocket({
-        autoConnect: true,
-    });
+    } = useSupabaseGame();
 
     const [hasJoined, setHasJoined] = useState(false);
     const [showWinner, setShowWinner] = useState(false);
 
-    // Connection banner — surfaces socket lifecycle + offline state to the user
-    // during online play. Hidden when fully connected (with a 2s "Connected"
-    // celebration toast on recovery).
-    const { status: connStatus, retry: retryConnection } = useSocketStatus();
+    // Connection banner — zobrazí stav Supabase Realtime pripojenia
     const connBannerMessage = useMemo(() => {
         switch (connStatus) {
             case 'reconnecting':
             case 'connecting': return t.connStatusReconnecting;
             case 'disconnected': return t.connStatusDisconnected;
             case 'error': return t.connStatusError;
-            case 'offline': return t.connStatusOffline;
             case 'connected': return t.connStatusConnected;
             default: return undefined;
         }
     }, [connStatus, t]);
     const handleRetryConnection = () => {
-        retryConnection();
+        // S Supabase Realtime sa reconnect rieši automaticky
         // Allow the join/create effect to fire again once reconnected.
         setHasJoined(false);
     };

@@ -68,7 +68,19 @@ export class LotoGameModule extends BaseGameEngine<GameState> {
                 this.claimWin(senderId, p.cardId);
                 break;
             }
+            case 'GAME:CLAIM_FLAT': {
+                const p = payload as { flatType: number };
+                this.claimFlat(senderId, p.flatType);
+                break;
+            }
         }
+    }
+
+    /**
+     * Verejný updateState — potrebný pre useSupabaseGame (host pridáva hráčov)
+     */
+    public patchState(updater: (state: GameState) => GameState): void {
+        this.updateState(updater);
     }
 
     public startGame() {
@@ -114,6 +126,18 @@ export class LotoGameModule extends BaseGameEngine<GameState> {
 
             this.stopAutoCall();
             return { ...s, phase: 'finished', winnerId: playerId };
+        });
+    }
+
+    public claimFlat(playerId: string, flatType: number) {
+        this.updateState(s => {
+            if (flatType === 1 && !s.flatWinners.flat1) {
+                return { ...s, flatWinners: { ...s.flatWinners, flat1: playerId } };
+            }
+            if (flatType === 2 && !s.flatWinners.flat2) {
+                return { ...s, flatWinners: { ...s.flatWinners, flat2: playerId } };
+            }
+            return s;
         });
     }
 
