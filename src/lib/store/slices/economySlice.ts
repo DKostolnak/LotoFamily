@@ -13,6 +13,7 @@ import type { GameStore, EconomySlice, PowerUpInventory } from '../types';
 import { DEFAULT_POWER_UPS } from '../types';
 import { ECONOMY } from '../../config';
 import { notificationsService } from '../../services/notifications';
+import { translations } from '../../i18n';
 
 export const createEconomySlice: StateCreator<GameStore, [], [], EconomySlice> = (set, get) => ({
     coins: ECONOMY.INITIAL_COINS,
@@ -30,6 +31,7 @@ export const createEconomySlice: StateCreator<GameStore, [], [], EconomySlice> =
         if (coins < amount) return false;
 
         set((state) => ({ coins: state.coins - amount }));
+        get().syncToSupabase().catch(() => {});
         return true;
     },
 
@@ -45,6 +47,9 @@ export const createEconomySlice: StateCreator<GameStore, [], [], EconomySlice> =
             coins: state.coins - cost,
             inventory: [...state.inventory, itemId],
         });
+
+        // Persist to Supabase fire-and-forget (local state is source of truth)
+        get().syncToSupabase().catch(() => {});
 
         return true;
     },
@@ -76,12 +81,20 @@ export const createEconomySlice: StateCreator<GameStore, [], [], EconomySlice> =
         get().addCoins(reward);
         set({ lastDailyBonus: now });
 
+        // Persist to Supabase — last_bonus_claimed_at is used for cross-device sync
+        get().syncToSupabase().catch(() => {});
+
         // Schedule a reminder ~24h from now so the user is nudged back when
         // the next bonus becomes claimable. Honour the per-user toggle (default
         // on) and silently no-op if permission was denied at the OS level.
         const notifEnabled = (get() as GameStore).notificationsEnabled ?? true;
         if (notifEnabled) {
-            notificationsService.scheduleDailyBonusReminder(24 * 60 * 60).catch(() => {});
+            const t = translations[(get() as GameStore).language ?? 'en'];
+            notificationsService.scheduleDailyBonusReminder(
+                24 * 60 * 60,
+                t.dailyBonusNotifTitle,
+                t.dailyBonusNotifBody,
+            ).catch(() => {});
         }
 
         return reward;

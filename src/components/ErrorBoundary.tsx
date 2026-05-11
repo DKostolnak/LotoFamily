@@ -5,6 +5,8 @@ import * as Clipboard from 'expo-clipboard';
 import { Copy, RefreshCw, Mail } from 'lucide-react-native';
 import { crashReporting } from '@/lib/services';
 import { SUPPORT_EMAIL, APP_VERSION, APP_BUILD_NUMBER } from '@/lib/config';
+import { useGameStore } from '@/lib/store';
+import { translations } from '@/lib/i18n';
 
 const WOOD_TEXTURE = require('../../assets/wood-seamless.png');
 
@@ -56,9 +58,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
     private handleCopyError = async () => {
         if (this.state.error) {
+            const language = useGameStore.getState().language;
+            const t = translations[language] ?? translations.en;
             const errorDetails = this.getErrorDetails();
             await Clipboard.setStringAsync(errorDetails);
-            Alert.alert('Copied', 'Error details copied to clipboard');
+            Alert.alert(t.copied);
         }
     };
     
@@ -85,6 +89,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
     public render() {
         if (this.state.hasError) {
+            const language = useGameStore.getState().language;
+            const t = translations[language] ?? translations.en;
+
             return (
                 <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
                     <View className="flex-1 bg-black/60 justify-center items-center p-6">
@@ -92,10 +99,10 @@ export class ErrorBoundary extends Component<Props, State> {
                             <View className="items-center py-6">
                                 <Text className="text-4xl mb-2">😵‍💫</Text>
                                 <Text className="text-gold text-3xl font-black mb-2 uppercase tracking-wide text-center">
-                                    OOPS!
+                                    {t.errorTitle}
                                 </Text>
                                 <Text className="text-muted text-center mb-6 font-medium">
-                                    The game got confused. Don't worry, your coins are safe!
+                                    {t.errorDefault}
                                 </Text>
 
                                 <ScrollView className="max-h-40 bg-wood-darkest rounded-lg p-3 w-full mb-6 border border-wood-medium">
@@ -108,7 +115,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                     <WoodenButton onPress={this.handleRestart} variant="gold" fullWidth>
                                         <View className="flex-row items-center gap-2">
                                             <RefreshCw size={20} color="#3d2814" />
-                                            <Text className="text-wood-dark font-bold uppercase">Restart Game</Text>
+                                            <Text className="text-wood-dark font-bold uppercase">{t.reloadGame}</Text>
                                         </View>
                                     </WoodenButton>
 
@@ -117,7 +124,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                             <WoodenButton onPress={this.handleCopyError} variant="secondary" fullWidth size="sm">
                                                 <View className="flex-row items-center gap-2">
                                                     <Copy size={16} color="#e8d4b8" />
-                                                    <Text className="text-cream-dark text-xs font-bold uppercase">Copy</Text>
+                                                    <Text className="text-cream-dark text-xs font-bold uppercase">{t.copy}</Text>
                                                 </View>
                                             </WoodenButton>
                                         </View>
@@ -125,7 +132,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                             <WoodenButton onPress={this.handleEmailSupport} variant="secondary" fullWidth size="sm">
                                                 <View className="flex-row items-center gap-2">
                                                     <Mail size={16} color="#e8d4b8" />
-                                                    <Text className="text-cream-dark text-xs font-bold uppercase">Report</Text>
+                                                    <Text className="text-cream-dark text-xs font-bold uppercase">{t.errorReport}</Text>
                                                 </View>
                                             </WoodenButton>
                                         </View>

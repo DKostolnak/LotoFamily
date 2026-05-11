@@ -77,6 +77,8 @@ export const OfflineGame = () => {
             cardsPerPlayer: 3,
             gameMode: 'classic',
         },
+        // 2 AI bots to practice against
+        botCount: 2,
     });
 
     // Local UI state
@@ -217,12 +219,15 @@ export const OfflineGame = () => {
             // Battle Pass: grant season XP for game completion / win / streak.
             // Read directly from store so we avoid adding new hook deps to the
             // existing winner effect (which intentionally has narrow deps).
-            const addSeasonXp = useGameStore.getState().addSeasonXp;
+            const { addSeasonXp, syncToSupabase } = useGameStore.getState();
             addSeasonXp(50); // game played
             if (isWin) {
                 addSeasonXp(150); // win bonus
                 if (newWinStreak >= 3) addSeasonXp(100); // streak bonus
             }
+
+            // Persist final stats to Supabase (fire-and-forget)
+            syncToSupabase().catch(() => {});
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [winner, haptics, updateStats]);
@@ -533,11 +538,10 @@ export const OfflineGame = () => {
                             key={card.id}
                             card={card}
                             onCellPress={(r, c) => handleCellPress(card.id, r, c)}
-                            showHeader={false}
+                            showHeader={true}
                             calledNumbers={calledNumbers}
                             t={t}
                             compact={true}
-                            style={{ flex: 1 }}
                             activeSkin={activeSkin}
                             activeTheme={activeTheme}
                         />

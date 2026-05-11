@@ -1,5 +1,12 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSequence,
+    withTiming,
+    withSpring,
+} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { LotoCard as LotoCardType } from '@/lib/types';
 import { useResponsive } from '@/hooks';
@@ -41,6 +48,10 @@ const LotoCell = memo(({
     activeSkin?: string,
     t: TranslationProp
 }) => {
+    // Spring scale feedback on every tap
+    const scale = useSharedValue(1);
+    const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
     const isEmpty = value === null;
 
     if (isEmpty) {
@@ -71,11 +82,21 @@ const LotoCell = memo(({
 
     const numberLabel = (t.a11yNumberLabel ?? 'Number {n}').replace('{n}', String(value));
 
+    const handlePress = () => {
+        // Squish then spring-bounce back
+        scale.value = withSequence(
+            withTiming(0.80, { duration: 65 }),
+            withSpring(1, { damping: 7, stiffness: 380 }),
+        );
+        onPress(row, col);
+    };
+
     return (
+        <Animated.View style={[{ flex: 1, overflow: 'hidden' }, animStyle]}>
         <TouchableOpacity
             className={`w-full h-full items-center justify-center ${bgClass} relative overflow-hidden`}
-            onPress={() => onPress(row, col)}
-            activeOpacity={0.7}
+            onPress={handlePress}
+            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={`${numberLabel}, ${getAccessibilityState()}`}
             accessibilityHint={isMarked ? undefined : (t.a11yMarkHint ?? 'Double tap to mark this number')}
@@ -99,10 +120,12 @@ const LotoCell = memo(({
                     marked
                     value={value}
                     variant={isCalled ? 'correct' : 'incorrect'}
-                    size={Math.max(36, fontSize * 2.6)}
+                    size={Math.max(32, fontSize * 2.4)}
+                    activeSkin={activeSkin}
                 />
             )}
         </TouchableOpacity>
+        </Animated.View>
     );
 });
 LotoCell.displayName = 'LotoCell';
@@ -176,10 +199,10 @@ const LotoCardComponent = ({
                 </View>
             </View>
 
-            {/* Grid - Uses flex to fill available height */}
-            <View className="flex-1 p-0.5" style={{ backgroundColor: theme.gridBg }}>
+            {/* Grid - aspectRatio 9/3 = 3 keeps cells square regardless of parent height */}
+            <View style={{ width: '100%', aspectRatio: 3, backgroundColor: theme.gridBg, padding: 2 }}>
                 {card.grid.map((row, rIdx) => (
-                    <View key={rIdx} className="flex-row flex-1">
+                    <View key={rIdx} style={{ flexDirection: 'row', flex: 1 }}>
                         {row.map((cell, cIdx) => {
                             const isCalled = cell.value !== null && calledMap.has(cell.value);
                             const calledIdx = isCalled ? calledMap.get(cell.value!)! : -1;

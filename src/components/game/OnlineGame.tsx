@@ -92,20 +92,23 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
     // ========================================================================
 
     // Handle connection and joining
+    // Supabase: createRoom/joinRoom sa volá na mount (nie po isConnected)
+    // pretože Supabase NASTAVÍ isConnected až PO volaní createRoom.
     useEffect(() => {
-        if (isConnected && !hasJoined) {
-            if (mode === 'create') {
-                createRoom(
-                    playerName || 'Player',
-                    playerAvatar || '🐻',
-                    { isPublic, crazyMode, customRoomCode: initialRoomCode }
-                );
-            } else if (mode === 'join' && initialRoomCode) {
-                joinRoom(initialRoomCode, playerName || 'Player', playerAvatar || '🐻');
-            }
-            setHasJoined(true);
+        if (hasJoined) return;
+        setHasJoined(true);
+
+        if (mode === 'create') {
+            createRoom(
+                playerName || 'Player',
+                playerAvatar || '🐻',
+                { isPublic, crazyMode, customRoomCode: initialRoomCode, cardsPerPlayer: 3 }
+            );
+        } else if (mode === 'join' && initialRoomCode) {
+            joinRoom(initialRoomCode, playerName || 'Player', playerAvatar || '🐻');
         }
-    }, [isConnected, hasJoined, mode, initialRoomCode, createRoom, joinRoom, playerName, playerAvatar]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // mount only
 
     // Handle game end (winner)
     // Audio effects
@@ -119,8 +122,34 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
             haptics.notifySuccess();
             playSound('win');
             speak('Bingo! We have a winner!');
+
+            // Update stats and persist to Supabase
+            const store = useGameStore.getState();
+            const isWin = gameState.winnerId === myPlayerId;
+            const prevStats = store.stats;
+            const newGamesPlayed = prevStats.gamesPlayed + 1;
+            const newWins = isWin ? prevStats.gamesWon + 1 : prevStats.gamesWon;
+            const newWinStreak = isWin ? (prevStats.currentWinStreak ?? 0) + 1 : 0;
+            const bestWinStreak = Math.max(newWinStreak, prevStats.longestWinStreak ?? 0);
+
+            store.updateStats({
+                ...prevStats,
+                gamesPlayed: newGamesPlayed,
+                gamesWon: newWins,
+                currentWinStreak: newWinStreak,
+                longestWinStreak: bestWinStreak,
+            });
+
+            store.addSeasonXp(50); // game played
+            if (isWin) {
+                store.addSeasonXp(150); // win bonus
+                if (newWinStreak >= 3) store.addSeasonXp(100); // streak bonus
+            }
+
+            store.syncToSupabase().catch(() => {});
         }
-    }, [gameState?.phase, haptics, speak]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [gameState?.phase]);
 
     // Handle socket errors (connection lost, etc)
     // could add a toast or alert here
@@ -145,7 +174,14 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
     }, 0), [myCards]);
 
     const progressPercent = totalNumbers > 0 ? Math.round((markedNumbers / totalNumbers) * 100) : 0;
-    // Remaining count available via gameState if needed
+
+    // True when every non-null cell on at least one card is marked — BINGO button appears
+    const canBingo = useMemo(() =>
+        myCards.some(card =>
+            card.grid.flat().every(c => c.value === null || c.isMarked)
+        ),
+        [myCards]
+    );
 
     // ========================================================================
     // HANDLERS
@@ -364,6 +400,8 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                     coins={coins}
                     isConnected={true}
                     onLeave={handleLeave}
+                    onTogglePause={isHost ? (isPaused ? resumeGame : pauseGame) : undefined}
+                    isPaused={isPaused}
                 />
 
                 {/* Game Info Strip */}
@@ -472,6 +510,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                     style={{
                         paddingHorizontal: SPACING.lg,
                         paddingTop: SPACING.sm,
+                        paddingBottom: Math.max(SPACING.md, insets.bottom),
                         gap: SPACING.sm,
                     }}
                 >
@@ -480,69 +519,38 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                             key={card.id}
                             card={card}
                             onCellPress={(r, c) => handleCellPress(card.id, r, c)}
-                            showHeader={false}
+                            showHeader={true}
                             calledNumbers={calledNumbers}
                             t={t}
                             compact={true}
-                            style={{ flex: 1 }}
                             activeSkin={activeSkin}
                             activeTheme={activeTheme}
                         />
                     ))}
                 </View>
 
-                {/* Control Deck Footer */}
-                <View
-                    style={{
-                        paddingBottom: Math.max(SPACING.lg, insets.bottom + SPACING.sm),
-                        paddingTop: SPACING.md,
-                        paddingHorizontal: SPACING.lg,
-                        backgroundColor: '#1a1109',
-                        borderTopWidth: 4,
-                        borderColor: '#8b6b4a',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: SPACING.md,
-                        zIndex: 50,
-                    }}
-                >
-                    {/* Left: Host Pause */}
-                    {isHost ? (
-                        <WoodenButton
-                            onPress={isPaused ? resumeGame : pauseGame}
-                            variant="secondary"
-                            size="md"
-                            accessibilityLabel={isPaused ? (t.resume ?? 'Resume') : (t.pause ?? 'Pause')}
-                        >
-                            {isPaused ? (t.resume ?? 'RESUME') : (t.pause ?? 'PAUSE')}
-                        </WoodenButton>
-                    ) : (
-                        <View />
-                    )}
-
-                    {/* Center: BINGO */}
-                    <View style={{ flex: 1, alignItems: 'center' }}>
+                {/* Floating BINGO button — appears only when a card is fully marked */}
+                {canBingo && (
+                    <View
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            alignItems: 'center',
+                            zIndex: 50,
+                            bottom: Math.max(SPACING.xl, insets.bottom + SPACING.xl),
+                        }}
+                    >
                         <WoodenButton
                             onPress={handleClaimBingo}
                             variant="gold"
                             size="lg"
-                            fullWidth
                             accessibilityLabel="BINGO"
                         >
                             {t.claimBingo ?? 'BINGO!'}
                         </WoodenButton>
                     </View>
-
-                    {/* Right: Leave */}
-                    <WoodenButton
-                        onPress={handleLeave}
-                        variant="danger"
-                        size="md"
-                        accessibilityLabel={t.exitGame ?? 'Exit'}
-                    >
-                        {t.exitGame ?? 'EXIT'}
-                    </WoodenButton>
-                </View>
+                )}
 
                 {/* Pause Overlay */}
                 {isPaused && (

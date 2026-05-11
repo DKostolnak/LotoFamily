@@ -239,25 +239,32 @@ export async function initializeProfile(
 
 /**
  * Atomicky odečíta coins a pridá item do inventory.
- * Používa Supabase RPC (PostgreSQL funkciu) pre atomic transakciu.
+ * Používa PostgreSQL RPC funkciu `purchase_item` — race condition safe.
  *
- * TODO: implementuj `purchase_item` funkciu v Supabase Edge Function.
- * Zatiaľ robíme optimistic update priamo z klienta.
+ * SQL definícia: supabase/migrations/20260511000001_initial_schema.sql
  */
 export async function purchaseItemRemote(
     userId: string,
     itemId: string,
     price: number
 ): Promise<NormalizedProfile> {
-    // Načítaj aktuálne coins
-    const profile = await fetchProfile(userId);
-    if (!profile) throw new Error('Profile not found');
-    if (profile.coins < price) throw new Error('Insufficient coins');
-
-    return updateProfile(userId, {
-        coins: profile.coins - price,
-        inventory: [...profile.inventory, itemId],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any).rpc('purchase_item', {
+        p_user_id: userId,
+        p_item_id: itemId,
+        p_price: price,
     });
+
+    if (error) {
+        throw new Error(`[SupabaseProfile] Purchase RPC failed: ${error.message}`);
+    }
+
+    const rows = data as ProfileRow[] | null;
+    if (!rows || rows.length === 0) {
+        throw new Error('[SupabaseProfile] Purchase RPC returned no data');
+    }
+
+    return normalizeProfile(rows[0]);
 }
 
 /**
@@ -276,4 +283,61 @@ export async function syncEconomy(
         games_played: gamesPlayed,
         games_won: gamesWon,
     });
+}
+
+// ============================================================================
+// SEASON / BATTLE PASS SYNC
+// ============================================================================
+
+export interface SeasonProgressRow {
+    user_id: string;
+    season_id: string;
+    season_xp: number;
+    season_level: number;
+    has_premium: boolean;
+    claimed_free: number[];
+    claimed_premium: number[];
+}
+
+/**
+ * Upsert season progress for the current season.
+ * Called after XP gain, reward claim, or premium purchase.
+ */
+export async function syncSeasonProgress(
+    userId: string,
+    progress: Omit<SeasonProgressRow, 'user_id'>
+): Promise<void> {
+    const { error } = await (supabase.from('season_progress') as any)
+        .upsert(
+            { user_id: userId, ...progress, updated_at: new Date().toISOString() },
+            { onConflict: 'user_id,season_id' }
+        );
+
+    if (error) {
+        // Non-critical — local state is source of truth
+        console.warn('[SupabaseProfile] syncSeasonProgress failed:', error.message);
+    }
+}
+
+/**
+ * Fetch season progress for the current season from Supabase.
+ * Returns null if no record exists yet (first play in this season).
+ */
+export async function fetchSeasonProgress(
+    userId: string,
+    seasonId: string
+): Promise<SeasonProgressRow | null> {
+    const { data, error } = await (supabase.from('season_progress') as any)
+        .select('*')
+        .eq('user_id', userId)
+        .eq('season_id', seasonId)
+        .single();
+
+    if (error) {
+        if (error.code === 'PGRST116') return null; // no rows
+        console.warn('[SupabaseProfile] fetchSeasonProgress failed:', error.message);
+        return null;
+    }
+
+    return data as SeasonProgressRow;
 }

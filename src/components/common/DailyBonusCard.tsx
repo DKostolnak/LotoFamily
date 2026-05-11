@@ -1,8 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withRepeat,
+    withTiming,
+    cancelAnimation,
+} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Gift, ChevronRight } from 'lucide-react-native';
 import { TEXT_STYLES, SPACING, RADII, ECONOMY } from '@/lib/config';
+
+// Animated wrapper — lets us animate borderColor via Reanimated
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 interface DailyBonusCardProps {
     lastDailyBonus: number;
@@ -66,6 +76,29 @@ export function DailyBonusCard({ lastDailyBonus, onClaim, labels, style, compact
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lastDailyBonus, intervalMs]);
 
+    // Border pulse — animates borderColor breathing when bonus is ready.
+    // Hooks must come before any conditional returns.
+    const pulse = useSharedValue(0);
+    const isReadyAnim = useSharedValue(ready ? 1 : 0);
+    useEffect(() => {
+        isReadyAnim.value = ready ? 1 : 0;
+        if (ready) {
+            pulse.value = withRepeat(withTiming(1, { duration: 1100 }), -1, true);
+        } else {
+            cancelAnimation(pulse);
+            pulse.value = withTiming(0, { duration: 300 });
+        }
+        return () => cancelAnimation(pulse);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ready]);
+
+    const animBorderStyle = useAnimatedStyle(() => ({
+        borderColor: isReadyAnim.value
+            ? `rgba(255, 215, 0, ${0.45 + pulse.value * 0.55})`
+            : 'rgba(90, 64, 37, 0.6)',
+        shadowOpacity: isReadyAnim.value ? 0.1 + pulse.value * 0.25 : 0,
+    }));
+
     const readyLabel = labels?.ready ?? 'Daily Bonus';
     const claimLabel = labels?.claim ?? 'CLAIM';
     const nextInLabel = labels?.nextIn ?? 'Next bonus in';
@@ -90,7 +123,7 @@ export function DailyBonusCard({ lastDailyBonus, onClaim, labels, style, compact
         const a11yStreakSuffix = showStreak ? `, day ${upcomingDay}` : '';
 
         return (
-            <TouchableOpacity
+            <AnimatedTouchable
                 onPress={handlePress}
                 activeOpacity={0.85}
                 accessibilityRole="button"
@@ -105,8 +138,8 @@ export function DailyBonusCard({ lastDailyBonus, onClaim, labels, style, compact
                         borderRadius: RADII.pill,
                         backgroundColor: 'rgba(255, 215, 0, 0.14)',
                         borderWidth: 1,
-                        borderColor: 'rgba(255, 215, 0, 0.65)',
                     },
+                    animBorderStyle,
                     style,
                 ]}
             >
@@ -119,12 +152,12 @@ export function DailyBonusCard({ lastDailyBonus, onClaim, labels, style, compact
                 </Text>
                 <Text style={[TEXT_STYLES.bodyBold, { color: '#ffd700' }]}>+{amount}</Text>
                 <ChevronRight size={16} color="#ffd700" strokeWidth={2.5} />
-            </TouchableOpacity>
+            </AnimatedTouchable>
         );
     }
 
     return (
-        <TouchableOpacity
+        <AnimatedTouchable
             onPress={handlePress}
             disabled={!ready}
             activeOpacity={ready ? 0.85 : 1}
@@ -140,9 +173,12 @@ export function DailyBonusCard({ lastDailyBonus, onClaim, labels, style, compact
                     borderRadius: RADII.lg,
                     backgroundColor: ready ? 'rgba(255, 215, 0, 0.12)' : 'rgba(45, 31, 16, 0.6)',
                     borderWidth: 2,
-                    borderColor: ready ? '#ffd700' : 'rgba(90, 64, 37, 0.6)',
+                    shadowColor: '#ffd700',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowRadius: 12,
                     minHeight: 72,
                 },
+                animBorderStyle,
                 style,
             ]}
         >
@@ -182,7 +218,7 @@ export function DailyBonusCard({ lastDailyBonus, onClaim, labels, style, compact
                     <Text style={[TEXT_STYLES.button, { color: '#1a1109' }]}>{claimLabel}</Text>
                 </View>
             )}
-        </TouchableOpacity>
+        </AnimatedTouchable>
     );
 }
 

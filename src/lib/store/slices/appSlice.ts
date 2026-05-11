@@ -22,7 +22,7 @@
 
 import type { StateCreator } from 'zustand';
 import type { GameStore, AppSlice } from '../types';
-import { initializeProfile, syncEconomy, updateProfile } from '../../services/supabaseProfile';
+import { initializeProfile, syncEconomy, updateProfile, syncSeasonProgress, fetchSeasonProgress } from '../../services/supabaseProfile';
 import { getSession } from '../../services/supabase';
 import { calculateTier } from './statsSlice';
 
@@ -30,10 +30,11 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
     isLoading: true,
     error: null,
     isInitialized: false,
+    pendingDeepLink: null,
 
     setError: (error: string | null) => set({ error }),
-
     setLoading: (loading: boolean) => set({ isLoading: loading }),
+    setPendingDeepLink: (link) => set({ pendingDeepLink: link }),
 
     initialize: async () => {
         set({ isLoading: true, error: null });
@@ -42,7 +43,7 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
             const current = get();
 
             try {
-                const { profile } = await initializeProfile(
+                const { userId, profile } = await initializeProfile(
                     current.playerName || 'Player',
                     current.playerAvatar || '🎮',
                 );
@@ -61,12 +62,42 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
                         xp: profile.xp,
                     },
                     tier: profile.tier ?? calculateTier(profile.gamesPlayed),
+                    // Restore daily bonus timestamp for cross-device sync.
+                    // Only overwrite if server has a more recent claim.
+                    lastDailyBonus: profile.lastBonusClaimedAt
+                        ? Math.max(
+                            current.lastDailyBonus,
+                            new Date(profile.lastBonusClaimedAt).getTime()
+                          )
+                        : current.lastDailyBonus,
                 });
+
+                // Restore Battle Pass progress from Supabase (cross-device sync)
+                const currentSeason = get();
+                if (currentSeason.seasonId) {
+                    const seasonData = await fetchSeasonProgress(userId, currentSeason.seasonId);
+                    if (seasonData) {
+                        // Server wins if it has higher XP (more progress)
+                        if (seasonData.season_xp >= currentSeason.seasonXp) {
+                            set({
+                                seasonXp: seasonData.season_xp,
+                                seasonLevel: seasonData.season_level,
+                                hasPremium: seasonData.has_premium || currentSeason.hasPremium,
+                                claimedFree: seasonData.claimed_free,
+                                claimedPremium: seasonData.claimed_premium,
+                            });
+                        }
+                    }
+                }
             } catch (e) {
                 console.warn('[AppSlice] Supabase sync failed, using local state:', e);
             }
 
             set({ isLoading: false, isInitialized: true });
+
+            // Bootstrap / roll over the Battle Pass season now that we know
+            // the local state is fully rehydrated and server-synced.
+            get().checkSeasonRollover();
         } catch (error) {
             set({
                 isLoading: false,
@@ -100,7 +131,7 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
                 state.stats.gamesWon,
             );
 
-            // Sync inventory + equip nastavenia
+            // Sync inventory, equip settings and daily bonus timestamp
             await updateProfile(session.user.id, {
                 inventory: state.inventory,
                 active_theme: state.activeTheme,
@@ -108,7 +139,22 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
                 nickname: state.playerName,
                 avatar: state.playerAvatar,
                 tier: state.tier,
+                last_bonus_claimed_at: state.lastDailyBonus > 0
+                    ? new Date(state.lastDailyBonus).toISOString()
+                    : null,
             });
+
+            // Sync Battle Pass / Season progress
+            if (state.seasonId) {
+                await syncSeasonProgress(session.user.id, {
+                    season_id: state.seasonId,
+                    season_xp: state.seasonXp,
+                    season_level: state.seasonLevel,
+                    has_premium: state.hasPremium,
+                    claimed_free: state.claimedFree,
+                    claimed_premium: state.claimedPremium,
+                });
+            }
         } catch (e) {
             // Sync je best-effort — offline/error neblokuje hru
             console.warn('[AppSlice] syncToSupabase failed:', e);

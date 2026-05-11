@@ -237,6 +237,10 @@ export interface TranslationKeys {
     rulesPage3Desc: string;
     rulesPage4Title: string;
     rulesPage4Desc: string;
+    rulesPage5Title: string;
+    rulesPage5Desc: string;
+    rulesPage6Title: string;
+    rulesPage6Desc: string;
 
     // Main Menu redesign (StickyHeader, DailyBonusCard, FreeCoinsCTA, ModeCard, BottomTabs)
     practiceVsBots: string;
@@ -343,6 +347,8 @@ export interface TranslationKeys {
     notificationsDesc: string;
     dailyBonusNotifTitle: string;
     dailyBonusNotifBody: string;
+    seasonEndingNotifTitle: string;
+    seasonEndingNotifBody: string;
     shareInvite: string;
     invitedToJoin: string;
 
@@ -405,6 +411,9 @@ export interface TranslationKeys {
     connStatusOffline: string;
     connStatusError: string;
     connRetry: string;
+
+    // Error Boundary (class component — read via getState())
+    errorReport: string;
 
     // Voice announcer (folk nicknames toggle)
     announcerMode: string;

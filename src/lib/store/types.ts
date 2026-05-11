@@ -160,6 +160,8 @@ export interface AppState {
     isLoading: boolean;
     error: string | null;
     isInitialized: boolean;
+    /** Pending deep-link from a tapped push notification (cleared after handling). */
+    pendingDeepLink: 'daily_bonus' | 'season_ending' | null;
 }
 
 export interface AppActions {
@@ -168,6 +170,8 @@ export interface AppActions {
     initialize: () => Promise<void>;
     /** Synchuje aktuálny Zustand stav do Supabase DB. Fire-and-forget. */
     syncToSupabase: () => Promise<void>;
+    /** Set pending deep-link from notification tap. */
+    setPendingDeepLink: (link: 'daily_bonus' | 'season_ending' | null) => void;
 }
 
 export type AppSlice = AppState & AppActions;
@@ -275,6 +279,7 @@ export const DEFAULT_APP_STATE: AppState = {
     isLoading: true,
     error: null,
     isInitialized: false,
+    pendingDeepLink: null,
 };
 
 export const DEFAULT_SEASON_STATE: SeasonState = {

@@ -9,6 +9,31 @@ import { getAvailableAvatars, getNextAvatar } from '@/lib/config/avatar.config';
 import { BarChart2, Crown, Trophy, Coins, Pencil, RotateCw, Check, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
+// ── Eased count-up hook ───────────────────────────────────────────────────────
+function easeOutQuad(t: number): number { return 1 - (1 - t) * (1 - t); }
+
+function useCountUp(target: number, duration: number, enabled: boolean): number {
+    const [value, setValue] = useState(0);
+    useEffect(() => {
+        if (!enabled) { setValue(0); return; }
+        if (target === 0) { setValue(0); return; }
+        const STEPS = 28;
+        const intervalMs = Math.max(16, duration / STEPS);
+        let step = 0;
+        const id = setInterval(() => {
+            step++;
+            const t = Math.min(step / STEPS, 1);
+            setValue(Math.round(target * easeOutQuad(t)));
+            if (step >= STEPS) {
+                clearInterval(id);
+                setValue(target);
+            }
+        }, intervalMs);
+        return () => clearInterval(id);
+    }, [target, enabled, duration]);
+    return value;
+}
+
 interface StatsModalProps {
     visible: boolean;
     onClose: () => void;
@@ -24,13 +49,18 @@ export const StatsModal = ({ visible, onClose }: StatsModalProps) => {
     const [isEditingName, setIsEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState(playerName || '');
     const [nameError, setNameError] = useState<string | null>(null);
+    const [countEnabled, setCountEnabled] = useState(false);
 
     useEffect(() => {
         if (!visible) {
             setIsEditingName(false);
             setNameError(null);
+            setCountEnabled(false);
         } else {
             setNameDraft(playerName || '');
+            // Slight delay so the modal entrance animation completes first
+            const id = setTimeout(() => setCountEnabled(true), 120);
+            return () => clearTimeout(id);
         }
     }, [visible, playerName]);
 
@@ -40,6 +70,12 @@ export const StatsModal = ({ visible, onClose }: StatsModalProps) => {
 
     const level = Math.floor(stats.xp / 100) + 1;
     const xpInLevel = stats.xp % 100;
+
+    // Animated stat counters — count up from 0 on modal open
+    const animGamesPlayed = useCountUp(stats.gamesPlayed, 650, countEnabled);
+    const animGamesWon    = useCountUp(stats.gamesWon,    650, countEnabled);
+    const animWinRate     = useCountUp(winRate,            600, countEnabled);
+    const animEarnings    = useCountUp(stats.totalEarnings, 900, countEnabled);
 
     const handleCycleAvatar = () => {
         Haptics.selectionAsync().catch(() => { });
@@ -142,22 +178,22 @@ export const StatsModal = ({ visible, onClose }: StatsModalProps) => {
                 <ListRow
                     icon={<BarChart2 size={20} color="#ffd700" />}
                     title={t.games}
-                    right={<Badge label={String(stats.gamesPlayed)} variant="neutral" />}
+                    right={<Badge label={String(animGamesPlayed)} variant="neutral" />}
                 />
                 <ListRow
                     icon={<Crown size={20} color="#ffd700" />}
                     title={t.wins}
-                    right={<Badge label={String(stats.gamesWon)} variant="gold" />}
+                    right={<Badge label={String(animGamesWon)} variant="gold" />}
                 />
                 <ListRow
                     icon={<Trophy size={20} color="#4ade80" />}
                     title={t.winRate}
-                    right={<Badge label={`${winRate}%`} variant="success" />}
+                    right={<Badge label={`${animWinRate}%`} variant="success" />}
                 />
                 <ListRow
                     icon={<Coins size={20} color="#ffd700" />}
                     title={t.earnings}
-                    right={<Badge label={String(stats.totalEarnings)} variant="gold" />}
+                    right={<Badge label={String(animEarnings)} variant="gold" />}
                 />
             </Section>
         </ModalShell>

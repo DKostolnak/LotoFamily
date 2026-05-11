@@ -129,7 +129,12 @@ export interface Database {
                 };
             };
         };
-        Functions: Record<string, never>;
+        Functions: {
+            purchase_item: {
+                Args: { p_user_id: string; p_item_id: string; p_price: number };
+                Returns: ProfileRow[];
+            };
+        };
         Enums: Record<string, never>;
     };
 }

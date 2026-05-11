@@ -1,7 +1,17 @@
 import * as Speech from 'expo-speech';
-import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import { pickAnnounceText } from '../config/numberNicknames';
 import type { Language } from '../i18n';
+
+// Lazy require — expo-audio native module is not available in Expo Go without
+// a full native build. We gracefully degrade: sounds are skipped, TTS still works.
+let ExpoAudio: typeof import('expo-audio') | null = null;
+try {
+    ExpoAudio = require('expo-audio');
+} catch {
+    console.warn('[audio] expo-audio native module unavailable — sound effects disabled');
+}
+
+type AudioPlayer = any;
 
 export type SoundEffect = 'chip' | 'win' | 'call' | 'error' | 'pop';
 
@@ -39,13 +49,15 @@ class AudioService {
         if (this.isInitialized) return; // Guard against double initialization
 
         try {
-            await setAudioModeAsync({
-                allowsRecording: false,
-                playsInSilentMode: true,
-                shouldPlayInBackground: false,
-                shouldRouteThroughEarpiece: false,
-                interruptionMode: 'duckOthers',
-            });
+            if (ExpoAudio?.setAudioModeAsync) {
+                await ExpoAudio.setAudioModeAsync({
+                    allowsRecording: false,
+                    playsInSilentMode: true,
+                    shouldPlayInBackground: false,
+                    shouldRouteThroughEarpiece: false,
+                    interruptionMode: 'duckOthers',
+                });
+            }
             await this.loadSounds();
             this.isInitialized = true;
         } catch (error) {
@@ -65,9 +77,11 @@ class AudioService {
             // pop: require('../../../assets/sounds/pop.mp3'),
         };
 
+        if (!ExpoAudio?.createAudioPlayer) return;
+
         for (const [key, asset] of Object.entries(soundAssets)) {
             try {
-                const player = createAudioPlayer(asset);
+                const player = ExpoAudio.createAudioPlayer(asset);
                 this.sounds.set(key as SoundEffect, player);
             } catch (e) {
                 // Silently fail if asset doesn't exist yet

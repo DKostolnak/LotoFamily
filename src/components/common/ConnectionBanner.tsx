@@ -28,6 +28,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Wifi, WifiOff, X } from 'lucide-react-native';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
+import { useGameStore } from '@/lib/store';
+import { translations } from '@/lib/i18n';
 
 export type BannerStatus = 'reconnecting' | 'disconnected' | 'connected' | 'error' | 'offline';
 
@@ -71,6 +73,8 @@ export function ConnectionBanner({
     autoHide = true,
 }: ConnectionBannerProps) {
     const insets = useSafeAreaInsets();
+    const language = useGameStore((s) => s.language);
+    const t = translations[language];
     const translateY = useRef(new Animated.Value(-200)).current;
     const [renderStatus, setRenderStatus] = useState<BannerStatus | null>(null);
 
@@ -132,11 +136,11 @@ export function ConnectionBanner({
 
     const defaultMessage = ((): string => {
         switch (renderStatus) {
-            case 'reconnecting': return 'Reconnecting...';
-            case 'disconnected': return 'Connection lost';
-            case 'error': return 'Connection error';
-            case 'offline': return 'No connection';
-            case 'connected': return 'Connected';
+            case 'reconnecting': return t.connStatusReconnecting;
+            case 'disconnected': return t.connStatusDisconnected;
+            case 'error': return t.connStatusError;
+            case 'offline': return t.connStatusOffline;
+            case 'connected': return t.connStatusConnected;
         }
     })();
 
@@ -195,7 +199,7 @@ export function ConnectionBanner({
                 <TouchableOpacity
                     onPress={onRetry}
                     accessibilityRole="button"
-                    accessibilityLabel={retryLabel ?? 'Retry'}
+                    accessibilityLabel={retryLabel ?? t.connRetry}
                     style={{
                         paddingHorizontal: SPACING.md,
                         paddingVertical: 6,
@@ -206,7 +210,7 @@ export function ConnectionBanner({
                     }}
                 >
                     <Text style={[TEXT_STYLES.captionUpper, { color: palette.fg }]}>
-                        {retryLabel ?? 'Retry'}
+                        {retryLabel ?? t.connRetry}
                     </Text>
                 </TouchableOpacity>
             )}
@@ -218,7 +222,7 @@ export function ConnectionBanner({
                         slideOut();
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel="Dismiss"
+                    accessibilityLabel={t.close}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     style={{ padding: 4 }}
                 >

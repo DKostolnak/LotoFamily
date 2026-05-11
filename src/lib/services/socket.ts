@@ -85,9 +85,33 @@ class SocketService {
     // ========================================================================
 
     /**
-     * Connect to the game server
+     * Connect to the game server.
+     *
+     * @deprecated Socket.io has been replaced by Supabase Realtime.
+     *   This service is kept for backward-compatibility only.
+     *   New code should use `realtimeService` from `supabaseRealtime.ts`.
      */
     public connect(serverUrl: string = k_defaultServerUrl): GameSocket {
+        // Guard: skip connection to localhost — on a real device "localhost"
+        // resolves to the device itself, not the dev Mac. Since we've
+        // migrated to Supabase Realtime, there is no local socket server.
+        const isLocalhost = serverUrl.includes('localhost') || serverUrl.includes('127.0.0.1');
+        if (isLocalhost) {
+            console.warn('[Socket] Skipping connection to localhost — use Supabase Realtime instead.');
+            this.m_status = 'disconnected';
+            // Return a stub socket to satisfy callers that expect a GameSocket.
+            // All emit calls on a disconnected socket are no-ops.
+            if (!this.m_socket) {
+                this.m_socket = io(serverUrl, {
+                    transports: ['websocket'],
+                    autoConnect: false,    // ← do NOT auto-connect
+                    reconnection: false,
+                });
+                this.setupConnectionListeners();
+            }
+            return this.m_socket;
+        }
+
         // If already connected to same server, return existing socket
         if (this.m_socket?.connected && this.m_serverUrl === serverUrl) {
             return this.m_socket;
@@ -184,10 +208,12 @@ class SocketService {
         });
 
         this.m_socket.on('connect_error', (error) => {
-            console.error('[Socket] Connection error:', error.message);
+            // Downgraded to warn: connection errors from the legacy socket server
+            // are expected — Supabase Realtime is used instead.
+            console.warn('[Socket] Connection error (legacy, non-fatal):', error?.message ?? error);
             this.m_status = 'error';
-            this.m_error = error.message;
-            this.notifyListeners('error', error.message);
+            this.m_error = error?.message ?? String(error);
+            this.notifyListeners('error', this.m_error);
         });
 
         // Server info event
@@ -198,9 +224,9 @@ class SocketService {
 
         // Error event
         this.m_socket.on('error', (error) => {
-            console.error('[Socket] Server error:', error.message);
-            this.m_error = error.message;
-            this.notifyListeners('error', error.message);
+            console.warn('[Socket] Server error (legacy, non-fatal):', error?.message ?? error);
+            this.m_error = error?.message ?? String(error);
+            this.notifyListeners('error', this.m_error);
         });
     }
 

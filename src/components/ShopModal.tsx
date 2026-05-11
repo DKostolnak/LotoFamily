@@ -1,23 +1,27 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
-import { ModalShell, Badge, CoinBadge, WoodenButton, EmptyState } from '@/components/common';
+import { View, Text, Pressable, ScrollView, TouchableOpacity } from 'react-native';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withDelay,
+    withTiming,
+    withSpring,
+    Easing,
+} from 'react-native-reanimated';
+import { ModalShell, Badge, CoinBadge, EmptyState } from '@/components/common';
 import { TEXT_STYLES, SPACING, RADII, FONT_WEIGHTS } from '@/lib/config';
 import { useGameStore } from '@/lib/store';
 import { SHOP_ITEMS, type ShopItem, isPowerUpItem } from '@/lib/shop';
-import { translations } from '@/lib/i18n';
+import { translations, type TranslationKeys } from '@/lib/i18n';
 import * as Haptics from 'expo-haptics';
 import { ShopItemPreview } from '@/components/shop/ShopItemPreview';
+import { Check, Lock } from 'lucide-react-native';
 
 interface ShopModalProps {
     visible: boolean;
     onClose: () => void;
 }
 
-/**
- * ShopModal — 2-column card grid layout (was a dense vertical list with
- * filler descriptions). Each card has a big preview tile, the item name,
- * and a single primary action (equip / buy / claim).
- */
 export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
     const {
         coins, inventory, purchaseItem, removeCoins, addPowerUp,
@@ -25,29 +29,40 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
         language,
     } = useGameStore();
     const t = translations[language];
+
     type CategoryId = 'all' | 'avatar' | 'theme' | 'skin' | 'powerup';
     const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
+    // Guard against double-tap / rapid-fire purchases
+    const [purchasing, setPurchasing] = useState(false);
 
     useEffect(() => {
         if (visible) setActiveCategory('all');
     }, [visible]);
 
     const handlePurchase = (item: ShopItem) => {
-        if (coins < item.price) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => { });
-            return;
-        }
-        if (isPowerUpItem(item)) {
-            const ok = removeCoins(item.price);
-            if (ok) {
-                addPowerUp(item.powerUpType, item.count);
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+        if (purchasing || coins < item.price) {
+            if (coins < item.price) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => { });
             }
             return;
         }
-        const success = purchaseItem(item.id, item.price);
-        if (success) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+        setPurchasing(true);
+        try {
+            if (isPowerUpItem(item)) {
+                const ok = removeCoins(item.price);
+                if (ok) {
+                    addPowerUp(item.powerUpType, item.count);
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+                }
+                return;
+            }
+            const success = purchaseItem(item.id, item.price);
+            if (success) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+            }
+        } finally {
+            // Small delay so the button stays disabled until Zustand re-render
+            setTimeout(() => setPurchasing(false), 400);
         }
     };
 
@@ -61,12 +76,12 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
         }
     };
 
-    const categories: { id: CategoryId; label: string }[] = [
-        { id: 'all', label: t.all },
-        { id: 'avatar', label: t.avatars },
-        { id: 'theme', label: t.themes },
-        { id: 'skin', label: t.markers },
-        { id: 'powerup', label: t.powerUps },
+    const categories: { id: CategoryId; label: string; emoji: string }[] = [
+        { id: 'all', label: t.all ?? 'All', emoji: '🛍️' },
+        { id: 'avatar', label: t.avatars ?? 'Avatars', emoji: '🐻' },
+        { id: 'theme', label: t.themes ?? 'Themes', emoji: '🎨' },
+        { id: 'skin', label: t.markers ?? 'Markers', emoji: '🔴' },
+        { id: 'powerup', label: t.powerUps ?? 'Power-ups', emoji: '⚡' },
     ];
 
     const filteredItems = useMemo(
@@ -78,213 +93,320 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
         <ModalShell
             visible={visible}
             onClose={onClose}
-            title={t.shopTitle}
+            title={t.shopTitle ?? 'Grand Store'}
             headerRight={<CoinBadge coins={coins} size="sm" />}
+            contentStyle={{ padding: 0, gap: 0 }}
         >
-            {/* Tab strip — horizontal scroll so all category labels render at native size */}
-            <View
-                style={{
-                    height: 52,
-                    backgroundColor: '#1a1109',
-                    borderRadius: RADII.md,
-                    borderWidth: 1,
-                    borderColor: '#5a4025',
-                    overflow: 'hidden',
+            {/* ── Category Filter ──────────────────────────────────────── */}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                    flexDirection: 'row',
+                    paddingHorizontal: SPACING.lg,
+                    paddingVertical: SPACING.md,
+                    gap: SPACING.sm,
                 }}
             >
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{
-                        flexGrow: 1,
-                        flexDirection: 'row',
-                        padding: 4,
-                        gap: 4,
-                        alignItems: 'stretch',
-                    }}
-                >
-                    {categories.map((cat) => {
-                        const isActive = activeCategory === cat.id;
-                        return (
-                            <Pressable
-                                key={cat.id}
+                {categories.map((cat) => {
+                    const isActive = activeCategory === cat.id;
+                    return (
+                        <Pressable
+                            key={cat.id}
+                            onPress={() => {
+                                Haptics.selectionAsync().catch(() => { });
+                                setActiveCategory(cat.id);
+                            }}
+                            accessibilityRole="tab"
+                            accessibilityLabel={`${cat.emoji} ${cat.label}`}
+                            accessibilityState={{ selected: isActive }}
+                            style={({ pressed }) => ({
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 5,
+                                paddingHorizontal: 14,
+                                paddingVertical: 8,
+                                borderRadius: RADII.pill,
+                                backgroundColor: isActive
+                                    ? 'rgba(255, 215, 0, 0.18)'
+                                    : 'rgba(255,255,255,0.05)',
+                                borderWidth: 1.5,
+                                borderColor: isActive
+                                    ? 'rgba(255, 215, 0, 0.65)'
+                                    : 'rgba(90, 64, 37, 0.5)',
+                                opacity: pressed ? 0.7 : 1,
+                            })}
+                        >
+                            <Text style={{ fontSize: 14 }}>{cat.emoji}</Text>
+                            <Text
                                 style={{
-                                    paddingHorizontal: SPACING.md,
-                                    minWidth: 80,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: RADII.sm,
-                                    backgroundColor: isActive ? '#3d2814' : 'transparent',
-                                    borderWidth: isActive ? 1 : 0,
-                                    borderColor: isActive ? 'rgba(255, 215, 0, 0.5)' : 'transparent',
-                                }}
-                                onPress={() => {
-                                    Haptics.selectionAsync().catch(() => { });
-                                    setActiveCategory(cat.id);
+                                    fontSize: 13,
+                                    fontWeight: FONT_WEIGHTS.bold,
+                                    color: isActive ? '#ffd700' : '#c9a87a',
+                                    letterSpacing: 0.3,
                                 }}
                             >
-                                <Text
-                                    numberOfLines={1}
-                                    style={[
-                                        TEXT_STYLES.captionUpper,
-                                        { color: isActive ? '#ffd700' : '#d4b896' },
-                                    ]}
-                                >
-                                    {cat.label}
-                                </Text>
-                            </Pressable>
-                        );
-                    })}
-                </ScrollView>
+                                {cat.label}
+                            </Text>
+                        </Pressable>
+                    );
+                })}
+            </ScrollView>
+
+            {/* ── Divider ─────────────────────────────────────────────── */}
+            <View style={{ height: 1, backgroundColor: 'rgba(90, 64, 37, 0.4)', marginHorizontal: SPACING.lg }} />
+
+            {/* ── Item grid ───────────────────────────────────────────── */}
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                    padding: SPACING.lg,
+                    gap: SPACING.md,
+                }}
+            >
+                {filteredItems.length === 0 ? (
+                    <EmptyState title={t.emptyShelf ?? 'Nothing here'} description={t.emptyShelfDesc ?? ''} />
+                ) : (
+                    <View key={activeCategory} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md }}>
+                        {filteredItems.map((item, index) => (
+                            <ShopCard
+                                key={item.id}
+                                item={item}
+                                coins={coins}
+                                inventory={inventory}
+                                activeTheme={activeTheme}
+                                activeSkin={activeSkin}
+                                playerAvatar={playerAvatar}
+                                t={t}
+                                purchasing={purchasing}
+                                staggerIndex={index}
+                                onBuy={() => handlePurchase(item)}
+                                onEquip={() => handleEquip(item)}
+                            />
+                        ))}
+                    </View>
+                )}
+            </ScrollView>
+        </ModalShell>
+    );
+};
+
+// ── ShopCard ────────────────────────────────────────────────────────────────
+interface ShopCardProps {
+    item: ShopItem;
+    coins: number;
+    inventory: string[];
+    activeTheme: string;
+    activeSkin: string;
+    playerAvatar: string;
+    t: Partial<TranslationKeys>;
+    /** True while a purchase is in-flight — disables all buy buttons globally. */
+    purchasing: boolean;
+    /** Position index — drives stagger entrance delay (50ms per card). */
+    staggerIndex: number;
+    onBuy: () => void;
+    onEquip: () => void;
+}
+
+const ShopCard = ({
+    item, coins, inventory, activeTheme, activeSkin, playerAvatar, t, purchasing, staggerIndex, onBuy, onEquip,
+}: ShopCardProps) => {
+    // Stagger entrance: scale up from 0.75 + fade in, offset by 50ms per index
+    const enterScale = useSharedValue(0.75);
+    const enterOpacity = useSharedValue(0);
+    useEffect(() => {
+        const delay = Math.min(staggerIndex * 50, 400); // cap at 400ms
+        enterScale.value = withDelay(delay, withSpring(1, { damping: 14, stiffness: 180 }));
+        enterOpacity.value = withDelay(delay, withTiming(1, { duration: 220, easing: Easing.out(Easing.quad) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    const cardAnimStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: enterScale.value }],
+        opacity: enterOpacity.value,
+    }));
+    const isPowerUp = isPowerUpItem(item);
+    const isOwned = !isPowerUp && (inventory.includes(item.id) || item.price === 0);
+    const isEquipped = !isPowerUp && (
+        activeTheme === item.id ||
+        activeSkin === item.id ||
+        (item.category === 'avatar' && playerAvatar === item.icon)
+    );
+    const canAfford = coins >= item.price;
+    const isFree = item.price === 0;
+
+    // Border glow when equipped
+    const borderColor = isEquipped
+        ? 'rgba(255, 215, 0, 0.75)'
+        : isOwned
+            ? 'rgba(74, 222, 128, 0.35)'
+            : 'rgba(90, 64, 37, 0.5)';
+
+    return (
+        <Animated.View
+            style={[
+                {
+                    width: '47.5%',
+                    backgroundColor: isEquipped ? 'rgba(255, 215, 0, 0.07)' : 'rgba(0, 0, 0, 0.3)',
+                    borderRadius: RADII.lg,
+                    borderWidth: 1.5,
+                    borderColor,
+                    overflow: 'hidden',
+                    shadowColor: isEquipped ? '#ffd700' : '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isEquipped ? 0.4 : 0.3,
+                    shadowRadius: isEquipped ? 6 : 3,
+                    elevation: isEquipped ? 6 : 3,
+                },
+                cardAnimStyle,
+            ]}
+        >
+            {/* Preview area */}
+            <View
+                style={{
+                    height: 88,
+                    backgroundColor: 'rgba(0,0,0,0.25)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                }}
+            >
+                <ShopItemPreview item={item} size="md" />
+
+                {/* Status badge — top right */}
+                <View style={{ position: 'absolute', top: 6, right: 6 }}>
+                    {isEquipped ? (
+                        <View style={{
+                            flexDirection: 'row', alignItems: 'center', gap: 3,
+                            backgroundColor: '#ffd700', borderRadius: RADII.pill,
+                            paddingHorizontal: 7, paddingVertical: 3,
+                        }}>
+                            <Check size={10} color="#1a1109" strokeWidth={3} />
+                            <Text style={{ fontSize: 12, fontWeight: '800', color: '#1a1109' }}>
+                                {t.active ?? 'ON'}
+                            </Text>
+                        </View>
+                    ) : isFree && !isOwned ? (
+                        <View style={{
+                            backgroundColor: '#4ade80', borderRadius: RADII.pill,
+                            paddingHorizontal: 7, paddingVertical: 3,
+                        }}>
+                            <Text style={{ fontSize: 12, fontWeight: '800', color: '#052e16' }}>
+                                FREE
+                            </Text>
+                        </View>
+                    ) : isOwned ? (
+                        <View style={{
+                            backgroundColor: 'rgba(74, 222, 128, 0.25)', borderRadius: RADII.pill,
+                            paddingHorizontal: 7, paddingVertical: 3,
+                            borderWidth: 1, borderColor: '#4ade80',
+                        }}>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: '#4ade80' }}>
+                                {t.owned ?? 'OWNED'}
+                            </Text>
+                        </View>
+                    ) : null}
+                </View>
             </View>
 
-            {/* Card grid — 2 columns */}
-            {filteredItems.length === 0 ? (
-                <EmptyState title={t.emptyShelf} description={t.emptyShelfDesc} />
-            ) : (
-                <View
+            {/* Info + Action */}
+            <View style={{ padding: SPACING.sm, gap: SPACING.xs }}>
+                {/* Name */}
+                <Text
                     style={{
-                        flexDirection: 'row',
-                        flexWrap: 'wrap',
-                        gap: SPACING.md,
+                        fontSize: 13,
+                        fontWeight: FONT_WEIGHTS.bold,
+                        color: '#f5e6c8',
+                        textAlign: 'center',
                     }}
+                    numberOfLines={1}
                 >
-                    {filteredItems.map((item) => {
-                        const isPowerUp = isPowerUpItem(item);
-                        const isOwned =
-                            !isPowerUp &&
-                            (inventory.includes(item.id) || item.price === 0);
-                        const isEquipped =
-                            !isPowerUp &&
-                            (activeTheme === item.id ||
-                                activeSkin === item.id ||
-                                (item.category === 'avatar' &&
-                                    playerAvatar === item.icon));
-                        const canAfford = coins >= item.price;
+                    {item.name}
+                </Text>
 
-                        // Status badge in the top-right corner of the card
-                        let cornerBadge: React.ReactNode = null;
-                        if (isEquipped) {
-                            cornerBadge = <Badge label={t.active} variant="gold" />;
-                        } else if (isOwned && item.price > 0) {
-                            cornerBadge = <Badge label={t.owned} variant="success" />;
-                        } else if (item.price === 0 && !isEquipped) {
-                            cornerBadge = <Badge label={t.free} variant="info" />;
-                        }
-
-                        // Bottom action — single button per card
-                        let action: React.ReactNode;
-                        if (isOwned) {
-                            if (
-                                ['theme', 'skin', 'avatar'].includes(item.category)
-                            ) {
-                                action = (
-                                    <WoodenButton
-                                        size="sm"
-                                        variant={isEquipped ? 'secondary' : 'gold'}
-                                        onPress={() => handleEquip(item)}
-                                        disabled={isEquipped}
-                                        fullWidth
-                                    >
-                                        {isEquipped ? t.active : t.equip}
-                                    </WoodenButton>
-                                );
-                            } else {
-                                action = (
-                                    <WoodenButton
-                                        size="sm"
-                                        variant="secondary"
-                                        disabled
-                                        fullWidth
-                                    >
-                                        {t.owned}
-                                    </WoodenButton>
-                                );
-                            }
-                        } else {
-                            action = (
-                                <WoodenButton
-                                    size="sm"
-                                    variant={canAfford ? 'gold' : 'secondary'}
-                                    onPress={() => handlePurchase(item)}
-                                    disabled={!canAfford}
-                                    fullWidth
-                                >
-                                    {`💰 ${item.price}`}
-                                </WoodenButton>
-                            );
-                        }
-
-                        return (
-                            <View
-                                key={item.id}
-                                style={{
-                                    width: '48%',
-                                    backgroundColor: 'rgba(26, 17, 9, 0.7)',
-                                    borderRadius: RADII.md,
-                                    borderWidth: 2,
-                                    borderColor: isEquipped
-                                        ? '#ffd700'
-                                        : 'rgba(90, 64, 37, 0.55)',
-                                    padding: SPACING.md,
-                                    gap: SPACING.sm,
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 3 },
-                                    shadowOpacity: isEquipped ? 0.55 : 0.35,
-                                    shadowRadius: 4,
-                                    elevation: isEquipped ? 6 : 3,
-                                }}
-                            >
-                                {/* Preview tile + corner badge */}
-                                <View
-                                    style={{
-                                        height: 96,
-                                        borderRadius: RADII.sm,
-                                        backgroundColor: 'rgba(0, 0, 0, 0.35)',
-                                        borderWidth: 1,
-                                        borderColor: 'rgba(255, 215, 0, 0.18)',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        overflow: 'hidden',
-                                    }}
-                                >
-                                    <ShopItemPreview item={item} size="md" />
-
-                                    {cornerBadge ? (
-                                        <View
-                                            style={{
-                                                position: 'absolute',
-                                                top: 4,
-                                                right: 4,
-                                            }}
-                                        >
-                                            {cornerBadge}
-                                        </View>
-                                    ) : null}
-                                </View>
-
-                                {/* Item name */}
-                                <Text
-                                    style={[
-                                        TEXT_STYLES.bodyBold,
-                                        {
-                                            color: '#f5e6c8',
-                                            textAlign: 'center',
-                                            fontWeight: FONT_WEIGHTS.bold,
-                                        },
-                                    ]}
-                                    numberOfLines={1}
-                                >
-                                    {item.name}
-                                </Text>
-
-                                {/* Action button */}
-                                {action}
-                            </View>
-                        );
-                    })}
-                </View>
-            )}
-        </ModalShell>
+                {/* Action button */}
+                {isOwned ? (
+                    ['theme', 'skin', 'avatar'].includes(item.category) ? (
+                        <TouchableOpacity
+                            onPress={onEquip}
+                            disabled={isEquipped}
+                            activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel={isEquipped ? `${item.name} — ${t.active ?? 'Active'}` : `${item.name} — ${t.equip ?? 'Equip'}`}
+                            accessibilityState={{ disabled: isEquipped }}
+                            style={{
+                                paddingVertical: 7,
+                                borderRadius: RADII.sm,
+                                alignItems: 'center',
+                                backgroundColor: isEquipped
+                                    ? 'rgba(255, 215, 0, 0.12)'
+                                    : 'rgba(255, 215, 0, 0.85)',
+                                borderWidth: 1,
+                                borderColor: isEquipped
+                                    ? 'rgba(255,215,0,0.25)'
+                                    : '#ffd700',
+                            }}
+                        >
+                            <Text style={{
+                                fontSize: 12,
+                                fontWeight: '800',
+                                color: isEquipped ? '#a08a40' : '#1a1109',
+                                letterSpacing: 0.5,
+                            }}>
+                                {isEquipped ? (t.active ?? 'ACTIVE') : (t.equip ?? 'EQUIP')}
+                            </Text>
+                        </TouchableOpacity>
+                    ) : (
+                        // Power-up — show count info, no equip
+                        <View style={{
+                            paddingVertical: 7,
+                            borderRadius: RADII.sm,
+                            alignItems: 'center',
+                            backgroundColor: 'rgba(255,255,255,0.05)',
+                        }}>
+                            <Text style={{ fontSize: 12, color: '#f5e6c8', fontWeight: '600' }}>
+                                {t.owned ?? 'OWNED'}
+                            </Text>
+                        </View>
+                    )
+                ) : (
+                    <TouchableOpacity
+                        onPress={onBuy}
+                        disabled={!canAfford || purchasing}
+                        activeOpacity={0.75}
+                        accessibilityRole="button"
+                        accessibilityLabel={isFree
+                            ? `${item.name} — ${t.claim ?? 'Claim for free'}`
+                            : canAfford
+                                ? `${item.name} — ${t.buy ?? 'Buy'} ${item.price} coins`
+                                : `${item.name} — ${t.locked ?? 'Not enough coins'}`}
+                        accessibilityState={{ disabled: !canAfford || purchasing }}
+                        style={{
+                            paddingVertical: 7,
+                            borderRadius: RADII.sm,
+                            alignItems: 'center',
+                            flexDirection: 'row',
+                            justifyContent: 'center',
+                            gap: 5,
+                            backgroundColor: canAfford && !purchasing
+                                ? 'rgba(255, 215, 0, 0.85)'
+                                : 'rgba(90, 64, 37, 0.3)',
+                            borderWidth: 1,
+                            borderColor: canAfford && !purchasing ? '#ffd700' : 'rgba(90,64,37,0.4)',
+                            opacity: canAfford && !purchasing ? 1 : 0.5,
+                        }}
+                    >
+                        {!canAfford && <Lock size={10} color="#8a6a40" strokeWidth={2.5} />}
+                        <Text style={{
+                            fontSize: 12,
+                            fontWeight: '800',
+                            color: canAfford && !purchasing ? '#1a1109' : '#8a6a40',
+                            letterSpacing: 0.3,
+                        }}>
+                            {isFree ? (t.claim ?? 'CLAIM') : `💰 ${item.price}`}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+        </Animated.View>
     );
 };
