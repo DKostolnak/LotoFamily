@@ -166,6 +166,8 @@ export interface AppActions {
     setError: (error: string | null) => void;
     setLoading: (loading: boolean) => void;
     initialize: () => Promise<void>;
+    /** Synchuje aktuálny Zustand stav do Supabase DB. Fire-and-forget. */
+    syncToSupabase: () => Promise<void>;
 }
 
 export type AppSlice = AppState & AppActions;

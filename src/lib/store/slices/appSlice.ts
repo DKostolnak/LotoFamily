@@ -13,11 +13,17 @@
  *   2. initializeProfile() zaistí Supabase session (anonymnú ak prvýkrát)
  *   3. Stiahne profil z Supabase DB (coins, inventory, stats...)
  *   4. Synchuje do Zustand store — server má prednosť pred lokálnym stavom
+ *
+ * syncToSupabase() voláme po:
+ *   - Konci hry (coins + stats)
+ *   - Nákupe v shope
+ *   - Claimovaní denného bonusu
  */
 
 import type { StateCreator } from 'zustand';
 import type { GameStore, AppSlice } from '../types';
-import { initializeProfile } from '../../services/supabaseProfile';
+import { initializeProfile, syncEconomy, updateProfile } from '../../services/supabaseProfile';
+import { getSession } from '../../services/supabase';
 import { calculateTier } from './statsSlice';
 
 export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, get) => ({
@@ -33,8 +39,6 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
         set({ isLoading: true, error: null });
 
         try {
-            // Persist middleware rehydrated local state already.
-            // Now sync with Supabase — server data takes precedence.
             const current = get();
 
             try {
@@ -43,7 +47,6 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
                     current.playerAvatar || '🎮',
                 );
 
-                // Synchuj server dáta do Zustand store
                 set({
                     playerName: profile.nickname,
                     playerAvatar: profile.avatar,
@@ -60,19 +63,55 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
                     tier: profile.tier ?? calculateTier(profile.gamesPlayed),
                 });
             } catch (e) {
-                // Supabase sync zlyhala (offline?) — pokračuj s lokálnym stavom
                 console.warn('[AppSlice] Supabase sync failed, using local state:', e);
             }
 
-            set({
-                isLoading: false,
-                isInitialized: true,
-            });
+            set({ isLoading: false, isInitialized: true });
         } catch (error) {
             set({
                 isLoading: false,
                 error: error instanceof Error ? error.message : 'Failed to initialize app',
             });
+        }
+    },
+
+    /**
+     * Synchronizuje aktuálny Zustand stav do Supabase.
+     *
+     * Kedy volať:
+     *   - Po konci hry: await syncToSupabase()
+     *   - Po nákupe: await syncToSupabase()
+     *   - Po dennom bonuse: await syncToSupabase()
+     *
+     * Fire-and-forget je OK — lokálny stav je source of truth,
+     * Supabase je backup + cross-device sync.
+     */
+    syncToSupabase: async () => {
+        try {
+            const { data: { session } } = await getSession();
+            if (!session?.user?.id) return;
+
+            const state = get();
+            await syncEconomy(
+                session.user.id,
+                state.coins,
+                state.stats.xp,
+                state.stats.gamesPlayed,
+                state.stats.gamesWon,
+            );
+
+            // Sync inventory + equip nastavenia
+            await updateProfile(session.user.id, {
+                inventory: state.inventory,
+                active_theme: state.activeTheme,
+                active_skin: state.activeSkin,
+                nickname: state.playerName,
+                avatar: state.playerAvatar,
+                tier: state.tier,
+            });
+        } catch (e) {
+            // Sync je best-effort — offline/error neblokuje hru
+            console.warn('[AppSlice] syncToSupabase failed:', e);
         }
     },
 });

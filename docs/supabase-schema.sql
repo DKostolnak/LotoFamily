@@ -190,3 +190,14 @@ BEGIN
     RETURN QUERY SELECT TRUE, (v_current_coins - p_price), 'OK';
 END;
 $$;
+
+-- ============================================================================
+-- MIGRÁCIA 001 — Leaderboard RLS
+-- ============================================================================
+-- Spusti toto v SQL Editore aby leaderboard videl všetkých hráčov.
+-- (Štandardná RLS politika umožňuje čítať len vlastný profil.)
+
+CREATE POLICY IF NOT EXISTS "profiles: leaderboard read"
+    ON public.profiles FOR SELECT
+    TO authenticated
+    USING (true);

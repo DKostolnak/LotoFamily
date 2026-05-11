@@ -45,6 +45,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
     // Supabase Realtime game hook (nahradil Socket.io useGameSocket)
     const {
         socket,
+        onGameEvent,
         gameState,
         isConnected,
         status: connStatus,
@@ -349,6 +350,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
 
             <GameStatusListener
                 socket={socket}
+                onGameEvent={onGameEvent}
                 gameState={gameState}
                 playerId={myPlayerId}
                 isConnected={isConnected}
