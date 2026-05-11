@@ -48,21 +48,41 @@ export const APP_NAME = Constants.expoConfig?.name ?? 'LOTO';
 export const APP_SLUG = Constants.expoConfig?.slug ?? 'loto-bingo';
 
 // =============================================================================
-// SERVER CONFIGURATION
+// SUPABASE CONFIGURATION
 // =============================================================================
 
 /**
- * Socket.io server URL
- * 
- * Set via EXPO_PUBLIC_SERVER_URL environment variable.
- * - In development: Uses localhost or local network IP
- * - In preview/production: Uses deployed server URL
- * 
- * Configure in:
- * - .env.local for local development
- * - eas.json for EAS builds
+ * Supabase Project URL + Anon Key
+ *
+ * Kde ich nájdeš:
+ *   1. Choď na https://supabase.com → tvoj projekt
+ *   2. Settings → API
+ *   3. Skopíruj "Project URL" a "anon public" key
+ *
+ * Nastav v .env.local pre lokálny vývoj:
+ *   EXPO_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+ *   EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *
+ * BEZPEČNOSŤ:
+ *   - anon key JE verejný — môžeš ho commitnúť do git (je to zamýšlané)
+ *   - Bezpečnosť riadi Row Level Security (RLS) priamo v Supabase
+ *   - service_role key (admin) NIKDY nedávaj do mobilnej app!
  */
-export const SERVER_URL = 
+export const SUPABASE_URL =
+    process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+
+export const SUPABASE_ANON_KEY =
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+
+// =============================================================================
+// SERVER CONFIGURATION (legacy — bude nahradené Supabase)
+// =============================================================================
+
+/**
+ * @deprecated Použiť Supabase Realtime namiesto Socket.io
+ * Ponechané pre spätú kompatibilitu počas migrácie.
+ */
+export const SERVER_URL =
     process.env.EXPO_PUBLIC_SERVER_URL ?? 'http://localhost:3000';
 
 // =============================================================================
@@ -177,6 +197,11 @@ export const ENV = {
     
     server: {
         url: SERVER_URL,
+    },
+
+    supabase: {
+        url: SUPABASE_URL,
+        anonKey: SUPABASE_ANON_KEY,
     },
     
     features: FEATURES,

@@ -4,17 +4,20 @@
  * Handles application lifecycle: loading, errors, initialization.
  * Single Responsibility: App state management only.
  *
- * NOTE: persisted slices (player, economy, stats, settings) are rehydrated
- * automatically by the Zustand `persist` middleware in `../index.ts`. This
- * slice no longer needs to manually load values from AsyncStorage — it only
- * performs an optional server sync (when an auth token is present) and flips
- * the `isInitialized` flag.
+ * Supabase migrácia:
+ *   - Starý tok: fetch(`${ENV.server.url}/profile`) cez Bearer token
+ *   - Nový tok: initializeProfile() cez Supabase Auth + PostgreSQL
+ *
+ * Čo sa tu deje pri štarte:
+ *   1. Zustand persist middleware rehydruje lokálny stav z AsyncStorage
+ *   2. initializeProfile() zaistí Supabase session (anonymnú ak prvýkrát)
+ *   3. Stiahne profil z Supabase DB (coins, inventory, stats...)
+ *   4. Synchuje do Zustand store — server má prednosť pred lokálnym stavom
  */
 
 import type { StateCreator } from 'zustand';
 import type { GameStore, AppSlice } from '../types';
-import { storageService, STORAGE_KEYS } from '../../services/storage';
-import { ENV } from '../../config/env.config';
+import { initializeProfile } from '../../services/supabaseProfile';
 import { calculateTier } from './statsSlice';
 
 export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, get) => ({
@@ -30,45 +33,35 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
         set({ isLoading: true, error: null });
 
         try {
-            // Persist middleware has already rehydrated local state.
-            // Optionally pull a fresh snapshot from the server to overwrite it.
-            const token = await storageService.getString(STORAGE_KEYS.PLAYER_TOKEN);
+            // Persist middleware rehydrated local state already.
+            // Now sync with Supabase — server data takes precedence.
+            const current = get();
 
-            if (token) {
-                try {
-                    const response = await fetch(`${ENV.server.url}/profile`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
-                    if (response.ok) {
-                        const serverProfile = await response.json();
-                        const current = get();
+            try {
+                const { profile } = await initializeProfile(
+                    current.playerName || 'Player',
+                    current.playerAvatar || '🎮',
+                );
 
-                        set({
-                            playerName: serverProfile.nickname ?? current.playerName,
-                            playerAvatar: serverProfile.avatar ?? current.playerAvatar,
-                            coins: serverProfile.coins ?? current.coins,
-                            inventory: serverProfile.inventory ?? current.inventory,
-                            activeTheme: serverProfile.activeTheme ?? current.activeTheme,
-                            activeSkin: serverProfile.activeSkin ?? current.activeSkin,
-                            stats: {
-                                gamesPlayed: serverProfile.gamesPlayed ?? current.stats.gamesPlayed,
-                                gamesWon: serverProfile.gamesWon ?? current.stats.gamesWon,
-                                totalEarnings: serverProfile.totalEarnings ?? current.stats.totalEarnings,
-                                xp: serverProfile.xp ?? current.stats.xp,
-                                fastestWinMs: current.stats.fastestWinMs,
-                                longestStreak: current.stats.longestStreak,
-                                currentStreak: current.stats.currentStreak,
-                                currentWinStreak: current.stats.currentWinStreak ?? 0,
-                                longestWinStreak: current.stats.longestWinStreak ?? 0,
-                            },
-                            tier:
-                                serverProfile.tier?.toString() ??
-                                calculateTier(serverProfile.gamesPlayed ?? current.stats.gamesPlayed),
-                        });
-                    }
-                } catch (e) {
-                    console.error('[AppSlice] Server sync failed:', e);
-                }
+                // Synchuj server dáta do Zustand store
+                set({
+                    playerName: profile.nickname,
+                    playerAvatar: profile.avatar,
+                    coins: profile.coins,
+                    inventory: profile.inventory,
+                    activeTheme: profile.activeTheme,
+                    activeSkin: profile.activeSkin,
+                    stats: {
+                        ...current.stats,
+                        gamesPlayed: profile.gamesPlayed,
+                        gamesWon: profile.gamesWon,
+                        xp: profile.xp,
+                    },
+                    tier: profile.tier ?? calculateTier(profile.gamesPlayed),
+                });
+            } catch (e) {
+                // Supabase sync zlyhala (offline?) — pokračuj s lokálnym stavom
+                console.warn('[AppSlice] Supabase sync failed, using local state:', e);
             }
 
             set({
