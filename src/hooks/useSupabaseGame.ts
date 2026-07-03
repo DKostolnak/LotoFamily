@@ -34,7 +34,7 @@ import { getSession } from '@/lib/services/supabase';
 import { LotoGameModule } from '@/lib/game-modules/loto/logic/LotoEngine';
 import { generateCards } from '@/engine/lotoCardGenerator';
 import type { GameState, Player, GameSettings } from '@/lib/types';
-import type { ChatMessage } from './useGameSocket';
+import type { ChatMessage } from '@/lib/types';
 import type { BroadcastEventType } from '@/lib/services/supabaseRealtime';
 
 // ============================================================================

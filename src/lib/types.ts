@@ -335,3 +335,13 @@ export const LOTO_MAX_NUMBER = 90;
 export const CARD_ROWS = 3;
 export const CARD_COLUMNS = 9;
 export const NUMBERS_PER_ROW = 5;
+
+/**
+ * In-game chat message (multiplayer lobby + game).
+ */
+export interface ChatMessage {
+    userId: string;
+    nickname: string;
+    message: string;
+    timestamp: number;
+}

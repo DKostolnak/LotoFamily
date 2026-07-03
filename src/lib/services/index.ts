@@ -25,15 +25,6 @@ export {
     setLastDailyBonus,
 } from './storage';
 
-// Socket
-export {
-    socketService,
-    type GameSocket,
-    type ConnectionStatus,
-    type ConnectionConfig,
-    type SocketServiceState,
-} from './socket';
-
 // Audio
 export { audioService } from './audio';
 

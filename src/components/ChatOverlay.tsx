@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
 import { MessageSquare, Send, X } from 'lucide-react-native';
-import { ChatMessage } from '@/hooks/useGameSocket';
+import { ChatMessage } from '@/lib/types';
 import { useGameStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';

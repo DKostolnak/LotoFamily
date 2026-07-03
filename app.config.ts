@@ -197,6 +197,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                 skAdNetworkItems: SK_AD_NETWORK_ITEMS,
             },
         ],
+        // Sentry source-map upload — only active when the org/project are
+        // configured (needs SENTRY_AUTH_TOKEN in EAS secrets). Runtime crash
+        // reporting works without this; it only makes stack traces readable.
+        ...(process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
+            ? [
+                  [
+                      '@sentry/react-native/expo',
+                      {
+                          organization: process.env.SENTRY_ORG,
+                          project: process.env.SENTRY_PROJECT,
+                      },
+                  ] as [string, object],
+              ]
+            : []),
     ],
     
     experiments: {

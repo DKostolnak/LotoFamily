@@ -1,22 +1,41 @@
 /**
- * Purchases Service
+ * Purchases Service — In-App Purchases via RevenueCat (react-native-purchases).
  *
- * Adapter / placeholder for In-App Purchases.
+ * Behavior by environment:
+ *  - Native builds with EXPO_PUBLIC_REVENUECAT_API_KEY_* set → real store
+ *    purchases (StoreKit / Play Billing, receipts validated by RevenueCat).
+ *  - No API keys / Expo Go / Jest → mock provider; in __DEV__ purchases
+ *    always "succeed" so coin-grant and premium flows stay testable.
  *
- * Recommended provider: RevenueCat (handles iOS + Android + receipt validation
- * + subscription state across devices). Alternative: `expo-in-app-purchases`
- * if you want a thinner StoreKit/Play Billing wrapper.
+ * Setup (before production release):
+ *  1. Create the products in App Store Connect + Google Play Console using
+ *     the SKUs from PRODUCT_IDS (and season.config's SEASON_PREMIUM_PRODUCT_ID).
+ *  2. In the RevenueCat dashboard, attach those products to an Offering and
+ *     map the non-consumables/subscriptions to the ENTITLEMENT_IDS below.
+ *  3. Set EXPO_PUBLIC_REVENUECAT_API_KEY_IOS / _ANDROID (see .env.example).
  *
- * Currently returns mock products and "successful" mock purchases in __DEV__.
- *
- * To wire up RevenueCat:
- *  1. `npx expo install react-native-purchases`
- *  2. Configure products & entitlements in RevenueCat dashboard.
- *  3. Provide API keys via env vars (see env.config.ts -> REVENUECAT).
- *  4. Replace bodies marked `// REPLACE WHEN REVENUECAT CONFIGURED` below.
+ * Public API kept stable so call sites (`purchasesService.purchase(...)`) do not change.
  */
 
-import { FEATURES, REVENUECAT } from '@/lib/config/env.config';
+import { Platform } from 'react-native';
+import { REVENUECAT } from '@/lib/config/env.config';
+import { adsService } from './ads';
+import type { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
+
+// Lazy native module load — throws in Expo Go / Jest where the native
+// binding is missing, so we fall back to the mock provider there.
+type PurchasesModule = typeof import('react-native-purchases');
+type PurchasesStatic = PurchasesModule['default'];
+let Purchases: PurchasesStatic | null = null;
+let RC_LOG_LEVEL: PurchasesModule['LOG_LEVEL'] | null = null;
+try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod: PurchasesModule = require('react-native-purchases');
+    Purchases = mod.default;
+    RC_LOG_LEVEL = mod.LOG_LEVEL;
+} catch {
+    Purchases = null;
+}
 
 export type PurchaseProvider = 'revenuecat' | 'expo-iap' | 'mock';
 
@@ -41,7 +60,7 @@ export interface PurchaseResult {
 }
 
 /**
- * Standardized product IDs. These should match the SKUs configured in
+ * Standardized product IDs. These must match the SKUs configured in
  * App Store Connect / Google Play Console / RevenueCat dashboard.
  */
 export const PRODUCT_IDS = {
@@ -53,6 +72,17 @@ export const PRODUCT_IDS = {
 } as const;
 
 export type ProductId = (typeof PRODUCT_IDS)[keyof typeof PRODUCT_IDS];
+
+/**
+ * RevenueCat entitlement identifiers. Configure these in the RevenueCat
+ * dashboard and attach the corresponding products to them.
+ */
+export const ENTITLEMENT_IDS = {
+    /** Non-consumable: permanently disables interstitial ads */
+    REMOVE_ADS: 'remove_ads',
+    /** Subscription: no ads + perks */
+    PREMIUM: 'premium',
+} as const;
 
 const MOCK_PRODUCTS: ProductPackage[] = [
     {
@@ -113,70 +143,74 @@ class PurchasesService {
     }
 
     /**
-     * Initialize IAP SDK. Should be called once on app start, after the
-     * authenticated user id is known (so receipts attach to the right account).
+     * Initialize the IAP SDK. Call once on app start, after the authenticated
+     * user id is known (so receipts attach to the right account and purchases
+     * survive reinstall / device switch). Never throws.
      */
     public async init(userId: string): Promise<void> {
         this.currentUserId = userId;
 
         if (this.initialized) return;
+        this.initialized = true;
 
-        if (!FEATURES.enableIAP) {
-            if (__DEV__) {
-                console.log('[IAP] Disabled (no RevenueCat keys). Using mock provider.');
-            }
+        const apiKey = Platform.OS === 'ios' ? REVENUECAT.apiKeyIos : REVENUECAT.apiKeyAndroid;
+
+        if (!Purchases || !apiKey) {
             this.provider = 'mock';
-            this.initialized = true;
+            if (__DEV__) {
+                console.log('[IAP] Mock provider', {
+                    nativeModule: !!Purchases,
+                    hasApiKey: !!apiKey,
+                });
+            }
             return;
         }
 
-        // REPLACE WHEN REVENUECAT CONFIGURED:
-        // import Purchases from 'react-native-purchases';
-        // const apiKey = Platform.OS === 'ios' ? REVENUECAT.apiKeyIos : REVENUECAT.apiKeyAndroid;
-        // Purchases.configure({ apiKey, appUserID: userId });
-        // this.provider = 'revenuecat';
+        try {
+            if (__DEV__ && RC_LOG_LEVEL) {
+                await Purchases.setLogLevel(RC_LOG_LEVEL.DEBUG);
+            }
+            Purchases.configure({ apiKey, appUserID: userId });
+            this.provider = 'revenuecat';
 
-        if (__DEV__) {
-            console.log('[IAP] Initialized (mock placeholder)', {
-                userId,
-                hasIosKey: !!REVENUECAT.apiKeyIos,
-                hasAndroidKey: !!REVENUECAT.apiKeyAndroid,
-            });
+            // Restore the ad-free entitlement state (e.g. after reinstall).
+            const info = await Purchases.getCustomerInfo();
+            this.applyEntitlements(info);
+        } catch (e) {
+            this.provider = 'mock';
+            if (__DEV__) console.warn('[IAP] RevenueCat init failed, using mock provider:', e);
         }
-
-        this.initialized = true;
     }
 
     /**
-     * Fetch available products. Mock returns a hardcoded list; the real
-     * implementation should fetch SKUs from the store at runtime so prices
-     * are localized to the user's region.
+     * Fetch available products with store-localized prices.
      */
     public async getProducts(): Promise<ProductPackage[]> {
-        if (this.provider === 'mock') {
+        if (this.provider !== 'revenuecat' || !Purchases) {
             return MOCK_PRODUCTS;
         }
 
-        // REPLACE WHEN REVENUECAT CONFIGURED:
-        // const offerings = await Purchases.getOfferings();
-        // return (offerings.current?.availablePackages ?? []).map((pkg) => ({
-        //     id: pkg.product.identifier,
-        //     title: pkg.product.title,
-        //     description: pkg.product.description,
-        //     price: pkg.product.priceString,
-        //     priceAmountMicros: Math.round(pkg.product.price * 1_000_000),
-        //     currency: pkg.product.currencyCode,
-        // }));
-
-        return [];
+        try {
+            const packages = await this.getAllPackages();
+            return packages.map((pkg) => ({
+                id: pkg.product.identifier,
+                title: pkg.product.title,
+                description: pkg.product.description,
+                price: pkg.product.priceString,
+                priceAmountMicros: Math.round(pkg.product.price * 1_000_000),
+                currency: pkg.product.currencyCode,
+            }));
+        } catch (e) {
+            if (__DEV__) console.warn('[IAP] getProducts failed:', e);
+            return [];
+        }
     }
 
     /**
-     * Initiate a purchase. The mock implementation pretends the user
-     * succeeded so coin-grant flows can be tested end-to-end.
+     * Initiate a purchase for the given product SKU.
      */
     public async purchase(productId: string): Promise<PurchaseResult> {
-        if (this.provider === 'mock') {
+        if (this.provider !== 'revenuecat' || !Purchases) {
             if (__DEV__) {
                 console.log(`[IAP] Mock purchase: ${productId}`);
                 return {
@@ -188,62 +222,74 @@ class PurchasesService {
             return { success: false, error: 'IAP not configured' };
         }
 
-        // REPLACE WHEN REVENUECAT CONFIGURED:
-        // try {
-        //     const offerings = await Purchases.getOfferings();
-        //     const pkg = offerings.current?.availablePackages.find((p) => p.product.identifier === productId);
-        //     if (!pkg) return { success: false, error: 'Product not found' };
-        //     const { customerInfo, productIdentifier } = await Purchases.purchasePackage(pkg);
-        //     return { success: true, productId: productIdentifier, transactionId: customerInfo.originalAppUserId };
-        // } catch (e: any) {
-        //     if (e.userCancelled) return { success: false, error: 'cancelled' };
-        //     return { success: false, error: e.message };
-        // }
+        try {
+            const packages = await this.getAllPackages();
+            const pkg = packages.find((p) => p.product.identifier === productId);
+            if (!pkg) return { success: false, error: 'Product not found' };
 
-        return { success: false, error: 'Provider not implemented' };
+            const { customerInfo, transaction } = await Purchases.purchasePackage(pkg);
+            this.applyEntitlements(customerInfo);
+            return {
+                success: true,
+                productId,
+                transactionId: transaction?.transactionIdentifier ?? undefined,
+            };
+        } catch (e: unknown) {
+            const err = e as { userCancelled?: boolean; message?: string };
+            if (err?.userCancelled) return { success: false, error: 'cancelled' };
+            if (__DEV__) console.warn('[IAP] purchase failed:', e);
+            return { success: false, error: err?.message ?? 'Purchase failed' };
+        }
     }
 
     /**
-     * Restore previously-purchased non-consumables (Remove Ads, lifetime
-     * upgrades) and active subscriptions. Returns a list of active product IDs.
+     * Restore previously-purchased non-consumables (Remove Ads, Premium) and
+     * active subscriptions. Returns the list of active entitlement IDs.
+     * Apple REQUIRES a visible "Restore Purchases" button that calls this.
      */
     public async restorePurchases(): Promise<string[]> {
-        if (this.provider === 'mock') {
+        if (this.provider !== 'revenuecat' || !Purchases) {
             if (__DEV__) console.log('[IAP] Mock restorePurchases()');
             return [];
         }
 
-        // REPLACE WHEN REVENUECAT CONFIGURED:
-        // const customerInfo = await Purchases.restorePurchases();
-        // return Object.keys(customerInfo.entitlements.active);
-
-        return [];
+        try {
+            const info = await Purchases.restorePurchases();
+            this.applyEntitlements(info);
+            return Object.keys(info.entitlements.active);
+        } catch (e) {
+            if (__DEV__) console.warn('[IAP] restore failed:', e);
+            return [];
+        }
     }
 
     /**
      * Whether the user has any active subscription (e.g. Premium Monthly).
      */
     public async hasActiveSubscription(): Promise<boolean> {
-        if (this.provider === 'mock') return false;
+        if (this.provider !== 'revenuecat' || !Purchases) return false;
 
-        // REPLACE WHEN REVENUECAT CONFIGURED:
-        // const info = await Purchases.getCustomerInfo();
-        // return Object.keys(info.entitlements.active).length > 0;
-
-        return false;
+        try {
+            const info = await Purchases.getCustomerInfo();
+            return !!info.entitlements.active[ENTITLEMENT_IDS.PREMIUM];
+        } catch {
+            return false;
+        }
     }
 
     /**
-     * Whether the user has purchased the "Remove Ads" non-consumable.
+     * Whether the user is entitled to an ad-free experience
+     * (Remove Ads non-consumable or an active Premium subscription).
      */
     public async hasRemovedAds(): Promise<boolean> {
-        if (this.provider === 'mock') return false;
+        if (this.provider !== 'revenuecat' || !Purchases) return false;
 
-        // REPLACE WHEN REVENUECAT CONFIGURED:
-        // const info = await Purchases.getCustomerInfo();
-        // return !!info.entitlements.active['remove_ads'];
-
-        return false;
+        try {
+            const info = await Purchases.getCustomerInfo();
+            return this.isAdFree(info);
+        } catch {
+            return false;
+        }
     }
 
     public getProvider(): PurchaseProvider {
@@ -252,6 +298,43 @@ class PurchasesService {
 
     public getUserId(): string | null {
         return this.currentUserId;
+    }
+
+    // ------------------------------------------------------------------------
+    // Internals
+    // ------------------------------------------------------------------------
+
+    /** All packages across all offerings (current first, deduped by product id). */
+    private async getAllPackages(): Promise<PurchasesPackage[]> {
+        if (!Purchases) return [];
+        const offerings = await Purchases.getOfferings();
+        const seen = new Set<string>();
+        const result: PurchasesPackage[] = [];
+        const offeringList = [
+            ...(offerings.current ? [offerings.current] : []),
+            ...Object.values(offerings.all),
+        ];
+        for (const offering of offeringList) {
+            for (const pkg of offering.availablePackages) {
+                if (!seen.has(pkg.product.identifier)) {
+                    seen.add(pkg.product.identifier);
+                    result.push(pkg);
+                }
+            }
+        }
+        return result;
+    }
+
+    private isAdFree(info: CustomerInfo): boolean {
+        return (
+            !!info.entitlements.active[ENTITLEMENT_IDS.REMOVE_ADS] ||
+            !!info.entitlements.active[ENTITLEMENT_IDS.PREMIUM]
+        );
+    }
+
+    /** Push the ad-free entitlement into the ads service (single source: RevenueCat). */
+    private applyEntitlements(info: CustomerInfo): void {
+        adsService.setAdFree(this.isAdFree(info));
     }
 }
 

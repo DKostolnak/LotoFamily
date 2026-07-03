@@ -1,23 +1,25 @@
 /**
- * Crash Reporting Service
- * 
- * Abstraction layer for crash reporting to allow easy swapping of providers.
- * Designed to integrate with Sentry, Bugsnag, or similar services.
- * 
- * Currently provides:
- * - Console logging in development
- * - Structured error capturing
- * - User context tracking
- * - Breadcrumb trail
- * 
- * To integrate with Sentry:
- * 1. npm install @sentry/react-native
- * 2. Follow Sentry's Expo integration guide
- * 3. Replace the implementation below with Sentry methods
+ * Crash Reporting Service — Sentry via @sentry/react-native.
+ *
+ * Behavior by environment:
+ *  - EXPO_PUBLIC_SENTRY_DSN set + production/preview build → real Sentry
+ *    (crashes, JS errors, breadcrumbs, user context, sessions).
+ *  - No DSN / dev build / Expo Go / Jest → mock provider that logs to the
+ *    console in debug builds.
+ *
+ * Setup (before production release):
+ *  1. Create a project at sentry.io → copy the DSN.
+ *  2. Set EXPO_PUBLIC_SENTRY_DSN (see .env.example) locally and in EAS.
+ *  3. Optional but recommended: set SENTRY_ORG + SENTRY_PROJECT +
+ *     SENTRY_AUTH_TOKEN in EAS so the config plugin uploads source maps
+ *     (readable stack traces). See app.config.ts.
+ *
+ * Public API kept stable so call sites (`crashReporting.captureException(...)`)
+ * do not change.
  */
 
 import { FEATURES, IS_DEBUG } from '@/lib/config';
-import { SENTRY } from '@/lib/config/env.config';
+import { APP_VARIANT, APP_VERSION, APP_BUILD_NUMBER, SENTRY } from '@/lib/config/env.config';
 
 type Severity = 'fatal' | 'error' | 'warning' | 'info' | 'debug';
 
@@ -41,6 +43,16 @@ interface Breadcrumb {
     timestamp?: number;
 }
 
+// Lazy module load — keeps Expo Go / Jest safe (no native binding there).
+type SentryModule = typeof import('@sentry/react-native');
+let Sentry: SentryModule | null = null;
+try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Sentry = require('@sentry/react-native');
+} catch {
+    Sentry = null;
+}
+
 class CrashReportingService {
     private static instance: CrashReportingService;
     private initialized = false;
@@ -59,12 +71,13 @@ class CrashReportingService {
     }
 
     /**
-     * Initialize the crash reporting service
-     * Call this early in app startup (_layout.tsx)
+     * Initialize the crash reporting service.
+     * Call this early in app startup (_layout.tsx). Never throws.
      */
     public init(): void {
         if (this.initialized) return;
-        
+        this.initialized = true;
+
         if (!FEATURES.enableCrashReporting) {
             if (IS_DEBUG) {
                 console.log('[CrashReporting] Disabled for this environment');
@@ -72,23 +85,29 @@ class CrashReportingService {
             return;
         }
 
-        // REPLACE WHEN SENTRY CONFIGURED:
-        // import * as Sentry from '@sentry/react-native';
-        // Sentry.init({
-        //     dsn: SENTRY.dsn,
-        //     environment: APP_VARIANT,
-        //     release: `${APP_VERSION}+${APP_BUILD_NUMBER}`,
-        //     enableAutoSessionTracking: true,
-        //     tracesSampleRate: 0.2,
-        // });
-        // this.provider = 'sentry';
-
-        if (IS_DEBUG && !SENTRY.dsn) {
-            console.log('[CrashReporting] No Sentry DSN configured (mock).');
+        if (!Sentry || !SENTRY.dsn) {
+            if (IS_DEBUG) {
+                console.log('[CrashReporting] No Sentry DSN / module configured (mock).');
+            }
+            return;
         }
 
-        this.initialized = true;
-        console.log('[CrashReporting] Initialized');
+        try {
+            Sentry.init({
+                dsn: SENTRY.dsn,
+                environment: APP_VARIANT,
+                release: `${APP_VERSION}+${APP_BUILD_NUMBER}`,
+                // 20% of transactions — enough signal without eating quota.
+                tracesSampleRate: 0.2,
+                enableAutoSessionTracking: true,
+                maxBreadcrumbs: this.maxBreadcrumbs,
+            });
+            this.provider = 'sentry';
+            if (this.userContext) Sentry.setUser(this.userContext);
+        } catch (e) {
+            this.provider = 'mock';
+            if (IS_DEBUG) console.warn('[CrashReporting] Sentry init failed:', e);
+        }
     }
 
     /**
@@ -101,20 +120,16 @@ class CrashReportingService {
     /**
      * Capture an exception and send to crash reporting service
      */
-    public captureException(
-        error: Error | unknown,
-        context?: ErrorContext
-    ): void {
+    public captureException(error: Error | unknown, context?: ErrorContext): void {
         const errorObj = error instanceof Error ? error : new Error(String(error));
-        
+
         if (IS_DEBUG) {
             console.error('[CrashReporting] Exception:', errorObj.message, context);
         }
 
-        if (!FEATURES.enableCrashReporting || !this.initialized) return;
-
-        // TODO: Send to real provider
-        // Example: Sentry.captureException(errorObj, { extra: context });
+        if (this.provider === 'sentry' && Sentry) {
+            Sentry.captureException(errorObj, { extra: context });
+        }
     }
 
     /**
@@ -125,10 +140,9 @@ class CrashReportingService {
             console.log(`[CrashReporting] ${severity.toUpperCase()}: ${message}`);
         }
 
-        if (!FEATURES.enableCrashReporting || !this.initialized) return;
-
-        // TODO: Send to real provider
-        // Example: Sentry.captureMessage(message, severity);
+        if (this.provider === 'sentry' && Sentry) {
+            Sentry.captureMessage(message, severity);
+        }
     }
 
     /**
@@ -136,13 +150,14 @@ class CrashReportingService {
      */
     public setUser(user: UserContext | null): void {
         this.userContext = user;
-        
+
         if (IS_DEBUG && user) {
             console.log('[CrashReporting] User set:', user.id);
         }
 
-        // TODO: Set on real provider
-        // Example: Sentry.setUser(user);
+        if (this.provider === 'sentry' && Sentry) {
+            Sentry.setUser(user);
+        }
     }
 
     /**
@@ -155,7 +170,7 @@ class CrashReportingService {
         };
 
         this.breadcrumbs.push(crumb);
-        
+
         // Keep breadcrumb list bounded
         if (this.breadcrumbs.length > this.maxBreadcrumbs) {
             this.breadcrumbs.shift();
@@ -165,8 +180,14 @@ class CrashReportingService {
             console.log(`[CrashReporting] Breadcrumb: ${breadcrumb.category} - ${breadcrumb.message}`);
         }
 
-        // TODO: Add to real provider
-        // Example: Sentry.addBreadcrumb(crumb);
+        if (this.provider === 'sentry' && Sentry) {
+            Sentry.addBreadcrumb({
+                category: crumb.category,
+                message: crumb.message,
+                data: crumb.data,
+                level: crumb.level ?? 'info',
+            });
+        }
     }
 
     /**
@@ -177,16 +198,18 @@ class CrashReportingService {
             console.log(`[CrashReporting] Tag: ${key}=${value}`);
         }
 
-        // TODO: Set on real provider
-        // Example: Sentry.setTag(key, value);
+        if (this.provider === 'sentry' && Sentry) {
+            Sentry.setTag(key, value);
+        }
     }
 
     /**
      * Set extra context data
      */
     public setExtra(key: string, value: unknown): void {
-        // TODO: Set on real provider
-        // Example: Sentry.setExtra(key, value);
+        if (this.provider === 'sentry' && Sentry) {
+            Sentry.setExtra(key, value);
+        }
     }
 
     /**
@@ -228,7 +251,7 @@ class CrashReportingService {
         return ((...args: Parameters<T>) => {
             try {
                 const result = fn(...args);
-                
+
                 // Handle promises
                 if (result instanceof Promise) {
                     return result.catch((error) => {
@@ -236,7 +259,7 @@ class CrashReportingService {
                         throw error;
                     });
                 }
-                
+
                 return result;
             } catch (error) {
                 this.captureException(error, context);

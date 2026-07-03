@@ -24,6 +24,8 @@ import type { StateCreator } from 'zustand';
 import type { GameStore, AppSlice } from '../types';
 import { initializeProfile, syncEconomy, updateProfile, syncSeasonProgress, fetchSeasonProgress } from '../../services/supabaseProfile';
 import { getSession } from '../../services/supabase';
+import { purchasesService } from '../../services/purchases';
+import { crashReporting } from '../../services/crashReporting';
 import { calculateTier } from './statsSlice';
 
 export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, get) => ({
@@ -47,6 +49,12 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
                     current.playerName || 'Player',
                     current.playerAvatar || '🎮',
                 );
+
+                // IAP: bind purchases to the Supabase user so they survive
+                // reinstall / device switch. Also restores the ad-free
+                // entitlement into adsService. Fire-and-forget.
+                purchasesService.init(userId).catch(() => {});
+                crashReporting.setUser({ id: userId, name: profile.nickname });
 
                 set({
                     playerName: profile.nickname,

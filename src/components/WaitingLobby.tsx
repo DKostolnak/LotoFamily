@@ -15,7 +15,7 @@ import * as Linking from 'expo-linking';
 import { WoodenCard, HeroCTAButton } from '@/components/common';
 import { PlayerList } from './PlayerList';
 import { Player } from '@/lib/types';
-import { ChatMessage } from '@/hooks/useGameSocket';
+import { ChatMessage } from '@/lib/types';
 import { Copy, Share2, Clock } from 'lucide-react-native';
 import type { TranslationKeys } from '@/lib/i18n';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
