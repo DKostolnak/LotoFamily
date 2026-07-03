@@ -6,10 +6,11 @@
  */
 
 import React, { memo, ReactNode } from 'react';
-import { ImageBackground, View, StyleSheet, ViewStyle } from 'react-native';
+import { ImageBackground, View, StyleSheet, ViewStyle, Image } from 'react-native';
 import { StatusBar, StatusBarStyle } from 'expo-status-bar';
 
 const WOOD_TEXTURE = require('../../../assets/wood-seamless.png');
+const FOLK_PATTERN = require('../../../assets/folk-background.png');
 
 interface WoodBackgroundProps {
     children: ReactNode;
@@ -23,6 +24,8 @@ interface WoodBackgroundProps {
     style?: ViewStyle;
     /** Whether to show the overlay at all */
     showOverlay?: boolean;
+    /** Whether to render the folk pattern background overlay */
+    useFolkPattern?: boolean;
 }
 
 export const WoodBackground = memo(({
@@ -32,6 +35,7 @@ export const WoodBackground = memo(({
     statusBarStyle = 'light',
     style,
     showOverlay = true,
+    useFolkPattern = false,
 }: WoodBackgroundProps) => {
     return (
         <ImageBackground 
@@ -40,6 +44,14 @@ export const WoodBackground = memo(({
             resizeMode="repeat"
         >
             <StatusBar style={statusBarStyle} />
+            
+            {useFolkPattern && (
+                <Image 
+                    source={FOLK_PATTERN} 
+                    style={styles.folkPattern}
+                    resizeMode="cover"
+                />
+            )}
             
             {showOverlay && (
                 <View 
@@ -64,5 +76,10 @@ const styles = StyleSheet.create({
     },
     overlay: {
         ...StyleSheet.absoluteFillObject,
+    },
+    folkPattern: {
+        ...StyleSheet.absoluteFillObject,
+        width: '100%',
+        height: '100%',
     },
 });

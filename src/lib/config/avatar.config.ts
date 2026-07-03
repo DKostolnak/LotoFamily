@@ -10,14 +10,14 @@
 // ============================================================================
 
 export const DEFAULT_AVATARS = [
-    '🐻', // Bear
-    '🦁', // Lion
-    '🐯', // Tiger
-    '🐼', // Panda
-    '🐨', // Koala
-    '🐸', // Frog
-    '🐙', // Octopus
-    '🦊', // Fox
+    '👴', // Grandpa
+    '👵', // Grandma
+    '👨', // Father
+    '👩', // Mother
+    '👦', // Son
+    '👧', // Daughter
+    '👶', // Baby
+    '🐶', // Family Pet
 ] as const;
 
 export type DefaultAvatar = typeof DEFAULT_AVATARS[number];
@@ -35,11 +35,11 @@ export interface PremiumAvatar {
 }
 
 export const PREMIUM_AVATARS: readonly PremiumAvatar[] = [
-    { id: 'avatar_unicorn', icon: '🦄', name: 'Unicorn', price: 500, description: 'Magical and unique!' },
-    { id: 'avatar_robot', icon: '🤖', name: 'Robot', price: 300, description: 'Beep boop!' },
-    { id: 'avatar_alien', icon: '👽', name: 'Alien', price: 300, description: 'Greetings earthling.' },
-    { id: 'avatar_dragon', icon: '🐲', name: 'Dragon', price: 1000, description: 'Legendary power!' },
-    { id: 'avatar_ghost', icon: '👻', name: 'Ghost', price: 250, description: 'Boo!' },
+    { id: 'avatar_unicorn', icon: '🤵', name: 'Elegant Groom', price: 500, description: 'Father looking super sharp!' },
+    { id: 'avatar_robot', icon: '👰', name: 'Beautiful Bride', price: 300, description: 'Mother in an elegant dress!' },
+    { id: 'avatar_alien', icon: '👨‍🍳', name: 'Master Chef Grandpa', price: 300, description: 'Grandpa cooking family dinner!' },
+    { id: 'avatar_dragon', icon: '🦸‍♂️', name: 'Superhero Son', price: 1000, description: 'Son saving the day!' },
+    { id: 'avatar_ghost', icon: '🦸‍♀️', name: 'Princess Daughter', price: 250, description: 'Daughter wearing a crown!' },
 ] as const;
 
 // ============================================================================

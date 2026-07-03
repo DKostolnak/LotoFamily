@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ImageBackground, StatusBar, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import {
     WoodenCard,
     WoodenButton,
@@ -15,6 +15,7 @@ import {
     PlayNowButton,
     HomeFooter,
     ModePickerSheet,
+    WoodBackground,
 } from '@/components/common';
 import { useGameStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
@@ -51,8 +52,6 @@ import Animated, {
     interpolate,
     Easing,
 } from 'react-native-reanimated';
-
-const WOOD_TEXTURE = require('../../assets/wood-seamless.png');
 
 export default function MainMenu() {
     const router = useRouter();
@@ -690,11 +689,7 @@ export default function MainMenu() {
     );
 
     return (
-        <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
-            <StatusBar barStyle="light-content" />
-
-            {/* Premium overlay */}
-            <View style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)' }} pointerEvents="none" />
+        <WoodBackground useFolkPattern={true} overlayOpacity={0.5}>
 
             {isLoading ? (
                 <View style={{ paddingTop: insets.top + SPACING.xl }}>
@@ -861,6 +856,6 @@ export default function MainMenu() {
             {activeModal === 'seasonPass' && <BattlePassModal visible={true} onClose={closeModal} />}
             <DailyBonusModal />
             <OnboardingModal />
-        </ImageBackground>
+        </WoodBackground>
     );
 }

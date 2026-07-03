@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, ImageBackground } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -10,6 +9,8 @@ import Animated, {
     Easing,
 } from 'react-native-reanimated';
 import { TEXT_STYLES, FONT_WEIGHTS } from '@/lib/config';
+
+const MEDALLION = require('../../assets/wooden-medallion.jpg');
 
 export type NumberMedallionSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -81,11 +82,11 @@ export const NumberMedallion = ({ number, size = 'md' }: NumberMedallionProps) =
             />
 
             <View style={[styles.container, { width: dim, height: dim, borderRadius: dim / 2 }]}>
-                <LinearGradient
-                    colors={['#cda468', '#8b6b4a']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
+                <ImageBackground
+                    source={MEDALLION}
                     style={[styles.inner, { borderRadius: dim / 2 }]}
+                    imageStyle={{ borderRadius: dim / 2 }}
+                    resizeMode="cover"
                 >
                     {/* Inner bevel */}
                     <View style={[styles.bevel, { borderRadius: dim / 2 }]}>
@@ -96,7 +97,7 @@ export const NumberMedallion = ({ number, size = 'md' }: NumberMedallionProps) =
                             {number ?? '?'}
                         </Text>
                     </View>
-                </LinearGradient>
+                </ImageBackground>
             </View>
         </Animated.View>
     );
@@ -124,6 +125,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#8b6b4a',
         borderWidth: 2,
         borderColor: '#ffd700',
+        overflow: 'hidden',
     },
     inner: {
         flex: 1,

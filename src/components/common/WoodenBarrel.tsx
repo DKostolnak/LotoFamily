@@ -14,7 +14,7 @@ import Animated, {
 import { TEXT_STYLES, FONT_WEIGHTS } from '@/lib/config';
 import { audioService } from '@/lib/services/audio';
 
-const MEDALLION = require('../../../assets/wooden-medallion.jpg');
+const BARREL = require('../../../assets/wooden-barrel-3d.png');
 
 export type WoodenBarrelSize = 'sm' | 'md' | 'lg';
 
@@ -36,18 +36,15 @@ const SIZE_PT: Record<WoodenBarrelSize, number> = {
 };
 
 /**
- * WoodenBarrel — hero "called number" element using the real wooden
- * medallion texture asset (assets/wooden-medallion.jpg) with a tasteful
- * roll-in animation per call.
+ * WoodenBarrel — hero "called number" element using the vertical 3D barrel
+ * texture asset (assets/wooden-barrel-3d.png) with a tasteful roll-in
+ * animation per call.
  *
  * Animation per `rollKey` change:
- *   1. Glow halo flashes briefly behind the medallion (0 → 0.9 → 0).
- *   2. The medallion scales 0.6 → 1.15 → 1 with a spring overshoot, while
+ *   1. Glow halo flashes briefly behind the barrel (0 → 0.9 → 0).
+ *   2. The barrel scales 0.6 → 1.15 → 1 with a spring overshoot, while
  *      the number simultaneously fades in and rotates 25deg → 0deg.
  *   3. After settle, optional onRollComplete fires.
- *
- * No rotation gimmicks (rotateY tends to look broken on Android web view);
- * we lean on the real wood texture and a confident pop instead.
  */
 const WoodenBarrelComponent = ({
     number,
@@ -56,6 +53,8 @@ const WoodenBarrelComponent = ({
     size = 'lg',
 }: WoodenBarrelProps) => {
     const dim = SIZE_PT[size];
+    const width = dim;
+    const height = dim * 1.25; // 3D barrel is taller than it is wide
     const lastRollKey = useRef(rollKey);
 
     const scale = useSharedValue(1);
@@ -76,7 +75,7 @@ const WoodenBarrelComponent = ({
         numberOpacity.value = 0;
         numberTilt.value = 25;
 
-        // Pop the medallion
+        // Pop the barrel
         scale.value = withSequence(
             withTiming(0.6, { duration: 80, easing: Easing.out(Easing.quad) }),
             withTiming(1.15, { duration: 220, easing: Easing.out(Easing.back(2)) }),
@@ -123,7 +122,7 @@ const WoodenBarrelComponent = ({
         };
     }, [scale, numberOpacity, numberTilt, glowOpacity]);
 
-    const medallionStyle = useAnimatedStyle(() => ({
+    const barrelStyle = useAnimatedStyle(() => ({
         transform: [{ scale: scale.value }],
     }));
 
@@ -145,63 +144,49 @@ const WoodenBarrelComponent = ({
 
     return (
         <View
-            style={[styles.wrapper, { width: dim, height: dim }]}
+            style={[styles.wrapper, { width: width, height: height }]}
             accessibilityRole="image"
             accessibilityLabel={
                 number !== null
                     ? `Called number ${number}`
-                    : 'Wooden medallion — waiting for next number'
+                    : 'Wooden barrel — waiting for next number'
             }
         >
-            {/* Glow halo behind medallion (entrance flash) */}
+            {/* Glow halo behind barrel (entrance flash) */}
             <Animated.View
                 pointerEvents="none"
                 style={[
                     styles.glow,
                     {
-                        width: dim + 24,
-                        height: dim + 24,
-                        borderRadius: (dim + 24) / 2,
+                        width: width + 24,
+                        height: height + 24,
+                        borderRadius: (width + 24) / 2,
                     },
                     glowStyle,
                 ]}
             />
 
-            {/* Medallion image */}
+            {/* Barrel image and content container */}
             <Animated.View
                 style={[
-                    styles.medallion,
+                    styles.barrel,
                     {
-                        width: dim,
-                        height: dim,
-                        borderRadius: dim / 2,
+                        width: width,
+                        height: height,
                     },
-                    medallionStyle,
+                    barrelStyle,
                 ]}
             >
                 <Image
-                    source={MEDALLION}
+                    source={BARREL}
                     style={[
-                        styles.medallionImage,
-                        { width: dim, height: dim, borderRadius: dim / 2 },
+                        styles.barrelImage,
+                        { width: width, height: height },
                     ]}
-                    resizeMode="cover"
+                    resizeMode="contain"
                 />
 
-                {/* Inner gold ring overlay */}
-                <View
-                    pointerEvents="none"
-                    style={[
-                        styles.innerRing,
-                        {
-                            width: dim - 10,
-                            height: dim - 10,
-                            borderRadius: (dim - 10) / 2,
-                        },
-                    ]}
-                />
-
-                {/* Number */}
+                {/* Number centered on the barrel belly */}
                 {number !== null && (
                     <Animated.View
                         pointerEvents="none"
@@ -240,28 +225,19 @@ const styles = StyleSheet.create({
         shadowOpacity: 1,
         shadowRadius: 28,
     },
-    medallion: {
+    barrel: {
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 3,
-        borderColor: '#ffd700',
-        backgroundColor: '#3d2814',
-        overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.55,
         shadowRadius: 8,
         elevation: 10,
     },
-    medallionImage: {
+    barrelImage: {
         position: 'absolute',
         top: 0,
         left: 0,
-    },
-    innerRing: {
-        position: 'absolute',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 215, 0, 0.55)',
     },
     numberLayer: {
         alignItems: 'center',
