@@ -75,13 +75,15 @@ export function HomeFooter({
                     <Icon size={22} color="#c9a87a" strokeWidth={2} />
                     <Text
                         style={{
-                            fontSize: 10,
+                            fontSize: 11,
                             fontWeight: '700',
-                            color: '#8a6a40',
+                            // #8a6a40 failed WCAG contrast on dark wood — use muted token
+                            color: '#d4b896',
                             textTransform: 'uppercase',
                             letterSpacing: 0.4,
                         }}
                         numberOfLines={1}
+                        maxFontSizeMultiplier={1.2}
                     >
                         {label}
                     </Text>

@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
         borderRadius: RADII.pill,
     },
     claimChipText: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: '800',
         color: '#1a1109',
         letterSpacing: 0.5,

@@ -125,9 +125,10 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                             style={({ pressed }) => ({
                                 flexDirection: 'row',
                                 alignItems: 'center',
+                                justifyContent: 'center',
                                 gap: 5,
                                 paddingHorizontal: 14,
-                                paddingVertical: 8,
+                                minHeight: 44,
                                 borderRadius: RADII.pill,
                                 backgroundColor: isActive
                                     ? 'rgba(255, 215, 0, 0.18)'
@@ -338,7 +339,8 @@ const ShopCard = ({
                             accessibilityLabel={isEquipped ? `${item.name} — ${t.active ?? 'Active'}` : `${item.name} — ${t.equip ?? 'Equip'}`}
                             accessibilityState={{ disabled: isEquipped }}
                             style={{
-                                paddingVertical: 7,
+                                minHeight: 44,
+                                justifyContent: 'center',
                                 borderRadius: RADII.sm,
                                 alignItems: 'center',
                                 backgroundColor: isEquipped
@@ -353,16 +355,17 @@ const ShopCard = ({
                             <Text style={{
                                 fontSize: 12,
                                 fontWeight: '800',
-                                color: isEquipped ? '#a08a40' : '#1a1109',
+                                color: isEquipped ? '#ffd700' : '#1a1109',
                                 letterSpacing: 0.5,
-                            }}>
+                            }} maxFontSizeMultiplier={1.2}>
                                 {isEquipped ? (t.active ?? 'ACTIVE') : (t.equip ?? 'EQUIP')}
                             </Text>
                         </TouchableOpacity>
                     ) : (
                         // Power-up — show count info, no equip
                         <View style={{
-                            paddingVertical: 7,
+                            minHeight: 44,
+                            justifyContent: 'center',
                             borderRadius: RADII.sm,
                             alignItems: 'center',
                             backgroundColor: 'rgba(255,255,255,0.05)',
@@ -385,7 +388,7 @@ const ShopCard = ({
                                 : `${item.name} — ${t.locked ?? 'Not enough coins'}`}
                         accessibilityState={{ disabled: !canAfford || purchasing }}
                         style={{
-                            paddingVertical: 7,
+                            minHeight: 44,
                             borderRadius: RADII.sm,
                             alignItems: 'center',
                             flexDirection: 'row',
@@ -396,16 +399,16 @@ const ShopCard = ({
                                 : 'rgba(90, 64, 37, 0.3)',
                             borderWidth: 1,
                             borderColor: canAfford && !purchasing ? '#ffd700' : 'rgba(90,64,37,0.4)',
-                            opacity: canAfford && !purchasing ? 1 : 0.5,
+                            opacity: canAfford && !purchasing ? 1 : 0.6,
                         }}
                     >
-                        {!canAfford && <Lock size={10} color="#8a6a40" strokeWidth={2.5} />}
+                        {!canAfford && <Lock size={12} color="#d4b896" strokeWidth={2.5} />}
                         <Text style={{
                             fontSize: 12,
                             fontWeight: '800',
-                            color: canAfford && !purchasing ? '#1a1109' : '#8a6a40',
+                            color: canAfford && !purchasing ? '#1a1109' : '#d4b896',
                             letterSpacing: 0.3,
-                        }}>
+                        }} maxFontSizeMultiplier={1.2}>
                             {isFree ? (t.claim ?? 'CLAIM') : `💰 ${item.price}`}
                         </Text>
                     </TouchableOpacity>

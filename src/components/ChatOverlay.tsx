@@ -215,7 +215,7 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId }: ChatOv
                         value={inputValue}
                         onChangeText={setInputValue}
                         placeholder={t.typeMessage ?? 'Type a message…'}
-                        placeholderTextColor="#8b6b4a"
+                        placeholderTextColor="#d4b896"
                         style={[
                             TEXT_STYLES.body,
                             {

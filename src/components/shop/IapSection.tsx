@@ -279,8 +279,9 @@ export const IapSection = () => {
                                         style={{
                                             fontSize: 13,
                                             fontWeight: '800',
-                                            color: busyProductId ? '#8a6a40' : '#1a1109',
+                                            color: busyProductId ? '#d4b896' : '#1a1109',
                                         }}
+                                        maxFontSizeMultiplier={1.2}
                                     >
                                         {product.price}
                                     </Text>

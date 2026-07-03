@@ -200,7 +200,7 @@ const PowerUpIllustration = ({ items }: { items: PowerUpItem[] }) => (
                     {icon}
                 </View>
                 <Text style={{ fontSize: 11, fontWeight: '800', color: '#e8d4b8' }}>{label}</Text>
-                <Text style={{ fontSize: 10, color: '#8a6a40', textAlign: 'center', width: 56 }}>{desc}</Text>
+                <Text style={{ fontSize: 11, color: '#d4b896', textAlign: 'center', width: 56 }}>{desc}</Text>
             </View>
         ))}
     </View>

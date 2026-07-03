@@ -187,15 +187,19 @@ const LotoCardComponent = ({
                 <Text
                     className="text-muted font-bold uppercase tracking-widest"
                     style={{ fontSize: headerTextFontSize }}
+                    maxFontSizeMultiplier={1.2}
                 >
-                    CARD #{card.id.slice(-3)}
+                    {(t.cardLabel ?? 'Card').toUpperCase()} #{card.id.slice(-3)}
                 </Text>
                 <View className="bg-black/20 px-1.5 py-0.5 rounded-md border" style={{ borderColor: theme.border }}>
                     <Text
                         className={`font-bold uppercase tracking-widest ${remainingOnCard === 0 ? 'text-success' : 'text-cream'}`}
                         style={{ fontSize: headerTextFontSize }}
+                        maxFontSizeMultiplier={1.2}
                     >
-                        {remainingOnCard === 0 ? 'COMPLETE' : `${remainingOnCard} LEFT`}
+                        {remainingOnCard === 0
+                            ? (t.cardFull ?? 'COMPLETE')
+                            : `${remainingOnCard} ${(t.numbersLeft ?? 'left').toUpperCase()}`}
                     </Text>
                 </View>
             </View>

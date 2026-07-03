@@ -227,6 +227,9 @@ export interface TranslationKeys {
     emptyShelfDesc: string;
     tapToCopy: string;
 
+    // Loto card header
+    cardLabel: string;
+
     // Shop — In-App Purchases (real money)
     shopCoinsTab: string;
     iapRemoveAdsTitle: string;
