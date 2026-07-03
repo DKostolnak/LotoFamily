@@ -58,6 +58,8 @@ export {
     purchasesService,
     PurchasesService,
     PRODUCT_IDS,
+    ENTITLEMENT_IDS,
+    COIN_PACK_AMOUNTS,
     type PurchaseProvider,
     type ProductPackage,
     type ProductId,

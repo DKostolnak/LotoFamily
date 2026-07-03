@@ -227,6 +227,19 @@ export interface TranslationKeys {
     emptyShelfDesc: string;
     tapToCopy: string;
 
+    // Shop — In-App Purchases (real money)
+    shopCoinsTab: string;
+    iapRemoveAdsTitle: string;
+    iapRemoveAdsDesc: string;
+    iapBestValue: string;
+    iapRestorePurchases: string;
+    iapRestoreSuccess: string;
+    iapRestoreNone: string;
+    iapPurchaseSuccess: string;
+    iapPurchaseFailed: string;
+    iapUnavailable: string;
+    iapCoinsGranted: string;
+
     // Rules Content
     rulesTitle: string;
     rulesPage1Title: string;

@@ -15,6 +15,7 @@ import { SHOP_ITEMS, type ShopItem, isPowerUpItem } from '@/lib/shop';
 import { translations, type TranslationKeys } from '@/lib/i18n';
 import * as Haptics from 'expo-haptics';
 import { ShopItemPreview } from '@/components/shop/ShopItemPreview';
+import { IapSection } from '@/components/shop/IapSection';
 import { Check, Lock } from 'lucide-react-native';
 
 interface ShopModalProps {
@@ -30,7 +31,7 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
     } = useGameStore();
     const t = translations[language];
 
-    type CategoryId = 'all' | 'avatar' | 'theme' | 'skin' | 'powerup';
+    type CategoryId = 'all' | 'coins' | 'avatar' | 'theme' | 'skin' | 'powerup';
     const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
     // Guard against double-tap / rapid-fire purchases
     const [purchasing, setPurchasing] = useState(false);
@@ -78,6 +79,7 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
 
     const categories: { id: CategoryId; label: string; emoji: string }[] = [
         { id: 'all', label: t.all ?? 'All', emoji: '🛍️' },
+        { id: 'coins', label: t.shopCoinsTab ?? 'Coins', emoji: '💎' },
         { id: 'avatar', label: t.avatars ?? 'Avatars', emoji: '🐻' },
         { id: 'theme', label: t.themes ?? 'Themes', emoji: '🎨' },
         { id: 'skin', label: t.markers ?? 'Markers', emoji: '🔴' },
@@ -164,7 +166,9 @@ export const ShopModal = ({ visible, onClose }: ShopModalProps) => {
                     gap: SPACING.md,
                 }}
             >
-                {filteredItems.length === 0 ? (
+                {activeCategory === 'coins' ? (
+                    <IapSection />
+                ) : filteredItems.length === 0 ? (
                     <EmptyState title={t.emptyShelf ?? 'Nothing here'} description={t.emptyShelfDesc ?? ''} />
                 ) : (
                     <View key={activeCategory} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md }}>

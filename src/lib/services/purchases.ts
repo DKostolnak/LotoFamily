@@ -84,6 +84,16 @@ export const ENTITLEMENT_IDS = {
     PREMIUM: 'premium',
 } as const;
 
+/**
+ * How many in-game coins each consumable coin pack grants.
+ * Single source of truth for the grant logic in the shop UI.
+ */
+export const COIN_PACK_AMOUNTS: Record<string, number> = {
+    [PRODUCT_IDS.COINS_SMALL]: 1_000,
+    [PRODUCT_IDS.COINS_MEDIUM]: 5_500,
+    [PRODUCT_IDS.COINS_LARGE]: 12_000,
+};
+
 const MOCK_PRODUCTS: ProductPackage[] = [
     {
         id: PRODUCT_IDS.COINS_SMALL,
