@@ -23,7 +23,7 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    Dimensions,
+    useWindowDimensions,
 } from 'react-native';
 import Animated, {
     SlideInRight,
@@ -79,7 +79,6 @@ export function useToast(): ToastContextType {
 // ============================================================================
 
 const TOAST_DURATION_MS = 4000;
-const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const DEFAULT_ICONS: Record<ToastType, string> = {
     success: '✅',
@@ -154,6 +153,7 @@ interface ToastProviderProps {
 
 export function ToastProvider({ children }: ToastProviderProps) {
     const insets = useSafeAreaInsets();
+    const { width: screenWidth } = useWindowDimensions();
     const [toasts, setToasts] = useState<Toast[]>([]);
     const timeoutsRef = useRef<Map<number, any>>(new Map());
     const nextIdRef = useRef(0);
@@ -215,7 +215,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
             <View
                 style={[
                     styles.container,
-                    { top: insets.top + 16 },
+                    { top: insets.top + 16, width: Math.min(320, screenWidth * 0.9) },
                 ]}
                 pointerEvents="box-none"
             >
@@ -242,7 +242,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         right: 16,
         zIndex: 1500,
-        width: Math.min(320, SCREEN_WIDTH * 0.9),
         gap: 12,
     },
     toast: {

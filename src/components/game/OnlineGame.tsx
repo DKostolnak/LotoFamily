@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, ImageBackground, StatusBar, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
+import { View, ImageBackground, StatusBar, TouchableOpacity, Text, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useGameStore } from '@/lib/store';
@@ -511,14 +511,17 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                     a11yWatchAdLabel={t.watchAdForPowerUp}
                 />
 
-                {/* Cards Container */}
-                <View
+                {/* Cards Container — scrolls on short screens (iPhone SE), caps
+                    card width on tablets so cells keep a sane tap size. */}
+                <ScrollView
                     className="flex-1"
-                    style={{
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{
                         paddingHorizontal: SPACING.lg,
                         paddingTop: SPACING.sm,
                         paddingBottom: Math.max(SPACING.md, insets.bottom),
                         gap: SPACING.sm,
+                        alignItems: 'center',
                     }}
                 >
                     {myCards.map((card) => (
@@ -532,9 +535,10 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                             compact={true}
                             activeSkin={activeSkin}
                             activeTheme={activeTheme}
+                            style={{ width: '100%', maxWidth: 560 }}
                         />
                     ))}
-                </View>
+                </ScrollView>
 
                 {/* Floating BINGO button — appears only when a card is fully marked */}
                 {canBingo && (

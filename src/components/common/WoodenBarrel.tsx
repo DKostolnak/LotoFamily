@@ -199,6 +199,7 @@ const WoodenBarrelComponent = ({
                                 { fontWeight: FONT_WEIGHTS.black },
                             ]}
                             numberOfLines={1}
+                            maxFontSizeMultiplier={1}
                         >
                             {number}
                         </Text>

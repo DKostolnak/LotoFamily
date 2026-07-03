@@ -227,6 +227,7 @@ export const HeroCTAButton = ({
                             },
                         ]}
                         numberOfLines={1}
+                        maxFontSizeMultiplier={1.2}
                     >
                         {title}
                     </Text>
@@ -240,6 +241,7 @@ export const HeroCTAButton = ({
                                 marginTop: 2,
                             }}
                             numberOfLines={1}
+                            maxFontSizeMultiplier={1.2}
                         >
                             {subtitle}
                         </Text>

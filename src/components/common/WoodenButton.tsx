@@ -237,6 +237,7 @@ export function WoodenButton({
                         textStyle,
                     ]}
                     numberOfLines={multiline ? 2 : 1}
+                    maxFontSizeMultiplier={1.2}
                 >
                     {children}
                 </Text>

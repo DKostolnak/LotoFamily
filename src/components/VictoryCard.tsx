@@ -1,14 +1,9 @@
 import React from 'react';
-import { View, Text, ImageBackground, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ImageBackground, StyleSheet, useWindowDimensions } from 'react-native';
 import { Trophy, Star, Crown } from 'lucide-react-native';
 
 // Corrected path to assets (2 levels up from src/components)
 const WOOD_TEXTURE = require('../../assets/wood-seamless.png');
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Responsive card dimensions — fits every screen from iPhone SE to iPad
-const CARD_WIDTH  = Math.min(SCREEN_WIDTH - 48, 340);
-const CARD_HEIGHT = Math.round(CARD_WIDTH * (520 / 340));
 
 interface VictoryCardProps {
     playerName: string;
@@ -19,9 +14,14 @@ interface VictoryCardProps {
 }
 
 export const VictoryCard = ({ playerName, playerAvatar, prize, level, date }: VictoryCardProps) => {
+    const { width: screenWidth } = useWindowDimensions();
+    // Responsive card dimensions — fits every screen from iPhone SE to iPad
+    const cardWidth = Math.min(screenWidth - 48, 340);
+    const cardHeight = Math.round(cardWidth * (520 / 340));
+
     return (
         <View
-            style={styles.container}
+            style={[styles.container, { width: cardWidth, height: cardHeight }]}
             accessibilityRole="image"
             accessibilityLabel={`Victory card for ${playerName} — ${prize.toLocaleString()} coins prize`}
         >
@@ -105,8 +105,6 @@ export const VictoryCard = ({ playerName, playerAvatar, prize, level, date }: Vi
 
 const styles = StyleSheet.create({
     container: {
-        width: CARD_WIDTH,
-        height: CARD_HEIGHT,
         backgroundColor: '#000',
         borderRadius: 32,
         overflow: 'hidden',

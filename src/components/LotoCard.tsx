@@ -109,6 +109,7 @@ const LotoCell = memo(({
                 className={`font-bold ${textClass} ${isMarked && 'opacity-0'} z-10`}
                 style={{ fontSize }}
                 accessibilityElementsHidden
+                maxFontSizeMultiplier={1.1}
             >
                 {value}
             </Text>

@@ -80,6 +80,7 @@ export function BottomTabs({ tabs, showLabel = false, style }: BottomTabsProps) 
                                     { color: '#d4b896', textAlign: 'center' },
                                 ]}
                                 numberOfLines={1}
+                                maxFontSizeMultiplier={1.2}
                             >
                                 {tab.label}
                             </Text>

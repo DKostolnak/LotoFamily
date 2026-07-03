@@ -3,7 +3,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, ImageBackground, StatusBar, Text, ActivityIndicator } from 'react-native';
+import { View, ImageBackground, StatusBar, Text, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGameStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
@@ -528,31 +528,34 @@ export const OfflineGame = () => {
                     a11yWatchAdLabel={t.watchAdForPowerUp}
                 />
 
-                {/* Cards Container - Responsive bottom padding for safe area */}
-                <View
-                    ref={cardsRef}
-                    collapsable={false}
-                    className="flex-1"
-                    style={{
-                        paddingHorizontal: SPACING.lg,
-                        paddingTop: SPACING.sm,
-                        gap: SPACING.sm,
-                        paddingBottom: insets.bottom > 0 ? insets.bottom + SPACING.md : SPACING.md,
-                    }}
-                >
-                    {myCards.map((card) => (
-                        <LotoCard
-                            key={card.id}
-                            card={card}
-                            onCellPress={(r, c) => handleCellPress(card.id, r, c)}
-                            showHeader={true}
-                            calledNumbers={calledNumbers}
-                            t={t}
-                            compact={true}
-                            activeSkin={activeSkin}
-                            activeTheme={activeTheme}
-                        />
-                    ))}
+                {/* Cards Container — scrolls on short screens (iPhone SE), caps
+                    card width on tablets so cells keep a sane tap size. */}
+                <View ref={cardsRef} collapsable={false} className="flex-1">
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{
+                            paddingHorizontal: SPACING.lg,
+                            paddingTop: SPACING.sm,
+                            gap: SPACING.sm,
+                            alignItems: 'center',
+                            paddingBottom: insets.bottom > 0 ? insets.bottom + SPACING.md : SPACING.md,
+                        }}
+                    >
+                        {myCards.map((card) => (
+                            <LotoCard
+                                key={card.id}
+                                card={card}
+                                onCellPress={(r, c) => handleCellPress(card.id, r, c)}
+                                showHeader={true}
+                                calledNumbers={calledNumbers}
+                                t={t}
+                                compact={true}
+                                activeSkin={activeSkin}
+                                activeTheme={activeTheme}
+                                style={{ width: '100%', maxWidth: 560 }}
+                            />
+                        ))}
+                    </ScrollView>
                 </View>
 
                 {/* Floating BINGO Button (Only when needed) */}

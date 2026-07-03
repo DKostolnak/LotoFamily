@@ -34,7 +34,7 @@ export function CoinBadge({ coins, size = 'md', className, style }: CoinBadgePro
                 ...style,
             }}
         >
-            <Text style={{ fontSize: emojiSize }}>💰</Text>
+            <Text style={{ fontSize: emojiSize }} maxFontSizeMultiplier={1.2}>💰</Text>
             <Text
                 style={{
                     color: k_colorGold,
@@ -42,6 +42,7 @@ export function CoinBadge({ coins, size = 'md', className, style }: CoinBadgePro
                     fontFamily: 'monospace', // Or Platform.OS === 'ios' ? 'Courier' : 'monospace'
                     fontSize: valueSize,
                 }}
+                maxFontSizeMultiplier={1.2}
             >
                 {coins}
             </Text>

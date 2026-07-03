@@ -93,6 +93,7 @@ export const NumberMedallion = ({ number, size = 'md' }: NumberMedallionProps) =
                         <Text
                             style={[textStyle, styles.text, { fontWeight: FONT_WEIGHTS.black }]}
                             numberOfLines={1}
+                            maxFontSizeMultiplier={1}
                         >
                             {number ?? '?'}
                         </Text>

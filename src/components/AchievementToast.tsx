@@ -10,7 +10,8 @@
  */
 
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -44,8 +45,6 @@ interface AchievementToastProps {
 // CONSTANTS
 // ============================================================================
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const TOAST_WIDTH = Math.min(340, SCREEN_WIDTH - 48);
 const DISMISS_DELAY_MS = 4000;
 
 // ============================================================================
@@ -60,6 +59,9 @@ export default function AchievementToast({
     onDismiss,
 }: AchievementToastProps) {
     const { triggerHaptic } = useHapticFeedback();
+    const { width: screenWidth } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
+    const toastWidth = Math.min(340, screenWidth - 48);
 
     // Animation values
     const translateY = useSharedValue(-150);
@@ -112,8 +114,8 @@ export default function AchievementToast({
     }));
 
     return (
-        <View style={styles.wrapper} pointerEvents="none">
-            <Animated.View style={[styles.container, containerStyle]}>
+        <View style={[styles.wrapper, { top: insets.top + 12 }]} pointerEvents="none">
+            <Animated.View style={[styles.container, { width: toastWidth }, containerStyle]}>
                 {/* Icon */}
                 <Animated.View style={iconStyle}>
                     <Text style={styles.icon}>{icon}</Text>
@@ -137,7 +139,6 @@ export default function AchievementToast({
 const styles = StyleSheet.create({
     wrapper: {
         position: 'absolute',
-        top: 60,
         left: 0,
         right: 0,
         alignItems: 'center',
@@ -149,7 +150,6 @@ const styles = StyleSheet.create({
         gap: 12,
         paddingVertical: 16,
         paddingHorizontal: 24,
-        width: TOAST_WIDTH,
         borderRadius: 16,
         borderWidth: 2,
         borderColor: '#ffd700',

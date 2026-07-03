@@ -4,6 +4,7 @@ import { NumberMedallion } from './NumberMedallion';
 import { WoodenBarrel } from './common/WoodenBarrel';
 import Animated, { FadeInRight, FadeOutLeft, Layout } from 'react-native-reanimated';
 import { SPACING, RADII } from '@/lib/config';
+import { useResponsive } from '@/hooks/useResponsive';
 
 interface GameNumbersDisplayProps {
     currentNumber: number | null;
@@ -27,9 +28,12 @@ const GameNumbersDisplayComponent = ({
     history,
     compact = false,
 }: GameNumbersDisplayProps) => {
+    const { isSmallScreen } = useResponsive();
     const barrelSize: 'md' | 'lg' = compact ? 'md' : 'lg';
     const chipSize = compact ? 'sm' : 'sm';
-    const chipCount = compact ? 4 : 5;
+    // On narrow screens (iPhone SE: 375pt) 4 chips + barrel overflow the row,
+    // so drop one history chip to keep everything on-screen.
+    const chipCount = compact ? (isSmallScreen ? 3 : 4) : (isSmallScreen ? 4 : 5);
 
     // Engine appends to end → last in `history` is newest. Drop the very
     // last one (it's already shown in the barrel as the current call) and
@@ -64,7 +68,7 @@ const GameNumbersDisplayComponent = ({
             </View>
 
             {/* Current number — wooden barrel hero (rolls + reveals number) */}
-            <View style={[styles.heroWrapper, { paddingHorizontal: compact ? SPACING.md : SPACING.xl }]}>
+            <View style={[styles.heroWrapper, { paddingHorizontal: isSmallScreen ? SPACING.xs : compact ? SPACING.md : SPACING.xl }]}>
                 <WoodenBarrel
                     number={currentNumber}
                     rollKey={history.length}

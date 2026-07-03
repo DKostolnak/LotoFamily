@@ -125,6 +125,7 @@ export function PlayNowButton({ onPress, title, subtitle, style }: PlayNowButton
                             },
                         ]}
                         numberOfLines={1}
+                        maxFontSizeMultiplier={1.2}
                     >
                         {title}
                     </Text>
@@ -135,6 +136,7 @@ export function PlayNowButton({ onPress, title, subtitle, style }: PlayNowButton
                                 { color: '#d4b896', marginTop: 4 },
                             ]}
                             numberOfLines={1}
+                            maxFontSizeMultiplier={1.2}
                         >
                             {subtitle}
                         </Text>

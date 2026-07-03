@@ -201,7 +201,7 @@ const GameHeaderComponent = ({
                                     elevation: 2,
                                 }}
                             />
-                            <Text style={[TEXT_STYLES.captionUpper, { color: '#d4b896' }]}>
+                            <Text style={[TEXT_STYLES.captionUpper, { color: '#d4b896' }]} maxFontSizeMultiplier={1.2}>
                                 {statusLabel ?? (isConnected ? 'LIVE' : 'OFF')}
                             </Text>
                         </View>
