@@ -271,7 +271,14 @@ export const OfflineGame = () => {
 
     const handlePlayAgain = () => {
         setShowWinner(false);
+        // Frequency-capped inside the service; no-ops for ad-free users.
+        adsService.showInterstitial(AD_PLACEMENTS.POST_GAME_INTERSTITIAL);
         restartGame();
+    };
+
+    const handleWinnerClose = () => {
+        setShowWinner(false);
+        adsService.showInterstitial(AD_PLACEMENTS.POST_GAME_INTERSTITIAL);
     };
 
     // ========================================================================
@@ -595,7 +602,7 @@ export const OfflineGame = () => {
                     winnerName={winner?.name ?? 'Unknown'}
                     isMe={winner?.isMe ?? false}
                     prize={100}
-                    onClose={() => setShowWinner(false)}
+                    onClose={handleWinnerClose}
                     onPlayAgain={handlePlayAgain}
                 />
 

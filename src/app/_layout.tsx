@@ -7,7 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ToastProvider } from '@/components/ToastProvider';
 import { RateAppModal } from '@/components/RateAppModal';
-import { crashReporting, analytics, audioService, notificationsService } from '@/lib/services';
+import { crashReporting, analytics, audioService, notificationsService, adsService } from '@/lib/services';
 import { useGameStore } from '@/lib/store';
 import type { NotificationCategory } from '@/lib/services/notifications';
 
@@ -29,6 +29,8 @@ export default function Layout() {
         // so the very first announcement after launch uses the right mode.
         audioService.setAnnouncerMode(useGameStore.getState().announcerMode);
         notificationsService.init().catch(() => {});
+        // Ads: gathers GDPR consent + iOS tracking permission, then preloads.
+        adsService.init().catch(() => {});
 
         if (!Notifications) return;
 

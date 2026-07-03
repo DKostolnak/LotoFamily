@@ -266,12 +266,19 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
 
     const handlePlayAgain = () => {
         setShowWinner(false);
+        // Frequency-capped inside the service; no-ops for ad-free users.
+        adsService.showInterstitial(AD_PLACEMENTS.POST_GAME_INTERSTITIAL);
         if (isHost) {
             // socketService needs restart capability
             // restartGame(); // assume hook has it
         } else {
             // Client waits
         }
+    };
+
+    const handleWinnerClose = () => {
+        setShowWinner(false);
+        adsService.showInterstitial(AD_PLACEMENTS.POST_GAME_INTERSTITIAL);
     };
 
     // ========================================================================
@@ -577,7 +584,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                     winnerName={gameState.winnerId ? gameState.players.find(p => p.id === gameState.winnerId)?.name ?? 'Unknown' : 'Unknown'}
                     isMe={gameState.winnerId === myPlayerId}
                     prize={1000}
-                    onClose={() => setShowWinner(false)}
+                    onClose={handleWinnerClose}
                     onPlayAgain={isHost ? handlePlayAgain : undefined}
                 />
             </View>
