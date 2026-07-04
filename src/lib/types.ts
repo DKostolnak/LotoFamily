@@ -315,7 +315,8 @@ export type ClientToServerEvents = {
  */
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   gameMode: 'classic',
-  maxPlayers: 4,
+  // 6 players like classic Russian Loto (engine already supports it)
+  maxPlayers: 6,
   cardsPerPlayer: 3,
   autoCallEnabled: false,
   autoCallIntervalMs: 5000,
