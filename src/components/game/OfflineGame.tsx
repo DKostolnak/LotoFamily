@@ -219,11 +219,13 @@ export const OfflineGame = () => {
             // Battle Pass: grant season XP for game completion / win / streak.
             // Read directly from store so we avoid adding new hook deps to the
             // existing winner effect (which intentionally has narrow deps).
-            const { addSeasonXp, syncToSupabase } = useGameStore.getState();
+            const { addSeasonXp, syncToSupabase, trackQuestProgress } = useGameStore.getState();
             addSeasonXp(50); // game played
             if (isWin) {
                 addSeasonXp(150); // win bonus
                 if (newWinStreak >= 3) addSeasonXp(100); // streak bonus
+                // Daily quest: "Win a game"
+                trackQuestProgress('GAMES_WON');
             }
 
             // Persist final stats to Supabase (fire-and-forget)
@@ -269,16 +271,11 @@ export const OfflineGame = () => {
         }
     };
 
+    // R-Soft ad philosophy: NO forced interstitials — ads are always
+    // opt-in rewarded (power-up refill, free coins, bonus doubling).
     const handlePlayAgain = () => {
         setShowWinner(false);
-        // Frequency-capped inside the service; no-ops for ad-free users.
-        adsService.showInterstitial(AD_PLACEMENTS.POST_GAME_INTERSTITIAL);
         restartGame();
-    };
-
-    const handleWinnerClose = () => {
-        setShowWinner(false);
-        adsService.showInterstitial(AD_PLACEMENTS.POST_GAME_INTERSTITIAL);
     };
 
     // ========================================================================
@@ -297,6 +294,7 @@ export const OfflineGame = () => {
         // defensively if state changed mid-tap.
         if (!consumePowerUp(type)) return;
         haptics.impactMedium();
+        trackProgress('POWERUP_USED');
 
         if (type === 'peek') {
             const upcoming = peekUpcoming(3);
@@ -605,7 +603,7 @@ export const OfflineGame = () => {
                     winnerName={winner?.name ?? 'Unknown'}
                     isMe={winner?.isMe ?? false}
                     prize={100}
-                    onClose={handleWinnerClose}
+                    onClose={() => setShowWinner(false)}
                     onPlayAgain={handlePlayAgain}
                 />
 

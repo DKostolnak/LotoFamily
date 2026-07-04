@@ -230,6 +230,19 @@ export interface TranslationKeys {
     // Loto card header
     cardLabel: string;
 
+    // Daily quests (local missions)
+    questPlayGames: string;
+    questPlayGamesDesc: string;
+    questMarkNumbers: string;
+    questMarkNumbersDesc: string;
+    questWinGame: string;
+    questWinGameDesc: string;
+    questUsePowerUp: string;
+    questUsePowerUpDesc: string;
+
+    // Daily bonus — double via rewarded ad
+    doubleBonusCta: string;
+
     // Shop — In-App Purchases (real money)
     shopCoinsTab: string;
     iapRemoveAdsTitle: string;

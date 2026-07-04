@@ -106,6 +106,10 @@ export const createAppSlice: StateCreator<GameStore, [], [], AppSlice> = (set, g
             // Bootstrap / roll over the Battle Pass season now that we know
             // the local state is fully rehydrated and server-synced.
             get().checkSeasonRollover();
+
+            // Generate today's daily quests (rolls over stale sets from
+            // previous days).
+            get().ensureDailyQuests();
         } catch (error) {
             set({
                 isLoading: false,

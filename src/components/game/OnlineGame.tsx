@@ -146,6 +146,10 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                 if (newWinStreak >= 3) store.addSeasonXp(100); // streak bonus
             }
 
+            // Daily quests progress
+            store.trackQuestProgress('GAMES_PLAYED');
+            if (isWin) store.trackQuestProgress('GAMES_WON');
+
             store.syncToSupabase().catch(() => {});
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -203,6 +207,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
         markCell(cardId, row, col);
         haptics.impactLight();
         playSound('chip');
+        useGameStore.getState().trackQuestProgress('NUMBERS_MARKED', 1);
     };
 
     const handleClaimBingo = () => {
@@ -249,6 +254,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
         }
         if (!consumePowerUp(type)) return;
         haptics.impactMedium();
+        useGameStore.getState().trackQuestProgress('POWERUP_USED');
         const upcoming = (gameState?.remainingNumbers ?? []).slice(0, 3);
         const text = t.nextNumbersAre.replace('{numbers}', upcoming.join(', '));
         showToast(text, 'info', '🔮');
@@ -264,21 +270,16 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
         }
     };
 
+    // R-Soft ad philosophy: NO forced interstitials — ads are always
+    // opt-in rewarded (power-up refill, free coins, bonus doubling).
     const handlePlayAgain = () => {
         setShowWinner(false);
-        // Frequency-capped inside the service; no-ops for ad-free users.
-        adsService.showInterstitial(AD_PLACEMENTS.POST_GAME_INTERSTITIAL);
         if (isHost) {
             // socketService needs restart capability
             // restartGame(); // assume hook has it
         } else {
             // Client waits
         }
-    };
-
-    const handleWinnerClose = () => {
-        setShowWinner(false);
-        adsService.showInterstitial(AD_PLACEMENTS.POST_GAME_INTERSTITIAL);
     };
 
     // ========================================================================
@@ -588,7 +589,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                     winnerName={gameState.winnerId ? gameState.players.find(p => p.id === gameState.winnerId)?.name ?? 'Unknown' : 'Unknown'}
                     isMe={gameState.winnerId === myPlayerId}
                     prize={1000}
-                    onClose={handleWinnerClose}
+                    onClose={() => setShowWinner(false)}
                     onPlayAgain={isHost ? handlePlayAgain : undefined}
                 />
             </View>

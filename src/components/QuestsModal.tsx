@@ -40,7 +40,8 @@ export const QuestsModal = ({ visible, onClose }: QuestsModalProps) => {
     const timeLeft = useMemo(() => {
         const now = new Date();
         const tomorrow = new Date(now);
-        tomorrow.setUTCHours(24, 0, 0, 0);
+        // Local midnight — quests reset per local date (see quests.config.ts).
+        tomorrow.setHours(24, 0, 0, 0);
         const diff = tomorrow.getTime() - now.getTime();
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));

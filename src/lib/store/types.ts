@@ -7,6 +7,7 @@
 
 import type { Language } from '../i18n';
 import type { SeasonReward } from '../config/season.config';
+import type { QuestType } from '../config/quests.config';
 import type { AnnouncerMode } from '../services/audio';
 
 export type { AnnouncerMode };
@@ -218,6 +219,43 @@ export interface SeasonActions {
 export type SeasonSlice = SeasonState & SeasonActions;
 
 // ============================================================================
+// Daily Quests Slice Types
+// ============================================================================
+
+/** One daily mission instance with live progress. */
+export interface DailyQuest {
+    /** Catalog id (e.g. 'play_2'). Unique within a day. */
+    id: string;
+    type: QuestType;
+    target: number;
+    /** Coin reward on claim. */
+    reward: number;
+    /** Current progress (capped at target). */
+    progress: number;
+    claimed: boolean;
+}
+
+export interface QuestsState {
+    /** Local date key (YYYY-MM-DD) the current quest set belongs to. */
+    questsDate: string;
+    dailyQuests: DailyQuest[];
+}
+
+export interface QuestsActions {
+    /** Generate today's quests if the stored set is from a previous day. */
+    ensureDailyQuests: () => void;
+    /** Increment progress on all matching unclaimed quests. */
+    trackQuestProgress: (type: QuestType, amount?: number) => void;
+    /**
+     * Claim a completed quest. Grants coins via the economy slice.
+     * @returns the coin reward, or null if not completed / already claimed.
+     */
+    claimQuestReward: (questId: string) => number | null;
+}
+
+export type QuestsSlice = QuestsState & QuestsActions;
+
+// ============================================================================
 // Combined Store Type
 // ============================================================================
 
@@ -226,7 +264,8 @@ export type GameStore = PlayerSlice &
     StatsSlice &
     SettingsSlice &
     AppSlice &
-    SeasonSlice;
+    SeasonSlice &
+    QuestsSlice;
 
 // ============================================================================
 // Default Values
@@ -280,6 +319,11 @@ export const DEFAULT_APP_STATE: AppState = {
     error: null,
     isInitialized: false,
     pendingDeepLink: null,
+};
+
+export const DEFAULT_QUESTS_STATE: QuestsState = {
+    questsDate: '',
+    dailyQuests: [],
 };
 
 export const DEFAULT_SEASON_STATE: SeasonState = {

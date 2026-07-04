@@ -22,6 +22,7 @@ import {
     createSettingsSlice,
     createAppSlice,
     createSeasonSlice,
+    createQuestsSlice,
 } from './slices';
 
 /**
@@ -53,6 +54,9 @@ export const useGameStore = create<GameStore>()(
 
             // Season / Battle Pass progression
             ...createSeasonSlice(...args),
+
+            // Daily quests / missions (local, offline-first)
+            ...createQuestsSlice(...args),
         }),
         {
             name: 'loto-game-storage',
@@ -86,6 +90,9 @@ export const useGameStore = create<GameStore>()(
                 hasPremium: state.hasPremium,
                 claimedFree: state.claimedFree,
                 claimedPremium: state.claimedPremium,
+                // Daily quests
+                questsDate: state.questsDate,
+                dailyQuests: state.dailyQuests,
             }),
         }
     )

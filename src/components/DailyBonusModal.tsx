@@ -14,6 +14,7 @@ import { useGameStore } from '@/lib/store';
 import { translations, type TranslationKeys } from '@/lib/i18n';
 import * as Haptics from 'expo-haptics';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
+import { adsService, AD_PLACEMENTS } from '@/lib/services/ads';
 
 /**
  * Reward table mirrors the one in `economySlice.checkDailyBonus`.
@@ -102,6 +103,9 @@ const DailyBonusModal = () => {
     /** Streak day for the just-completed claim (1..N). */
     const [claimedDay, setClaimedDay] = useState(0);
     const [fireConfetti, setFireConfetti] = useState(false);
+    /** Opt-in rewarded ad: has the bonus already been doubled? */
+    const [doubled, setDoubled] = useState(false);
+    const [adLoading, setAdLoading] = useState(false);
 
     const hasChecked = useRef(false);
     const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -159,6 +163,30 @@ const DailyBonusModal = () => {
         setVisible(false);
     };
 
+    /**
+     * R-Soft style opt-in ad: the base bonus is already granted; watching a
+     * rewarded ad grants it once more (= 2× total). Never forced.
+     */
+    const handleDoubleWithAd = async () => {
+        if (doubled || adLoading) return;
+        // User is engaging — stop the auto-close countdown.
+        if (closeTimer.current) clearTimeout(closeTimer.current);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setAdLoading(true);
+        try {
+            const result = await adsService.showRewardedAd(AD_PLACEMENTS.DAILY_BONUS_DOUBLE);
+            if (result.rewarded) {
+                useGameStore.getState().addCoins(amount);
+                setAmount((prev) => prev * 2);
+                setDoubled(true);
+                setFireConfetti(true);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+        } finally {
+            setAdLoading(false);
+        }
+    };
+
     // Visualisation logic: render days 1..7 of the current 7-day cycle.
     // claimedDay maps to `((claimedDay - 1) % 7) + 1` slot in the row.
     const slotInCycle = claimedDay > 0 ? ((claimedDay - 1) % 7) + 1 : 1;
@@ -170,10 +198,26 @@ const DailyBonusModal = () => {
     const streakLabel = (t.streakDays ?? '{n}-day streak').replace('{n}', String(claimedDay));
     const tomorrowLabel = (t.tomorrowReward ?? 'Tomorrow: +{n}').replace('{n}', String(nextReward));
 
+    const doubleLabel = (t.doubleBonusCta ?? 'Double it: +{n}').replace('{n}', String(amount));
+
     const footer = (
-        <WoodenButton variant="gold" size="xl" fullWidth onPress={handleClaim}>
-            {(t.claimAndPlay ?? 'CLAIM').replace('{n}', String(amount))} +{amount}
-        </WoodenButton>
+        <View style={{ gap: SPACING.sm }}>
+            {!doubled && (
+                <WoodenButton
+                    variant="secondary"
+                    size="md"
+                    fullWidth
+                    disabled={adLoading}
+                    onPress={handleDoubleWithAd}
+                    accessibilityLabel={doubleLabel}
+                >
+                    {`📺 ${doubleLabel}`}
+                </WoodenButton>
+            )}
+            <WoodenButton variant="gold" size="xl" fullWidth onPress={handleClaim}>
+                {(t.claimAndPlay ?? 'CLAIM').replace('{n}', String(amount))} +{amount}
+            </WoodenButton>
+        </View>
     );
 
     // currentStreak getter exposed for callers/tests; not used directly here.
