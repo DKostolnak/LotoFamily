@@ -201,3 +201,27 @@ CREATE POLICY IF NOT EXISTS "profiles: leaderboard read"
     ON public.profiles FOR SELECT
     TO authenticated
     USING (true);
+
+-- ============================================================================
+-- MIGRÁCIA 002 — UGC moderation reports
+-- ============================================================================
+-- Reporty sú write-only pre klientov: hráč môže nahlásiť problém, ale nemôže
+-- čítať, meniť ani mazať reporty. Kontrola reportov prebieha cez Supabase
+-- dashboard / admin tooling.
+
+CREATE TABLE IF NOT EXISTS public.reports (
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    reporter_id      UUID NOT NULL REFERENCES auth.users(id),
+    reported_user_id UUID NOT NULL,
+    room_code        TEXT,
+    reason           TEXT NOT NULL CHECK (reason IN ('name', 'avatar', 'chat', 'cheating', 'other')),
+    message          TEXT,
+    created_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "reports: own insert"
+    ON public.reports FOR INSERT
+    TO authenticated
+    WITH CHECK (reporter_id = auth.uid());

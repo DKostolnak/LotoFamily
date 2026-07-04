@@ -33,6 +33,7 @@ export const ANALYTICS_EVENTS = {
     DAILY_BONUS_CLAIMED: 'daily_bonus_claimed',
     SHOP_OPENED: 'shop_opened',
     SETTINGS_CHANGED: 'settings_changed',
+    PLAYER_REPORTED: 'player_reported',
 } as const;
 
 export type AnalyticsEvent =

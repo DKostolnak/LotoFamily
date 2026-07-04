@@ -23,6 +23,7 @@ import {
     createAppSlice,
     createSeasonSlice,
     createQuestsSlice,
+    createModerationSlice,
 } from './slices';
 
 /**
@@ -57,6 +58,9 @@ export const useGameStore = create<GameStore>()(
 
             // Daily quests / missions (local, offline-first)
             ...createQuestsSlice(...args),
+
+            // Local UGC safety preferences
+            ...createModerationSlice(...args),
         }),
         {
             name: 'loto-game-storage',
@@ -93,6 +97,8 @@ export const useGameStore = create<GameStore>()(
                 // Daily quests
                 questsDate: state.questsDate,
                 dailyQuests: state.dailyQuests,
+                // Moderation
+                blockedUserIds: state.blockedUserIds,
             }),
         }
     )

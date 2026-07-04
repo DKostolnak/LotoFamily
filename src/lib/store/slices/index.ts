@@ -9,3 +9,4 @@ export { createSettingsSlice } from './settingsSlice';
 export { createAppSlice } from './appSlice';
 export { createSeasonSlice } from './seasonSlice';
 export { createQuestsSlice } from './questsSlice';
+export { createModerationSlice } from './moderationSlice';

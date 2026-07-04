@@ -239,7 +239,11 @@ export const WaitingLobby = memo(({
                             showsVerticalScrollIndicator={false}
                             contentContainerStyle={{ paddingVertical: SPACING.xs }}
                         >
-                            <PlayerList players={players} currentPlayerId={currentPlayerId} />
+                            <PlayerList
+                                players={players}
+                                currentPlayerId={currentPlayerId}
+                                roomCode={roomCode}
+                            />
                             {players.length === 0 && (
                                 <View style={{ paddingVertical: SPACING.xxl, alignItems: 'center' }}>
                                     <Text

@@ -99,6 +99,30 @@ export interface GameRoomRow {
 }
 
 // ============================================================================
+// REPORTS — user-generated content moderation
+// ============================================================================
+
+export type ReportReason = 'name' | 'avatar' | 'chat' | 'cheating' | 'other';
+
+export interface ReportRow {
+    id: string;
+    reporter_id: string;
+    reported_user_id: string;
+    room_code: string | null;
+    reason: ReportReason;
+    message: string | null;
+    created_at: string;
+}
+
+export interface ReportInsert {
+    reporter_id: string;
+    reported_user_id: string;
+    room_code?: string | null;
+    reason: ReportReason;
+    message?: string | null;
+}
+
+// ============================================================================
 // DATABASE — hlavný typ pre createClient<Database>()
 // ============================================================================
 
@@ -114,6 +138,11 @@ export interface Database {
                 Row: GameRoomRow;
                 Insert: Omit<GameRoomRow, 'id' | 'created_at'>;
                 Update: Partial<Omit<GameRoomRow, 'id' | 'created_at'>>;
+            };
+            reports: {
+                Row: ReportRow;
+                Insert: ReportInsert;
+                Update: never;
             };
         };
         Views: {
