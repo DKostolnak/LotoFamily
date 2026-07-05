@@ -74,6 +74,13 @@ export const translations: Record<Language, TranslationKeys> = {
         gameSpeed: 'Game Speed', pausedByHost: 'Game is paused by host',
         selectTarget: 'Select Target 🎯', cancel: 'Cancel', mode: 'Mode',
         copiedError: 'Failed to copy', leaderboard: 'Leaderboard',
+        giftButton: 'Gift',
+        giftTitle: 'Send a gift',
+        giftSent: 'Gift sent to {name}!',
+        giftReceived: '{name} sent you {n} coins! 🎁',
+        giftNotEnough: 'Not enough coins',
+        giftLimit: 'Gift limit reached, try later',
+        giftSystemMessage: '🎁 {sender} sent {amount} coins to {recipient}',
 
         // Mobile App UI
         welcomeBack: 'Welcome back,', hostOnline: 'Host Online', practice: 'Practice',
@@ -381,6 +388,13 @@ export const translations: Record<Language, TranslationKeys> = {
         gameSpeed: 'Rýchlosť hry', pausedByHost: 'Hra je pozastavená hostiteľom',
         selectTarget: 'Vyber cieľ 🎯', cancel: 'Zrušiť', mode: 'Režim',
         copiedError: 'Nepodarilo sa skopírovať', leaderboard: 'Rebríček',
+        giftButton: 'Darček',
+        giftTitle: 'Poslať darček',
+        giftSent: 'Darček odoslaný hráčovi {name}!',
+        giftReceived: '{name} vám poslal {n} mincí! 🎁',
+        giftNotEnough: 'Nedostatok mincí',
+        giftLimit: 'Limit darčekov dosiahnutý, skúste neskôr',
+        giftSystemMessage: '🎁 {sender} poslal {amount} mincí hráčovi {recipient}',
 
         // Mobile App UI
         welcomeBack: 'Vitaj späť,', hostOnline: 'Hostiteľ online', practice: 'Cvičenie',
@@ -688,6 +702,13 @@ export const translations: Record<Language, TranslationKeys> = {
         gameSpeed: 'Скорость игры', pausedByHost: 'Игра приостановлена ведущим',
         selectTarget: 'Выбрать цель 🎯', cancel: 'Отмена', mode: 'Режим',
         copiedError: 'Не удалось скопировать', leaderboard: 'Таблица лидеров',
+        giftButton: 'Подарок',
+        giftTitle: 'Отправить подарок',
+        giftSent: 'Подарок отправлен игроку {name}!',
+        giftReceived: '{name} отправил вам {n} монет! 🎁',
+        giftNotEnough: 'Недостаточно монет',
+        giftLimit: 'Лимит подарков достигнут, попробуйте позже',
+        giftSystemMessage: '🎁 {sender} отправил {amount} монет игроку {recipient}',
 
         // Mobile App UI
         welcomeBack: 'С возвращением,', hostOnline: 'Хост онлайн', practice: 'Тренировка',
@@ -995,6 +1016,13 @@ export const translations: Record<Language, TranslationKeys> = {
         gameSpeed: 'Швидкість гри', pausedByHost: 'Гра призупинена ведучим',
         selectTarget: 'Обрати ціль 🎯', cancel: 'Скасувати', mode: 'Режим',
         copiedError: 'Не вдалося скопіювати', leaderboard: 'Таблиця лідерів',
+        giftButton: 'Подарунок',
+        giftTitle: 'Надіслати подарунок',
+        giftSent: 'Подарунок надіслано гравцю {name}!',
+        giftReceived: '{name} надіслав вам {n} монет! 🎁',
+        giftNotEnough: 'Недостатньо монет',
+        giftLimit: 'Ліміт подарунків досягнуто, спробуйте пізніше',
+        giftSystemMessage: '🎁 {sender} надіслав {amount} монет гравцю {recipient}',
 
         // Mobile App UI
         welcomeBack: 'Ласкаво просимо,', hostOnline: 'Хост онлайн', practice: 'Тренування',

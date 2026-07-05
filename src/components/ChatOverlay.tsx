@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
     View,
     Text,
@@ -9,26 +9,57 @@ import {
     Platform,
 } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
-import { MessageSquare, Send, X } from 'lucide-react-native';
-import { ChatMessage } from '@/lib/types';
+import * as Haptics from 'expo-haptics';
+import { Gift, MessageSquare, Send, X } from 'lucide-react-native';
+import { ChatMessage, Player } from '@/lib/types';
 import { useGameStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
+import { ModalShell, WoodenButton } from '@/components/common';
+import { useToast } from '@/components/ToastProvider';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
+import { sendGift, type GiftAmount } from '@/lib/services/gifts';
 
 interface ChatOverlayProps {
     messages: ChatMessage[];
     onSendMessage?: (msg: string) => void;
     currentPlayerId: string;
+    players?: Player[];
 }
 
 const SEND_BUTTON_SIZE = 44; // min tap target.
+const GIFT_AMOUNTS = [50, 100, 500] as const satisfies readonly GiftAmount[];
 
-export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId }: ChatOverlayProps) => {
+const formatTemplate = (template: string, values: Record<string, string>) =>
+    Object.entries(values).reduce((text, [key, value]) => text.replace(`{${key}}`, value), template);
+
+const extractGiftAmount = (message: string): GiftAmount | null => {
+    const match = message.match(/\b(50|100|500)\b/);
+    if (!match) return null;
+    return Number(match[1]) as GiftAmount;
+};
+
+export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId, players = [] }: ChatOverlayProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
+    const [giftVisible, setGiftVisible] = useState(false);
+    const [giftRecipient, setGiftRecipient] = useState<Player | null>(null);
+    const [giftSending, setGiftSending] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
+    const lastSeenGiftTimestampRef = useRef<number | null>(null);
     const language = useGameStore((s) => s.language);
+    const coins = useGameStore((s) => s.coins);
+    const playerName = useGameStore((s) => s.playerName);
     const t = translations[language];
+    const { showToast } = useToast();
+
+    const giftRecipients = useMemo(
+        () => players.filter((player) => player.id !== currentPlayerId),
+        [currentPlayerId, players]
+    );
+
+    const currentPlayerName = useMemo(() => {
+        return players.find((player) => player.id === currentPlayerId)?.name || playerName || t.playerName;
+    }, [currentPlayerId, playerName, players, t.playerName]);
 
     const height = useSharedValue(0);
     const opacity = useSharedValue(0);
@@ -45,6 +76,74 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId }: ChatOv
         onSendMessage(inputValue.trim());
         setInputValue('');
     };
+
+    const closeGiftModal = () => {
+        setGiftVisible(false);
+        setGiftRecipient(null);
+        setGiftSending(false);
+    };
+
+    const handleSendGift = async (amount: GiftAmount) => {
+        if (!giftRecipient || giftSending) return;
+        if (coins < amount) {
+            showToast(t.giftNotEnough, 'error');
+            return;
+        }
+
+        setGiftSending(true);
+        const result = await sendGift(giftRecipient.id, amount);
+        setGiftSending(false);
+
+        if (!result.success || result.newBalance === undefined) {
+            const errorMessage = result.error === 'gift_limit_reached'
+                ? t.giftLimit
+                : result.error === 'insufficient_funds'
+                    ? t.giftNotEnough
+                    : t.connectionError;
+            showToast(errorMessage, 'error');
+            return;
+        }
+
+        useGameStore.setState({ coins: result.newBalance });
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        showToast(formatTemplate(t.giftSent, { name: giftRecipient.name }), 'success', '🎁');
+        onSendMessage?.(formatTemplate(t.giftSystemMessage, {
+            sender: currentPlayerName,
+            amount: String(amount),
+            recipient: giftRecipient.name,
+        }));
+        closeGiftModal();
+    };
+
+    useEffect(() => {
+        const latestTimestamp = messages.reduce((latest, message) => Math.max(latest, message.timestamp), 0);
+        if (lastSeenGiftTimestampRef.current === null) {
+            lastSeenGiftTimestampRef.current = latestTimestamp;
+            return;
+        }
+
+        const newGift = messages
+            .filter((message) => message.timestamp > (lastSeenGiftTimestampRef.current ?? 0))
+            .find((message) => {
+                return message.userId !== currentPlayerId &&
+                    message.message.startsWith('🎁') &&
+                    currentPlayerName.length > 0 &&
+                    message.message.includes(currentPlayerName) &&
+                    extractGiftAmount(message.message) !== null;
+            });
+
+        if (newGift) {
+            const amount = extractGiftAmount(newGift.message);
+            if (amount !== null) {
+                showToast(formatTemplate(t.giftReceived, {
+                    name: newGift.nickname,
+                    n: String(amount),
+                }), 'success', '🎁');
+            }
+        }
+
+        lastSeenGiftTimestampRef.current = latestTimestamp;
+    }, [currentPlayerId, currentPlayerName, messages, showToast, t.giftReceived]);
 
     const animatedContainerStyle = useAnimatedStyle(() => ({
         height: height.value,
@@ -95,17 +194,45 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId }: ChatOv
                         alignItems: 'center',
                     }}
                 >
-                    <Text style={[TEXT_STYLES.captionUpper, { color: '#ffd700' }]}>
+                    <Text
+                        style={[TEXT_STYLES.captionUpper, { color: '#ffd700', flex: 1 }]}
+                        numberOfLines={1}
+                        maxFontSizeMultiplier={1.2}
+                    >
                         {t.chatTitle ?? 'CHAT'}
                     </Text>
-                    <TouchableOpacity
-                        onPress={toggleChat}
-                        accessibilityRole="button"
-                        accessibilityLabel={t.close ?? 'Close'}
-                        hitSlop={8}
-                    >
-                        <X size={18} color="#d4b896" />
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs }}>
+                        {giftRecipients.length > 0 && (
+                            <TouchableOpacity
+                                onPress={() => setGiftVisible(true)}
+                                accessibilityRole="button"
+                                accessibilityLabel={t.giftButton}
+                                style={{
+                                    width: 44,
+                                    height: 44,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: RADII.md,
+                                    backgroundColor: 'rgba(255, 215, 0, 0.12)',
+                                }}
+                            >
+                                <Gift size={20} color="#ffd700" />
+                            </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                            onPress={toggleChat}
+                            accessibilityRole="button"
+                            accessibilityLabel={t.close ?? 'Close'}
+                            style={{
+                                width: 44,
+                                height: 44,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <X size={18} color="#d4b896" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Messages */}
@@ -154,42 +281,51 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId }: ChatOv
                     )}
                     {messages.map((msg, i) => {
                         const isMe = msg.userId === currentPlayerId;
+                        const isGiftSystem = msg.message.startsWith('🎁');
                         return (
                             <View
                                 key={`${msg.timestamp}-${i}`}
                                 style={{
                                     marginBottom: SPACING.md,
-                                    maxWidth: '85%',
-                                    alignSelf: isMe ? 'flex-end' : 'flex-start',
+                                    maxWidth: isGiftSystem ? '92%' : '85%',
+                                    alignSelf: isGiftSystem ? 'center' : isMe ? 'flex-end' : 'flex-start',
                                 }}
                             >
-                                <Text
-                                    style={[
-                                        TEXT_STYLES.captionUpper,
-                                        {
-                                            color: isMe ? '#ffd700' : '#d4b896',
-                                            marginBottom: 2,
-                                            paddingHorizontal: SPACING.sm,
-                                            textAlign: isMe ? 'right' : 'left',
-                                        },
-                                    ]}
-                                >
-                                    {msg.nickname}
-                                </Text>
+                                {!isGiftSystem && (
+                                    <Text
+                                        style={[
+                                            TEXT_STYLES.captionUpper,
+                                            {
+                                                color: isMe ? '#ffd700' : '#d4b896',
+                                                marginBottom: 2,
+                                                paddingHorizontal: SPACING.sm,
+                                                textAlign: isMe ? 'right' : 'left',
+                                            },
+                                        ]}
+                                    >
+                                        {msg.nickname}
+                                    </Text>
+                                )}
                                 <View
                                     style={{
                                         padding: SPACING.md,
                                         borderRadius: RADII.lg,
-                                        backgroundColor: isMe ? '#ffd700' : '#f5e6c8',
+                                        backgroundColor: isGiftSystem ? '#3d2814' : isMe ? '#ffd700' : '#f5e6c8',
                                         borderTopRightRadius: isMe ? RADII.sm : RADII.lg,
                                         borderTopLeftRadius: isMe ? RADII.lg : RADII.sm,
+                                        borderWidth: isGiftSystem ? 1 : 0,
+                                        borderColor: isGiftSystem ? 'rgba(255, 215, 0, 0.45)' : 'transparent',
                                     }}
                                 >
                                     <Text
                                         style={[
                                             TEXT_STYLES.body,
-                                            { color: isMe ? '#3d2814' : '#2d1f10' },
+                                            {
+                                                color: isGiftSystem ? '#ffd700' : isMe ? '#3d2814' : '#2d1f10',
+                                                textAlign: isGiftSystem ? 'center' : 'left',
+                                            },
                                         ]}
+                                        maxFontSizeMultiplier={1.2}
                                     >
                                         {msg.message}
                                     </Text>
@@ -295,6 +431,58 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId }: ChatOv
                     )}
                 </TouchableOpacity>
             )}
+
+            <ModalShell
+                visible={giftVisible}
+                onClose={closeGiftModal}
+                title={t.giftTitle}
+                closeAccessibilityLabel={t.close}
+                maxWidth={420}
+            >
+                {!giftRecipient ? (
+                    <View style={{ gap: SPACING.sm }}>
+                        {giftRecipients.map((player) => (
+                            <WoodenButton
+                                key={player.id}
+                                size="md"
+                                variant="secondary"
+                                fullWidth
+                                onPress={() => setGiftRecipient(player)}
+                                accessibilityLabel={`${t.giftButton}: ${player.name}`}
+                            >
+                                {`${player.avatar} ${player.name}`}
+                            </WoodenButton>
+                        ))}
+                    </View>
+                ) : (
+                    <View style={{ gap: SPACING.sm }}>
+                        <Text
+                            style={[TEXT_STYLES.bodyBold, { color: '#f5e6c8', textAlign: 'center' }]}
+                            numberOfLines={1}
+                            maxFontSizeMultiplier={1.2}
+                        >
+                            {`${giftRecipient.avatar} ${giftRecipient.name}`}
+                        </Text>
+                        {GIFT_AMOUNTS.map((amount) => {
+                            const disabled = giftSending || coins < amount;
+                            return (
+                                <WoodenButton
+                                    key={amount}
+                                    size="md"
+                                    variant="gold"
+                                    fullWidth
+                                    disabled={disabled}
+                                    onPress={() => handleSendGift(amount)}
+                                    accessibilityLabel={String(amount)}
+                                    accessibilityHint={coins < amount ? t.giftNotEnough : undefined}
+                                >
+                                    {amount}
+                                </WoodenButton>
+                            );
+                        })}
+                    </View>
+                )}
+            </ModalShell>
         </KeyboardAvoidingView>
     );
 };

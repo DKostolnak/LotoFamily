@@ -133,6 +133,13 @@ export interface TranslationKeys {
     mode: string;
     copiedError: string;
     leaderboard: string;
+    giftButton: string;
+    giftTitle: string;
+    giftSent: string;
+    giftReceived: string;
+    giftNotEnough: string;
+    giftLimit: string;
+    giftSystemMessage: string;
 
     // Mobile App UI
     welcomeBack: string;
