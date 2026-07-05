@@ -134,6 +134,10 @@ export interface Database {
                 Args: { p_user_id: string; p_item_id: string; p_price: number };
                 Returns: ProfileRow[];
             };
+            transfer_coins: {
+                Args: { recipient: string; amount: number };
+                Returns: number;
+            };
         };
         Enums: Record<string, never>;
     };

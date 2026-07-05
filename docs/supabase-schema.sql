@@ -201,3 +201,89 @@ CREATE POLICY IF NOT EXISTS "profiles: leaderboard read"
     ON public.profiles FOR SELECT
     TO authenticated
     USING (true);
+
+-- ============================================================================
+-- MIGRÁCIA 002 — Coin gifts
+-- ============================================================================
+-- Owner must run this block in Supabase before the client gift UI can work.
+-- Transfers are intentionally server-side and atomic: the client never writes
+-- another player's balance and cannot spend coins it does not have.
+
+CREATE TABLE IF NOT EXISTS public.coin_gifts (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sender_id    UUID NOT NULL REFERENCES auth.users(id),
+    recipient_id UUID NOT NULL REFERENCES auth.users(id),
+    amount       INTEGER NOT NULL CHECK (amount IN (50, 100, 500)),
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.coin_gifts ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION public.transfer_coins(recipient UUID, amount INT)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    sender UUID := auth.uid();
+    sender_balance INTEGER;
+    gifts_last_hour INTEGER;
+BEGIN
+    IF sender IS NULL THEN
+        RAISE EXCEPTION 'not_authenticated';
+    END IF;
+
+    IF amount NOT IN (50, 100, 500) THEN
+        RAISE EXCEPTION 'invalid_gift_amount';
+    END IF;
+
+    IF recipient = sender THEN
+        RAISE EXCEPTION 'cannot_gift_self';
+    END IF;
+
+    SELECT COUNT(*) INTO gifts_last_hour
+    FROM public.coin_gifts
+    WHERE sender_id = sender
+      AND created_at > NOW() - INTERVAL '1 hour';
+
+    IF gifts_last_hour >= 10 THEN
+        RAISE EXCEPTION 'gift_limit_reached';
+    END IF;
+
+    SELECT coins INTO sender_balance
+    FROM public.profiles
+    WHERE id = sender
+    FOR UPDATE;
+
+    IF sender_balance IS NULL THEN
+        RAISE EXCEPTION 'sender_profile_missing';
+    END IF;
+
+    IF sender_balance < amount THEN
+        RAISE EXCEPTION 'insufficient_funds';
+    END IF;
+
+    UPDATE public.profiles
+    SET coins = coins - amount,
+        updated_at = NOW()
+    WHERE id = sender;
+
+    UPDATE public.profiles
+    SET coins = coins + amount,
+        updated_at = NOW()
+    WHERE id = recipient;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'recipient_profile_missing';
+    END IF;
+
+    INSERT INTO public.coin_gifts (sender_id, recipient_id, amount)
+    VALUES (sender, recipient, amount);
+
+    RETURN sender_balance - amount;
+END;
+$$;
+
+REVOKE UPDATE (coins) ON public.profiles FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.transfer_coins(UUID, INT) TO authenticated;
