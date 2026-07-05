@@ -21,6 +21,11 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
+# local tooling output
+.playwright-mcp/
+tmp/
+*-smoke.png
+
 # debug
 npm-debug.*
 yarn-debug.*

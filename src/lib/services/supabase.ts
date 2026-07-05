@@ -100,6 +100,7 @@ export const signOut = () => supabase.auth.signOut();
  */
 export const db = {
     profiles: () => supabase.from('profiles'),
+    publicProfiles: () => supabase.from('public_profiles'),
     gameRooms: () => supabase.from('game_rooms'),
     leaderboard: () => supabase.from('leaderboard_view'),
 } as const;

@@ -49,7 +49,7 @@ export interface PendingFriendRequest {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const friendshipsTable = () => supabase.from('friendships') as any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const profilesTable = () => supabase.from('profiles') as any;
+const profilesTable = () => supabase.from('public_profiles') as any;
 
 const errorMessage = (error: unknown): string => {
     if (error instanceof Error) return error.message;

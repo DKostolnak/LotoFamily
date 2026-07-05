@@ -180,14 +180,13 @@ export default function MainMenu() {
         (supabase.from('game_rooms') as any)
             .select('id, room_code, host_id, players, settings, created_at')
             .eq('phase', 'lobby')
+            .eq('is_public', true)
             .order('created_at', { ascending: false })
             .limit(20)
             .then(({ data, error }: { data: any[] | null; error: any }) => {
                 if (cancelled) return;
                 if (error) throw new Error(error.message ?? 'Supabase error');
                 const rooms = (data ?? [])
-                    // Exclude rooms the host explicitly marked private
-                    .filter((r: any) => r.settings?.isPublic !== false)
                     .map((r: any) => ({
                         id: r.id,
                         code: r.room_code,

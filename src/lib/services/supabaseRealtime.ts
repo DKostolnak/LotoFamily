@@ -35,6 +35,10 @@ export type BroadcastEventType =
     | 'game:numberCalled' // Nové číslo zavolané
     | 'game:playerJoined' // Hráč sa pripojil
     | 'game:playerLeft'   // Hráč odišiel
+    | 'game:markCell'     // Hráč označil políčko
+    | 'game:claimWin'     // Hráč žiada bingo
+    | 'game:claimFlat'    // Hráč žiada flat bonus
+    | 'game:chat'         // Chat správa
     | 'game:winner'       // Hra má víťaza
     | 'game:flatClaimed'  // Flat bonus uplatnený
     | 'room:created'      // Miestnosť vytvorená (host dostane kód)

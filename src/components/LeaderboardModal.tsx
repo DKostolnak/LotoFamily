@@ -118,9 +118,9 @@ export const LeaderboardModal = ({ visible, onClose }: LeaderboardModalProps) =>
         setLoading(true);
         setFetchError(null);
         try {
-            const { data, error } = await (supabase.from('profiles') as any)
-                .select('id, nickname, avatar, coins, games_won, tier')
-                .order('coins', { ascending: false })
+            const { data, error } = await (supabase.from('leaderboard_view') as any)
+                .select('id, nickname, avatar, coins, games_won, tier, rank')
+                .order('rank', { ascending: true })
                 .limit(50);
 
             if (error) {
