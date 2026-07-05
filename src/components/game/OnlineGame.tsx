@@ -357,6 +357,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                         onLeave={handleLeave}
                         chatMessages={chatMessages}
                         onSendMessage={sendChatMessage}
+                        enableFriends
                         t={t}
                     />
                 </SafeAreaView>

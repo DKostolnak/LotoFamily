@@ -201,3 +201,43 @@ CREATE POLICY IF NOT EXISTS "profiles: leaderboard read"
     ON public.profiles FOR SELECT
     TO authenticated
     USING (true);
+
+-- ============================================================================
+-- FRIENDSHIPS — friend requests and accepted friends
+-- ============================================================================
+-- Run this in the Supabase SQL editor before enabling the friends UI in prod.
+
+CREATE TABLE IF NOT EXISTS public.friendships (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    requester_id  UUID NOT NULL REFERENCES auth.users(id),
+    addressee_id  UUID NOT NULL REFERENCES auth.users(id),
+    status        TEXT NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending', 'accepted')),
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT friendships_requester_addressee_unique UNIQUE (requester_id, addressee_id),
+    CONSTRAINT friendships_no_self CHECK (requester_id <> addressee_id)
+);
+
+ALTER TABLE public.friendships ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "friendships: own insert"
+    ON public.friendships FOR INSERT
+    TO authenticated
+    WITH CHECK (requester_id = auth.uid());
+
+CREATE POLICY "friendships: own select"
+    ON public.friendships FOR SELECT
+    TO authenticated
+    USING (requester_id = auth.uid() OR addressee_id = auth.uid());
+
+CREATE POLICY "friendships: addressee accept"
+    ON public.friendships FOR UPDATE
+    TO authenticated
+    USING (addressee_id = auth.uid())
+    WITH CHECK (addressee_id = auth.uid() AND status = 'accepted');
+
+CREATE POLICY "friendships: own delete"
+    ON public.friendships FOR DELETE
+    TO authenticated
+    USING (requester_id = auth.uid() OR addressee_id = auth.uid());

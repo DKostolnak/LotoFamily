@@ -381,6 +381,19 @@ export interface TranslationKeys {
     shareInvite: string;
     invitedToJoin: string;
 
+    // Friends
+    friendsTitle: string;
+    addFriend: string;
+    friendPending: string;
+    friendAccept: string;
+    friendDecline: string;
+    friendRemove: string;
+    friendInvite: string;
+    friendsEmpty: string;
+    friendRequestsSection: string;
+    friendsSection: string;
+    friendSignInRequired: string;
+
     // Battle Pass / Season Pass
     battlePass: string;
     seasonPass: string;

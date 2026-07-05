@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import {
     WoodenCard,
@@ -39,9 +39,11 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { LeaderboardModal } from '@/components/LeaderboardModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { BattlePassModal } from '@/components/BattlePassModal';
+import { FriendsModal } from '@/components/FriendsModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useResponsive } from '@/hooks';
 import { supabase } from '@/lib/services/supabase';
+import { fetchPendingRequests } from '@/lib/services/friends';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 import Animated, {
     useSharedValue,
@@ -90,8 +92,9 @@ export default function MainMenu() {
     const [publicRoomsRefreshKey, setPublicRoomsRefreshKey] = useState(0);
     const [joinedViaInvite, setJoinedViaInvite] = useState(false);
 
-    type MenuModal = 'rules' | 'shop' | 'stats' | 'settings' | 'leaderboard' | 'quests' | 'seasonPass' | null;
+    type MenuModal = 'rules' | 'shop' | 'stats' | 'settings' | 'leaderboard' | 'quests' | 'seasonPass' | 'friends' | null;
     const [activeModal, setActiveModal] = useState<MenuModal>(null);
+    const [pendingFriendCount, setPendingFriendCount] = useState(0);
 
     const openModal = (modal: Exclude<MenuModal, null>) => setActiveModal(modal);
     const closeModal = () => setActiveModal(null);
@@ -123,6 +126,15 @@ export default function MainMenu() {
         // Leaving the menu/form should always close any open modal
         setActiveModal(null);
     }, [mode]);
+
+    const refreshPendingFriends = useCallback(async () => {
+        const result = await fetchPendingRequests();
+        setPendingFriendCount(result.success ? result.data.length : 0);
+    }, []);
+
+    useEffect(() => {
+        refreshPendingFriends();
+    }, [refreshPendingFriends, activeModal]);
 
     // Handle deep-links from push notification taps
     useEffect(() => {
@@ -804,12 +816,15 @@ export default function MainMenu() {
                     {mode === 'menu' && (
                         <Animated.View style={footerAnimatedStyle}>
                             <HomeFooter
+                                onFriendsPress={() => openModal('friends')}
                                 onStatsPress={() => openModal('stats')}
                                 onShopPress={() => openModal('shop')}
                                 onSettingsPress={() => openModal('settings')}
                                 onHelpPress={() => openModal('rules')}
+                                pendingFriendsCount={pendingFriendCount}
                                 bottomInset={insets.bottom}
                                 labels={{
+                                    friends: t.friendsTitle,
                                     stats: t.statsTitle ?? t.playerStats ?? 'Stats',
                                     shop: t.shop ?? 'Shop',
                                     settings: t.settings ?? 'Settings',
@@ -854,6 +869,13 @@ export default function MainMenu() {
             {activeModal === 'leaderboard' && <LeaderboardModal visible={true} onClose={closeModal} />}
             {activeModal === 'quests' && <QuestsModal visible={true} onClose={closeModal} />}
             {activeModal === 'seasonPass' && <BattlePassModal visible={true} onClose={closeModal} />}
+            {activeModal === 'friends' && (
+                <FriendsModal
+                    visible={true}
+                    onClose={closeModal}
+                    onPendingCountChange={setPendingFriendCount}
+                />
+            )}
             <DailyBonusModal />
             <OnboardingModal />
         </WoodBackground>

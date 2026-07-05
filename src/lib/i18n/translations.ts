@@ -242,6 +242,19 @@ export const translations: Record<Language, TranslationKeys> = {
         shareInvite: 'Share invite',
         invitedToJoin: "You're joining via invite",
 
+        // Friends
+        friendsTitle: 'Friends',
+        addFriend: 'Add friend',
+        friendPending: 'Pending',
+        friendAccept: 'Accept',
+        friendDecline: 'Decline',
+        friendRemove: 'Remove',
+        friendInvite: 'Invite to game',
+        friendsEmpty: 'No friends yet',
+        friendRequestsSection: 'Requests',
+        friendsSection: 'Friends',
+        friendSignInRequired: 'Connect to the server before using friends.',
+
         // Battle Pass / Season Pass
         battlePass: 'Battle Pass',
         seasonPass: 'Season Pass',
@@ -548,6 +561,19 @@ export const translations: Record<Language, TranslationKeys> = {
         seasonEndingNotifBody: 'Vyzdvihni odmeny z Battle Passu kým je čas.',
         shareInvite: 'Zdieľaj pozvánku',
         invitedToJoin: 'Pripájaš sa cez pozvánku',
+
+        // Friends
+        friendsTitle: 'Priatelia',
+        addFriend: 'Pridať priateľa',
+        friendPending: 'Čaká na potvrdenie',
+        friendAccept: 'Prijať',
+        friendDecline: 'Odmietnuť',
+        friendRemove: 'Odstrániť',
+        friendInvite: 'Pozvať do hry',
+        friendsEmpty: 'Zatiaľ žiadni priatelia',
+        friendRequestsSection: 'Žiadosti',
+        friendsSection: 'Priatelia',
+        friendSignInRequired: 'Pred používaním priateľov sa pripoj k serveru.',
 
         // Battle Pass / Season Pass
         battlePass: 'Bojový Pass',
@@ -856,6 +882,19 @@ export const translations: Record<Language, TranslationKeys> = {
         shareInvite: 'Поделиться',
         invitedToJoin: 'Вы присоединяетесь по приглашению',
 
+        // Friends
+        friendsTitle: 'Друзья',
+        addFriend: 'Добавить друга',
+        friendPending: 'Ожидает подтверждения',
+        friendAccept: 'Принять',
+        friendDecline: 'Отклонить',
+        friendRemove: 'Удалить',
+        friendInvite: 'Пригласить в игру',
+        friendsEmpty: 'Друзей пока нет',
+        friendRequestsSection: 'Запросы',
+        friendsSection: 'Друзья',
+        friendSignInRequired: 'Подключитесь к серверу, чтобы использовать друзей.',
+
         // Battle Pass / Season Pass
         battlePass: 'Боевой пропуск',
         seasonPass: 'Сезонный пропуск',
@@ -1162,6 +1201,19 @@ export const translations: Record<Language, TranslationKeys> = {
         seasonEndingNotifBody: 'Забери нагороди Battle Pass, поки не минув термін.',
         shareInvite: 'Поділитися',
         invitedToJoin: 'Ти приєднуєшся за запрошенням',
+
+        // Friends
+        friendsTitle: 'Друзі',
+        addFriend: 'Додати друга',
+        friendPending: 'Очікує підтвердження',
+        friendAccept: 'Прийняти',
+        friendDecline: 'Відхилити',
+        friendRemove: 'Видалити',
+        friendInvite: 'Запросити до гри',
+        friendsEmpty: 'Друзів поки немає',
+        friendRequestsSection: 'Запити',
+        friendsSection: 'Друзі',
+        friendSignInRequired: 'Підключіться до сервера, щоб використовувати друзів.',
 
         // Battle Pass / Season Pass
         battlePass: 'Бойовий пропуск',

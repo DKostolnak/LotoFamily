@@ -99,6 +99,26 @@ export interface GameRoomRow {
 }
 
 // ============================================================================
+// FRIENDSHIPS — social graph
+// ============================================================================
+
+export interface FriendshipRow {
+    id: string;
+    requester_id: string;
+    addressee_id: string;
+    status: 'pending' | 'accepted';
+    created_at: string;
+}
+
+export interface FriendshipInsert {
+    requester_id: string;
+    addressee_id: string;
+    status?: 'pending' | 'accepted';
+}
+
+export type FriendshipUpdate = Partial<Pick<FriendshipRow, 'status'>>;
+
+// ============================================================================
 // DATABASE — hlavný typ pre createClient<Database>()
 // ============================================================================
 
@@ -114,6 +134,11 @@ export interface Database {
                 Row: GameRoomRow;
                 Insert: Omit<GameRoomRow, 'id' | 'created_at'>;
                 Update: Partial<Omit<GameRoomRow, 'id' | 'created_at'>>;
+            };
+            friendships: {
+                Row: FriendshipRow;
+                Insert: FriendshipInsert;
+                Update: FriendshipUpdate;
             };
         };
         Views: {
