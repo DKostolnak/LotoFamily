@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Gift, MessageSquare, Send, X } from 'lucide-react-native';
+import { Gift, MessageSquare, MoreVertical, Send, X } from 'lucide-react-native';
 import { ChatMessage, Player } from '@/lib/types';
 import { useGameStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
@@ -18,12 +18,14 @@ import { ModalShell, WoodenButton } from '@/components/common';
 import { useToast } from '@/components/ToastProvider';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 import { sendGift, type GiftAmount } from '@/lib/services/gifts';
+import { ModerationActionModal } from './moderation/ModerationActionModal';
 
 interface ChatOverlayProps {
     messages: ChatMessage[];
     onSendMessage?: (msg: string) => void;
     currentPlayerId: string;
     players?: Player[];
+    roomCode?: string | null;
 }
 
 const SEND_BUTTON_SIZE = 44; // min tap target.
@@ -38,17 +40,19 @@ const extractGiftAmount = (message: string): GiftAmount | null => {
     return Number(match[1]) as GiftAmount;
 };
 
-export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId, players = [] }: ChatOverlayProps) => {
+export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId, players = [], roomCode }: ChatOverlayProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [giftVisible, setGiftVisible] = useState(false);
     const [giftRecipient, setGiftRecipient] = useState<Player | null>(null);
     const [giftSending, setGiftSending] = useState(false);
+    const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
     const scrollViewRef = useRef<ScrollView>(null);
     const lastSeenGiftTimestampRef = useRef<number | null>(null);
     const language = useGameStore((s) => s.language);
     const coins = useGameStore((s) => s.coins);
     const playerName = useGameStore((s) => s.playerName);
+    const blockedUserIds = useGameStore((s) => s.blockedUserIds);
     const t = translations[language];
     const { showToast } = useToast();
 
@@ -60,6 +64,11 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId, players 
     const currentPlayerName = useMemo(() => {
         return players.find((player) => player.id === currentPlayerId)?.name || playerName || t.playerName;
     }, [currentPlayerId, playerName, players, t.playerName]);
+
+    const visibleMessages = useMemo(
+        () => messages.filter((message) => !blockedUserIds.includes(message.userId)),
+        [blockedUserIds, messages]
+    );
 
     const height = useSharedValue(0);
     const opacity = useSharedValue(0);
@@ -245,7 +254,7 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId, players 
                     }}
                     onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
                 >
-                    {messages.length === 0 && (
+                    {visibleMessages.length === 0 && (
                         <View
                             style={{
                                 flex: 1,
@@ -279,12 +288,15 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId, players 
                             </Text>
                         </View>
                     )}
-                    {messages.map((msg, i) => {
+                    {visibleMessages.map((msg, i) => {
                         const isMe = msg.userId === currentPlayerId;
                         const isGiftSystem = msg.message.startsWith('🎁');
                         return (
-                            <View
+                            <TouchableOpacity
                                 key={`${msg.timestamp}-${i}`}
+                                onLongPress={isMe ? undefined : () => setSelectedMessage(msg)}
+                                activeOpacity={isMe ? 1 : 0.86}
+                                disabled={isMe}
                                 style={{
                                     marginBottom: SPACING.md,
                                     maxWidth: isGiftSystem ? '92%' : '85%',
@@ -309,12 +321,14 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId, players 
                                 <View
                                     style={{
                                         padding: SPACING.md,
+                                        paddingRight: isMe ? SPACING.md : 48,
                                         borderRadius: RADII.lg,
                                         backgroundColor: isGiftSystem ? '#3d2814' : isMe ? '#ffd700' : '#f5e6c8',
                                         borderTopRightRadius: isMe ? RADII.sm : RADII.lg,
                                         borderTopLeftRadius: isMe ? RADII.lg : RADII.sm,
                                         borderWidth: isGiftSystem ? 1 : 0,
                                         borderColor: isGiftSystem ? 'rgba(255, 215, 0, 0.45)' : 'transparent',
+                                        position: 'relative',
                                     }}
                                 >
                                     <Text
@@ -329,8 +343,27 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId, players 
                                     >
                                         {msg.message}
                                     </Text>
+                                    {!isMe && (
+                                        <TouchableOpacity
+                                            onPress={() => setSelectedMessage(msg)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={t.reportPlayer}
+                                            hitSlop={4}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                right: 0,
+                                                width: 44,
+                                                height: 44,
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                            }}
+                                        >
+                                            <MoreVertical size={18} color="#2d1f10" />
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
-                            </View>
+                            </TouchableOpacity>
                         );
                     })}
                 </ScrollView>
@@ -408,7 +441,7 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId, players 
                     }}
                 >
                     <MessageSquare size={24} color="#1a1109" />
-                    {messages.length > 0 && (
+                    {visibleMessages.length > 0 && (
                         <View
                             style={{
                                 position: 'absolute',
@@ -424,8 +457,8 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId, players 
                                 borderColor: '#1a1109',
                             }}
                         >
-                            <Text style={[TEXT_STYLES.caption, { color: 'white' }]}>
-                                {messages.length > 9 ? '9+' : messages.length}
+                            <Text style={[TEXT_STYLES.caption, { color: 'white' }]} maxFontSizeMultiplier={1.2}>
+                                {visibleMessages.length > 9 ? '9+' : visibleMessages.length}
                             </Text>
                         </View>
                     )}
@@ -483,6 +516,15 @@ export const ChatOverlay = ({ messages, onSendMessage, currentPlayerId, players 
                     </View>
                 )}
             </ModalShell>
+
+            <ModerationActionModal
+                visible={!!selectedMessage}
+                targetUserId={selectedMessage?.userId ?? null}
+                targetName={selectedMessage?.nickname}
+                roomCode={roomCode}
+                message={selectedMessage?.message}
+                onClose={() => setSelectedMessage(null)}
+            />
         </KeyboardAvoidingView>
     );
 };

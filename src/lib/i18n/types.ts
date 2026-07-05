@@ -140,6 +140,16 @@ export interface TranslationKeys {
     giftNotEnough: string;
     giftLimit: string;
     giftSystemMessage: string;
+    reportPlayer: string;
+    blockPlayer: string;
+    unblockPlayer: string;
+    blockedPlayers: string;
+    reportReasonName: string;
+    reportReasonAvatar: string;
+    reportReasonChat: string;
+    reportReasonOther: string;
+    reportThanks: string;
+    blockedEmpty: string;
 
     // Mobile App UI
     welcomeBack: string;

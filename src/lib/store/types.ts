@@ -256,6 +256,22 @@ export interface QuestsActions {
 export type QuestsSlice = QuestsState & QuestsActions;
 
 // ============================================================================
+// Moderation Slice Types
+// ============================================================================
+
+export interface ModerationState {
+    blockedUserIds: string[];
+}
+
+export interface ModerationActions {
+    blockUser: (id: string) => void;
+    unblockUser: (id: string) => void;
+    isBlocked: (id: string) => boolean;
+}
+
+export type ModerationSlice = ModerationState & ModerationActions;
+
+// ============================================================================
 // Combined Store Type
 // ============================================================================
 
@@ -265,7 +281,8 @@ export type GameStore = PlayerSlice &
     SettingsSlice &
     AppSlice &
     SeasonSlice &
-    QuestsSlice;
+    QuestsSlice &
+    ModerationSlice;
 
 // ============================================================================
 // Default Values
@@ -335,4 +352,8 @@ export const DEFAULT_SEASON_STATE: SeasonState = {
     hasPremium: false,
     claimedFree: [],
     claimedPremium: [],
+};
+
+export const DEFAULT_MODERATION_STATE: ModerationState = {
+    blockedUserIds: [],
 };

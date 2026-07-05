@@ -367,6 +367,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                     onSendMessage={sendChatMessage}
                     currentPlayerId={myPlayerId || ''}
                     players={gameState.players}
+                    roomCode={roomCode}
                 />
 
                 <ConnectionBanner

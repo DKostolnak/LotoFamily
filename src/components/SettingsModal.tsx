@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Switch } from 'react-native';
 import { ModalShell, Section, ListRow, WoodenButton } from '@/components/common';
 import { useGameStore } from '@/lib/store';
-import { Volume2, VolumeX, Zap, Info, Check, BookOpen, Bell, Shield, FileText, Megaphone } from 'lucide-react-native';
+import { Volume2, VolumeX, Zap, Info, Check, BookOpen, Bell, Shield, FileText, Megaphone, UserX } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { ENV, TEXT_STYLES, SPACING } from '@/lib/config';
 import { translations, type Language } from '@/lib/i18n';
@@ -30,12 +30,14 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
         tutorialCompleted, setTutorialCompleted,
         notificationsEnabled, setNotificationsEnabled,
         announcerMode, setAnnouncerMode,
+        blockedUserIds, unblockUser,
     } = useGameStore();
 
     const t = translations[language];
 
     const [privacyVisible, setPrivacyVisible] = useState(false);
     const [termsVisible, setTermsVisible] = useState(false);
+    const [blockedVisible, setBlockedVisible] = useState(false);
 
     const handleToggleMute = (value: boolean) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -168,6 +170,18 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
                 />
             </Section>
 
+            <Section title={t.blockedPlayers}>
+                <ListRow
+                    icon={<UserX size={20} color="#ffd700" />}
+                    title={t.blockedPlayers}
+                    subtitle={String(blockedUserIds.length)}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setBlockedVisible(true);
+                    }}
+                />
+            </Section>
+
             <Section title={t.howToPlay}>
                 <ListRow
                     icon={<BookOpen size={20} color="#ffd700" />}
@@ -225,6 +239,39 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
                     }}
                 />
             </Section>
+        </ModalShell>
+
+        <ModalShell
+            visible={blockedVisible}
+            onClose={() => setBlockedVisible(false)}
+            title={t.blockedPlayers}
+            closeAccessibilityLabel={t.close}
+        >
+            {blockedUserIds.length === 0 ? (
+                <Text style={[TEXT_STYLES.body, { color: '#d4b896', textAlign: 'center' }]}>
+                    {t.blockedEmpty}
+                </Text>
+            ) : (
+                <View style={{ gap: SPACING.sm }}>
+                    {blockedUserIds.map((id) => (
+                        <ListRow
+                            key={id}
+                            icon={<UserX size={20} color="#d4b896" />}
+                            title={id}
+                            right={
+                                <WoodenButton
+                                    size="sm"
+                                    variant="secondary"
+                                    onPress={() => unblockUser(id)}
+                                    accessibilityLabel={t.unblockPlayer}
+                                >
+                                    {t.unblockPlayer}
+                                </WoodenButton>
+                            }
+                        />
+                    ))}
+                </View>
+            )}
         </ModalShell>
 
         <PrivacyPolicyModal visible={privacyVisible} onClose={() => setPrivacyVisible(false)} />

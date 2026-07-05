@@ -35,6 +35,7 @@ export const ANALYTICS_EVENTS = {
     SETTINGS_CHANGED: 'settings_changed',
     GIFT_SENT: 'gift_sent',
     GIFT_FAILED: 'gift_failed',
+    PLAYER_REPORTED: 'player_reported',
 } as const;
 
 export type AnalyticsEvent =
