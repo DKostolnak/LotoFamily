@@ -101,7 +101,7 @@ const SK_AD_NETWORK_ITEMS = [
 export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
     name: getAppName(),
-    slug: 'loto-bingo',
+    slug: 'lotogame',
     version: '1.0.0',
     scheme: 'loto-bingo',
     orientation: 'portrait',
@@ -130,7 +130,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     
     ios: {
         bundleIdentifier: getAppIdentifier(),
-        buildNumber: '1',
         supportsTablet: true,
         infoPlist: {
             ITSAppUsesNonExemptEncryption: false,
@@ -147,7 +146,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     
     android: {
         package: getAppIdentifier(),
-        versionCode: 1,
         adaptiveIcon: {
             foregroundImage: './assets/adaptive-icon.png',
             backgroundColor: '#1a1109',

@@ -68,6 +68,20 @@ export interface ProfileInsert {
 export type ProfileUpdate = Partial<Omit<ProfileRow, 'id' | 'created_at' | 'updated_at'>>;
 
 // ============================================================================
+// PUBLIC PROFILE — safe profile projection for leaderboard/friends
+// ============================================================================
+
+export interface PublicProfileRow {
+    id: string;
+    nickname: string;
+    avatar: string;
+    coins: number;
+    games_won: number;
+    tier: string;
+    updated_at: string;
+}
+
+// ============================================================================
 // GAME ROOM — stav hernej miestnosti
 // ============================================================================
 
@@ -80,6 +94,8 @@ export interface GameRoomRow {
     host_id: string;
     /** Aktuálna fáza hry */
     phase: 'lobby' | 'playing' | 'paused' | 'finished';
+    /** Whether the room is discoverable in public room lists */
+    is_public: boolean;
     /** JSON konfigurácia hry (GameSettings) */
     settings: Record<string, unknown>;
     /** JSON pole hráčov */
@@ -123,6 +139,45 @@ export interface ReportInsert {
 }
 
 // ============================================================================
+// FRIENDSHIPS — social graph
+// ============================================================================
+
+export interface FriendshipRow {
+    id: string;
+    requester_id: string;
+    addressee_id: string;
+    status: 'pending' | 'accepted';
+    created_at: string;
+}
+
+export interface FriendshipInsert {
+    requester_id: string;
+    addressee_id: string;
+    status?: 'pending' | 'accepted';
+}
+
+export type FriendshipUpdate = Partial<Pick<FriendshipRow, 'status'>>;
+
+// ============================================================================
+// SEASON PROGRESS — persisted Battle Pass state
+// ============================================================================
+
+export interface SeasonProgressRow {
+    user_id: string;
+    season_id: string;
+    season_xp: number;
+    season_level: number;
+    has_premium: boolean;
+    claimed_free: number[];
+    claimed_premium: number[];
+    created_at: string;
+    updated_at: string;
+}
+
+export type SeasonProgressInsert = Omit<SeasonProgressRow, 'created_at' | 'updated_at'>;
+export type SeasonProgressUpdate = Partial<Omit<SeasonProgressRow, 'user_id' | 'season_id' | 'created_at' | 'updated_at'>>;
+
+// ============================================================================
 // DATABASE — hlavný typ pre createClient<Database>()
 // ============================================================================
 
@@ -134,6 +189,11 @@ export interface Database {
                 Insert: ProfileInsert;
                 Update: ProfileUpdate;
             };
+            public_profiles: {
+                Row: PublicProfileRow;
+                Insert: never;
+                Update: never;
+            };
             game_rooms: {
                 Row: GameRoomRow;
                 Insert: Omit<GameRoomRow, 'id' | 'created_at'>;
@@ -143,6 +203,16 @@ export interface Database {
                 Row: ReportRow;
                 Insert: ReportInsert;
                 Update: never;
+            };
+            friendships: {
+                Row: FriendshipRow;
+                Insert: FriendshipInsert;
+                Update: FriendshipUpdate;
+            };
+            season_progress: {
+                Row: SeasonProgressRow;
+                Insert: SeasonProgressInsert;
+                Update: SeasonProgressUpdate;
             };
         };
         Views: {

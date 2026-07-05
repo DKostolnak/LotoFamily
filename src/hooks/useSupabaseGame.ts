@@ -87,6 +87,24 @@ function generateRoomCode(): string {
     return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
+function normalizeRoomCode(code: string | undefined): string | null {
+    const normalized = code?.toUpperCase().trim();
+    if (!normalized) return null;
+    return /^[A-Z0-9]{4,8}$/.test(normalized) ? normalized : null;
+}
+
+function isGameStatePayload(value: unknown): value is GameState {
+    if (!value || typeof value !== 'object') return false;
+    const state = value as Partial<GameState>;
+    return (
+        typeof state.roomCode === 'string' &&
+        typeof state.phase === 'string' &&
+        Array.isArray(state.players) &&
+        Array.isArray(state.calledNumbers) &&
+        Array.isArray(state.remainingNumbers)
+    );
+}
+
 // ============================================================================
 // HOOK
 // ============================================================================
@@ -146,6 +164,7 @@ export function useSupabaseGame(): UseSupabaseGameReturn {
     const setupListeners = useCallback((currentUserId: string) => {
         // Príjem kompletného stavu hry (clients dostávajú od hosta)
         const unsubState = realtimeService.on<GameState>('game:state', (state) => {
+            if (!isGameStatePayload(state)) return;
             setGameState(state);
             setStatus('connected');
         });
@@ -191,20 +210,47 @@ export function useSupabaseGame(): UseSupabaseGameReturn {
             }
         });
 
+        const applyHostMessage = (type: string, payload: unknown, senderId: string) => {
+            if (!isHostRef.current || !engineRef.current) return;
+            engineRef.current.handleMessage({
+                type,
+                payload,
+                senderId,
+                timestamp: Date.now(),
+            });
+            const newState = engineRef.current.getState();
+            if (newState) {
+                setGameState({ ...newState });
+                broadcastState(newState);
+            }
+        };
+
         // Príjem herných akcií (len host spracuje)
-        const unsubMarkCell = realtimeService.on<{ cardId: string; row: number; col: number; }>('game:state', () => {});
-        // Použijeme handleMessage pre game:markCell a game:claimWin
-        const unsubAction = realtimeService.on<{ type: string; payload: unknown }>('game:state', () => {});
+        const unsubMarkCell = realtimeService.on<{ cardId: string; row: number; col: number; }>(
+            'game:markCell',
+            (payload, senderId) => applyHostMessage('GAME:MARK_CELL', payload, senderId)
+        );
+        const unsubClaimWin = realtimeService.on<{ cardId: string }>(
+            'game:claimWin',
+            (payload, senderId) => applyHostMessage('GAME:CLAIM_WIN', payload, senderId)
+        );
+        const unsubClaimFlat = realtimeService.on<{ flatType: number }>(
+            'game:claimFlat',
+            (payload, senderId) => applyHostMessage('GAME:CLAIM_FLAT', payload, senderId)
+        );
 
         // Chat správy
-        const unsubChat = realtimeService.on<ChatMessage>('game:state', () => {});
+        const unsubChat = realtimeService.on<ChatMessage>('game:chat', (chatMsg) => {
+            setChatMessages(prev => [...prev.slice(-49), chatMsg]);
+        });
 
         return () => {
             unsubState();
             unsubJoined();
             unsubLeft();
             unsubMarkCell();
-            unsubAction();
+            unsubClaimWin();
+            unsubClaimFlat();
             unsubChat();
         };
     }, [broadcastState]);
@@ -231,7 +277,7 @@ export function useSupabaseGame(): UseSupabaseGameReturn {
         setError(null);
 
         try {
-            const code = generateRoomCode();
+            const code = normalizeRoomCode(settings?.customRoomCode) ?? generateRoomCode();
             isHostRef.current = true;
 
             // Inicializuj LotoGameModule
@@ -255,6 +301,7 @@ export function useSupabaseGame(): UseSupabaseGameReturn {
                 room_code: code,
                 host_id: userId,
                 phase: 'lobby',
+                is_public: settings?.isPublic !== false,
                 settings: settings ?? {},
                 players: [],
                 called_numbers: [],
@@ -277,7 +324,7 @@ export function useSupabaseGame(): UseSupabaseGameReturn {
             setError(msg);
             setStatus('error');
         }
-    }, [myPlayerId, setupListeners]);
+    }, [myPlayerId, setupListeners, broadcastState]);
 
     // =========================================================================
     // JOIN ROOM (Client)
@@ -389,11 +436,7 @@ export function useSupabaseGame(): UseSupabaseGameReturn {
             broadcastState(newState);
         } else {
             // Client posiela hostu
-            realtimeService.broadcast('game:state', {
-                _action: 'GAME:MARK_CELL',
-                cardId, row, col,
-                senderId: myPlayerId,
-            });
+            realtimeService.broadcast('game:markCell', { cardId, row, col });
         }
     }, [myPlayerId, broadcastState]);
 
@@ -409,25 +452,24 @@ export function useSupabaseGame(): UseSupabaseGameReturn {
             setGameState({ ...newState });
             broadcastState(newState);
         } else {
-            realtimeService.broadcast('game:state', {
-                _action: 'GAME:CLAIM_WIN',
-                cardId,
-                senderId: myPlayerId,
-            });
+            realtimeService.broadcast('game:claimWin', { cardId });
         }
     }, [myPlayerId, broadcastState]);
 
     const claimFlat = useCallback((flatType: number) => {
-        if (!isHostRef.current || !engineRef.current) return;
-        engineRef.current.handleMessage({
-            type: 'GAME:CLAIM_FLAT',
-            payload: { flatType },
-            senderId: myPlayerId!,
-            timestamp: Date.now(),
-        });
-        const newState = engineRef.current.getState()!;
-        setGameState({ ...newState });
-        broadcastState(newState);
+        if (isHostRef.current && engineRef.current) {
+            engineRef.current.handleMessage({
+                type: 'GAME:CLAIM_FLAT',
+                payload: { flatType },
+                senderId: myPlayerId!,
+                timestamp: Date.now(),
+            });
+            const newState = engineRef.current.getState()!;
+            setGameState({ ...newState });
+            broadcastState(newState);
+        } else {
+            realtimeService.broadcast('game:claimFlat', { flatType });
+        }
     }, [myPlayerId, broadcastState]);
 
     const pauseGame = useCallback(() => {
@@ -463,7 +505,7 @@ export function useSupabaseGame(): UseSupabaseGameReturn {
             timestamp: Date.now(),
         };
         setChatMessages(prev => [...prev.slice(-49), chatMsg]);
-        realtimeService.broadcast('game:state', { _chat: chatMsg });
+        realtimeService.broadcast('game:chat', chatMsg);
     }, [myPlayerId, gameState]);
 
     const connect = useCallback(() => {}, []);

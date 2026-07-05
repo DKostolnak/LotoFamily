@@ -7,7 +7,7 @@
  * Vzory ktoré sa tu naučíš:
  *   1. upsert() — vlož alebo aktualizuj v jednom volaní
  *   2. RLS (Row Level Security) — každý user vidí len svoje dáta
- *   3. .single() — vráti jeden objekt namiesto poľa
+ *   3. .single() / .maybeSingle() — vráti jeden objekt namiesto poľa
  *   4. select() s explicitnými stĺpcami — efektívnejšie ako SELECT *
  */
 
@@ -101,13 +101,13 @@ export async function fetchProfile(userId: string): Promise<NormalizedProfile | 
     const { data, error } = await profileTable()
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
     if (error) {
-        // PGRST116 = "no rows returned" — profil ešte neexistuje
-        if (error.code === 'PGRST116') return null;
         throw new Error(`[SupabaseProfile] Fetch failed: ${error.message}`);
     }
+
+    if (!data) return null;
 
     return normalizeProfile(data);
 }
@@ -331,13 +331,14 @@ export async function fetchSeasonProgress(
         .select('*')
         .eq('user_id', userId)
         .eq('season_id', seasonId)
-        .single();
+        .maybeSingle();
 
     if (error) {
-        if (error.code === 'PGRST116') return null; // no rows
         console.warn('[SupabaseProfile] fetchSeasonProgress failed:', error.message);
         return null;
     }
+
+    if (!data) return null;
 
     return data as SeasonProgressRow;
 }

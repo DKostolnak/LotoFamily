@@ -14,9 +14,10 @@ import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import { WoodenCard, HeroCTAButton } from '@/components/common';
 import { PlayerList } from './PlayerList';
+import { FriendsModal } from './FriendsModal';
 import { Player } from '@/lib/types';
 import { ChatMessage } from '@/lib/types';
-import { Copy, Share2, Clock } from 'lucide-react-native';
+import { Copy, Share2, Clock, Users } from 'lucide-react-native';
 import type { TranslationKeys } from '@/lib/i18n';
 import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
 
@@ -29,6 +30,7 @@ interface WaitingLobbyProps {
     onLeave: () => void;
     chatMessages?: ChatMessage[];
     onSendMessage?: (msg: string) => void;
+    enableFriends?: boolean;
     t: TranslationKeys;
 }
 
@@ -39,9 +41,11 @@ export const WaitingLobby = memo(({
     isHost,
     onStart,
     onLeave,
+    enableFriends = false,
     t,
 }: WaitingLobbyProps) => {
     const [copied, setCopied] = useState(false);
+    const [friendsOpen, setFriendsOpen] = useState(false);
 
     // Non-host waiting card — gentle breathing pulse so the layout doesn't
     // feel collapsed compared to the host's hero CTA.
@@ -168,31 +172,58 @@ export const WaitingLobby = memo(({
                         </View>
                     </TouchableOpacity>
 
-                    {/* Share invite as wooden pill chip */}
-                    <TouchableOpacity
-                        onPress={handleShare}
-                        accessibilityRole="button"
-                        accessibilityLabel={t.share ?? 'Share'}
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: SPACING.sm,
-                            marginTop: SPACING.md,
-                            paddingVertical: SPACING.sm,
-                            paddingHorizontal: SPACING.lg,
-                            borderRadius: RADII.pill,
-                            borderWidth: 1,
-                            borderColor: 'rgba(255, 215, 0, 0.4)',
-                            backgroundColor: 'rgba(255, 215, 0, 0.06)',
-                            minHeight: 40,
-                        }}
-                        hitSlop={8}
-                    >
-                        <Share2 size={14} color="#ffd700" />
-                        <Text style={[TEXT_STYLES.button, { color: '#ffd700', fontSize: 12 }]}>
-                            {(t as any).shareInvite ?? t.share ?? 'SHARE INVITE'}
-                        </Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.md, justifyContent: 'center' }}>
+                        {/* Share invite as wooden pill chip */}
+                        <TouchableOpacity
+                            onPress={handleShare}
+                            accessibilityRole="button"
+                            accessibilityLabel={t.share ?? 'Share'}
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: SPACING.sm,
+                                paddingVertical: SPACING.sm,
+                                paddingHorizontal: SPACING.lg,
+                                borderRadius: RADII.pill,
+                                borderWidth: 1,
+                                borderColor: 'rgba(255, 215, 0, 0.4)',
+                                backgroundColor: 'rgba(255, 215, 0, 0.06)',
+                                minHeight: 44,
+                            }}
+                            hitSlop={8}
+                        >
+                            <Share2 size={14} color="#ffd700" />
+                            <Text style={[TEXT_STYLES.button, { color: '#ffd700', fontSize: 12 }]} maxFontSizeMultiplier={1.2}>
+                                {(t as any).shareInvite ?? t.share ?? 'SHARE INVITE'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        {enableFriends ? (
+                            <TouchableOpacity
+                                onPress={() => setFriendsOpen(true)}
+                                accessibilityRole="button"
+                                accessibilityLabel={t.friendsTitle}
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: SPACING.sm,
+                                    paddingVertical: SPACING.sm,
+                                    paddingHorizontal: SPACING.lg,
+                                    borderRadius: RADII.pill,
+                                    borderWidth: 1,
+                                    borderColor: 'rgba(255, 215, 0, 0.4)',
+                                    backgroundColor: 'rgba(255, 215, 0, 0.06)',
+                                    minHeight: 44,
+                                }}
+                                hitSlop={8}
+                            >
+                                <Users size={14} color="#ffd700" />
+                                <Text style={[TEXT_STYLES.button, { color: '#ffd700', fontSize: 12 }]} maxFontSizeMultiplier={1.2}>
+                                    {t.friendsTitle}
+                                </Text>
+                            </TouchableOpacity>
+                        ) : null}
+                    </View>
                 </View>
 
                 {/* Players Roster */}
@@ -243,6 +274,7 @@ export const WaitingLobby = memo(({
                                 players={players}
                                 currentPlayerId={currentPlayerId}
                                 roomCode={roomCode}
+                                showFriendActions={enableFriends}
                             />
                             {players.length === 0 && (
                                 <View style={{ paddingVertical: SPACING.xxl, alignItems: 'center' }}>
@@ -259,6 +291,14 @@ export const WaitingLobby = memo(({
                         </ScrollView>
                     </View>
                 </View>
+
+                {enableFriends ? (
+                    <FriendsModal
+                        visible={friendsOpen}
+                        onClose={() => setFriendsOpen(false)}
+                        roomCode={roomCode}
+                    />
+                ) : null}
 
                 {/* Action — Hero CTA */}
                 <View style={{ width: '100%', marginTop: SPACING.xl }}>
