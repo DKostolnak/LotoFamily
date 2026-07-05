@@ -46,6 +46,10 @@ export const translations: Record<Language, TranslationKeys> = {
 
         // Card Progress
         cardFull: 'FULL!', numbersLeft: 'left', almostThere: 'Almost there!', progress: 'Progress',
+        opponentsLabel: 'Opponents',
+        opponentNumbersLeft: '{n} left',
+        opponentCardsTitle: "{name}'s cards",
+        opponentChipAccessibility: '{name}, {n} numbers left, tap to view cards',
 
         // Winner Screen
         victory: 'Victory!', gameOver: 'Game Over', youWon: 'You won the Loto!',
@@ -370,6 +374,10 @@ export const translations: Record<Language, TranslationKeys> = {
 
         // Card Progress
         cardFull: 'PLNÉ!', numbersLeft: 'zostáva', almostThere: 'Už skoro!', progress: 'Pokrok',
+        opponentsLabel: 'Súperi',
+        opponentNumbersLeft: 'Zostáva {n}',
+        opponentCardsTitle: 'Karty hráča {name}',
+        opponentChipAccessibility: '{name}, zostáva {n} čísel, ťuknutím zobrazíte karty',
 
         // Winner Screen
         victory: 'Víťazstvo!', gameOver: 'Koniec hry', youWon: 'Vyhrali ste Loto!',
@@ -694,6 +702,10 @@ export const translations: Record<Language, TranslationKeys> = {
 
         // Card Progress
         cardFull: 'ГОТОВО!', numbersLeft: 'осталось', almostThere: 'Почти готово!', progress: 'Прогресс',
+        opponentsLabel: 'Соперники',
+        opponentNumbersLeft: 'Осталось {n}',
+        opponentCardsTitle: 'Карты игрока {name}',
+        opponentChipAccessibility: '{name}, осталось {n} чисел, нажмите, чтобы посмотреть карты',
 
         // Winner Screen
         victory: 'Победа!', gameOver: 'Игра окончена', youWon: 'Вы выиграли Лото!',
@@ -1018,6 +1030,10 @@ export const translations: Record<Language, TranslationKeys> = {
 
         // Card Progress
         cardFull: 'ГОТОВО!', numbersLeft: 'залишилось', almostThere: 'Майже готово!', progress: 'Прогрес',
+        opponentsLabel: 'Суперники',
+        opponentNumbersLeft: 'Залишилось {n}',
+        opponentCardsTitle: 'Картки гравця {name}',
+        opponentChipAccessibility: '{name}, залишилось {n} чисел, торкніться, щоб переглянути картки',
 
         // Winner Screen
         victory: 'Перемога!', gameOver: 'Гра закінчена', youWon: 'Ви виграли Лото!',

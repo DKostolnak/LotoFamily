@@ -3,8 +3,8 @@
  * (migrated from Socket.io — useSupabaseGame má rovnaký interface)
  */
 
-import React, { useEffect, useState, useMemo } from 'react';
-import { View, ImageBackground, StatusBar, TouchableOpacity, Text, ActivityIndicator, ScrollView } from 'react-native';
+import React, { memo, useCallback, useEffect, useState, useMemo } from 'react';
+import { View, ImageBackground, StatusBar, TouchableOpacity, Text, ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useGameStore } from '@/lib/store';
@@ -14,7 +14,7 @@ import { useSupabaseGame } from '@/hooks/useSupabaseGame';
 import { WaitingLobby } from '@/components/WaitingLobby';
 import { LotoCard } from '@/components/LotoCard';
 import { GameHeader } from '@/components/GameHeader';
-import { WoodenButton, ErrorView, ConnectionBanner, PowerUpBar } from '@/components/common';
+import { WoodenButton, ErrorView, ConnectionBanner, PowerUpBar, ModalShell } from '@/components/common';
 import { useToast } from '@/components/ToastProvider';
 import { adsService, AD_PLACEMENTS } from '@/lib/services/ads';
 import type { PowerUpInventory } from '@/lib/store/types';
@@ -22,7 +22,9 @@ import { ChatOverlay } from '@/components/ChatOverlay';
 import { WinnerModal } from '@/components/WinnerModal';
 import GamePausedOverlay from '@/components/GamePausedOverlay';
 import GameStatusListener from '@/components/GameStatusListener';
-import { TEXT_STYLES, SPACING, RADII } from '@/lib/config';
+import { TEXT_STYLES, SPACING, RADII, FONT_WEIGHTS } from '@/lib/config';
+import { getOpponentProgress, type OpponentProgress } from './opponentProgress';
+import type { TranslationKeys } from '@/lib/i18n';
 
 const WOOD_TEXTURE = require('../../../assets/wood-seamless.png');
 
@@ -32,6 +34,80 @@ interface OnlineGameProps {
     isPublic?: boolean;
     crazyMode?: boolean;
 }
+
+interface OpponentProgressStripProps {
+    opponents: OpponentProgress[];
+    t: TranslationKeys;
+    onSelect: (opponent: OpponentProgress) => void;
+}
+
+const formatTemplate = (template: string, values: Record<string, string>) =>
+    Object.entries(values).reduce((text, [key, value]) => text.replace(`{${key}}`, value), template);
+
+const OpponentProgressStrip = memo(({ opponents, t, onSelect }: OpponentProgressStripProps) => {
+    if (opponents.length === 0) return null;
+
+    return (
+        <View style={styles.opponentsStrip}>
+            <Text style={[TEXT_STYLES.captionUpper, styles.opponentsLabel]} maxFontSizeMultiplier={1.2}>
+                {t.opponentsLabel}
+            </Text>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.opponentsScrollContent}
+            >
+                {opponents.map(opponent => {
+                    const { player, numbersLeft, isUrgent } = opponent;
+                    const numbersLeftText = formatTemplate(t.opponentNumbersLeft, { n: String(numbersLeft) });
+                    const accessibilityLabel = formatTemplate(t.opponentChipAccessibility, {
+                        name: player.name,
+                        n: String(numbersLeft),
+                    });
+
+                    return (
+                        <TouchableOpacity
+                            key={player.id}
+                            onPress={() => onSelect(opponent)}
+                            activeOpacity={0.85}
+                            accessibilityRole="button"
+                            accessibilityLabel={accessibilityLabel}
+                            style={[
+                                styles.opponentChip,
+                                isUrgent ? styles.opponentChipUrgent : null,
+                            ]}
+                        >
+                            <Text style={styles.opponentAvatar} maxFontSizeMultiplier={1.2}>
+                                {player.avatar}
+                            </Text>
+                            <Text
+                                style={[TEXT_STYLES.bodySmall, styles.opponentName]}
+                                numberOfLines={1}
+                                maxFontSizeMultiplier={1.2}
+                            >
+                                {player.name}
+                            </Text>
+                            <View style={[styles.opponentBadge, isUrgent ? styles.opponentBadgeUrgent : null]}>
+                                <Text
+                                    style={[
+                                        TEXT_STYLES.caption,
+                                        styles.opponentBadgeText,
+                                        isUrgent ? styles.opponentBadgeTextUrgent : null,
+                                    ]}
+                                    numberOfLines={1}
+                                    maxFontSizeMultiplier={1.2}
+                                >
+                                    {numbersLeftText}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    );
+                })}
+            </ScrollView>
+        </View>
+    );
+});
+OpponentProgressStrip.displayName = 'OpponentProgressStrip';
 
 export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode = false }: OnlineGameProps) => {
     const router = useRouter();
@@ -69,6 +145,7 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
 
     const [hasJoined, setHasJoined] = useState(false);
     const [showWinner, setShowWinner] = useState(false);
+    const [selectedOpponentId, setSelectedOpponentId] = useState<string | null>(null);
 
     // Connection banner — zobrazí stav Supabase Realtime pripojenia
     const connBannerMessage = useMemo(() => {
@@ -168,6 +245,16 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
     );
 
     const myCards = useMemo(() => myPlayer?.cards ?? [], [myPlayer]);
+
+    const opponentProgress = useMemo(() =>
+        getOpponentProgress(gameState?.players ?? [], myPlayerId),
+        [gameState?.players, myPlayerId]
+    );
+
+    const selectedOpponent = useMemo(() =>
+        opponentProgress.find(opponent => opponent.player.id === selectedOpponentId),
+        [opponentProgress, selectedOpponentId]
+    );
 
     const totalNumbers = useMemo(() => myCards.reduce((sum, card) => {
         return sum + card.grid.flat().filter(c => c.value !== null).length;
@@ -281,6 +368,15 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
             // Client waits
         }
     };
+
+    const handleSelectOpponent = useCallback((opponent: OpponentProgress) => {
+        haptics.impactLight();
+        setSelectedOpponentId(opponent.player.id);
+    }, [haptics]);
+
+    const handleCloseOpponentCards = useCallback(() => {
+        setSelectedOpponentId(null);
+    }, []);
 
     // ========================================================================
     // RENDER
@@ -514,6 +610,12 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                     a11yWatchAdLabel={t.watchAdForPowerUp}
                 />
 
+                <OpponentProgressStrip
+                    opponents={opponentProgress}
+                    t={t}
+                    onSelect={handleSelectOpponent}
+                />
+
                 {/* Cards Container — scrolls on short screens (iPhone SE), caps
                     card width on tablets so cells keep a sane tap size. */}
                 <ScrollView
@@ -594,7 +696,99 @@ export const OnlineGame = ({ mode, initialRoomCode, isPublic = true, crazyMode =
                     onClose={() => setShowWinner(false)}
                     onPlayAgain={isHost ? handlePlayAgain : undefined}
                 />
+
+                <ModalShell
+                    visible={!!selectedOpponent}
+                    onClose={handleCloseOpponentCards}
+                    title={selectedOpponent
+                        ? `${selectedOpponent.player.avatar} ${formatTemplate(t.opponentCardsTitle, { name: selectedOpponent.player.name })}`
+                        : undefined}
+                    maxWidth={640}
+                    closeAccessibilityLabel={t.close}
+                    contentStyle={styles.opponentCardsModalContent}
+                >
+                    {selectedOpponent?.player.cards.map(card => (
+                        <LotoCard
+                            key={card.id}
+                            card={card}
+                            calledNumbers={calledNumbers}
+                            t={t}
+                            compact
+                            showHeader
+                            activeSkin={selectedOpponent.player.activeSkin}
+                            style={{ width: '100%', maxWidth: 560 }}
+                        />
+                    ))}
+                </ModalShell>
             </View>
         </ImageBackground>
     );
 };
+
+const styles = StyleSheet.create({
+    opponentsStrip: {
+        backgroundColor: 'rgba(45, 31, 16, 0.92)',
+        borderBottomWidth: 1,
+        borderBottomColor: '#5a4025',
+        paddingVertical: SPACING.sm,
+        gap: SPACING.xs,
+    },
+    opponentsLabel: {
+        color: '#d4b896',
+        paddingHorizontal: SPACING.lg,
+    },
+    opponentsScrollContent: {
+        paddingHorizontal: SPACING.lg,
+        gap: SPACING.sm,
+    },
+    opponentChip: {
+        minHeight: 44,
+        maxWidth: 190,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: SPACING.sm,
+        paddingVertical: SPACING.xs,
+        paddingHorizontal: SPACING.sm,
+        borderRadius: RADII.md,
+        borderWidth: 1,
+        borderColor: '#5a4025',
+        backgroundColor: '#3d2814',
+    },
+    opponentChipUrgent: {
+        borderColor: '#ef4444',
+    },
+    opponentAvatar: {
+        fontSize: 22,
+        width: 28,
+        textAlign: 'center',
+    },
+    opponentName: {
+        color: '#f5e6c8',
+        flexShrink: 1,
+        maxWidth: 72,
+        minWidth: 0,
+    },
+    opponentBadge: {
+        minHeight: 24,
+        justifyContent: 'center',
+        paddingHorizontal: SPACING.sm,
+        borderRadius: RADII.pill,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 215, 0, 0.55)',
+        backgroundColor: 'rgba(26, 17, 9, 0.72)',
+    },
+    opponentBadgeUrgent: {
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239, 68, 68, 0.16)',
+    },
+    opponentBadgeText: {
+        color: '#ffd700',
+        fontWeight: FONT_WEIGHTS.bold,
+    },
+    opponentBadgeTextUrgent: {
+        color: '#ef4444',
+    },
+    opponentCardsModalContent: {
+        alignItems: 'center',
+    },
+});

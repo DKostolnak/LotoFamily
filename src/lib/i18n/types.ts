@@ -86,6 +86,10 @@ export interface TranslationKeys {
     numbersLeft: string;
     almostThere: string;
     progress: string;
+    opponentsLabel: string;
+    opponentNumbersLeft: string;
+    opponentCardsTitle: string;
+    opponentChipAccessibility: string;
 
     // Winner Screen
     victory: string;
