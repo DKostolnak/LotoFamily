@@ -12,7 +12,7 @@ import { WaitingLobby } from '@/components/WaitingLobby';
 import { LotoCard } from '@/components/LotoCard';
 import { GameHeader } from '@/components/GameHeader';
 import GamePausedOverlay from '@/components/GamePausedOverlay';
-import { WoodenButton, TutorialOverlay, type TutorialStep, PowerUpBar } from '@/components/common';
+import { TutorialOverlay, type TutorialStep, PowerUpBar, GameProgressBar, BingoButton } from '@/components/common';
 import { useToast } from '@/components/ToastProvider';
 import { adsService, AD_PLACEMENTS } from '@/lib/services/ads';
 import type { PowerUpInventory } from '@/lib/store/types';
@@ -337,7 +337,7 @@ export const OfflineGame = () => {
     // Loading state - while local game is being created
     if (!gameState) {
         return (
-            <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
+            <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} imageStyle={{ width: '100%', height: '100%' }} resizeMode="repeat">
                 <StatusBar barStyle="light-content" />
                 <View className="absolute inset-0 bg-black/40" pointerEvents="none" />
                 <View
@@ -358,7 +358,7 @@ export const OfflineGame = () => {
 
     if (isLobby || phase === 'idle') {
         return (
-            <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
+            <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} imageStyle={{ width: '100%', height: '100%' }} resizeMode="repeat">
                 <StatusBar barStyle="light-content" />
                 <View className="absolute inset-0 bg-black/30" pointerEvents="none" />
                 <SafeAreaView className="flex-1">
@@ -381,7 +381,7 @@ export const OfflineGame = () => {
     // ========================================================================
 
     return (
-        <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
+        <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} imageStyle={{ width: '100%', height: '100%' }} resizeMode="repeat">
             <StatusBar barStyle="light-content" />
             <View className="absolute inset-0 bg-black/30" pointerEvents="none" />
 
@@ -457,25 +457,7 @@ export const OfflineGame = () => {
                                     {markedNumbers}/{totalNumbers}
                                 </Text>
                             </View>
-                            <View
-                                style={{
-                                    height: 8,
-                                    width: '100%',
-                                    backgroundColor: 'rgba(0,0,0,0.4)',
-                                    borderRadius: RADII.pill,
-                                    overflow: 'hidden',
-                                    borderWidth: 1,
-                                    borderColor: 'rgba(90, 64, 37, 0.3)',
-                                }}
-                            >
-                                <View
-                                    style={{
-                                        height: '100%',
-                                        width: `${progressPercent}%`,
-                                        backgroundColor: '#4ade80',
-                                    }}
-                                />
-                            </View>
+                            <GameProgressBar percent={progressPercent} />
                         </View>
                     </View>
 
@@ -570,14 +552,10 @@ export const OfflineGame = () => {
                             bottom: Math.max(SPACING.xl, insets.bottom + SPACING.xl),
                         }}
                     >
-                        <WoodenButton
+                        <BingoButton
                             onPress={handleClaimBingo}
-                            variant="gold"
-                            size="lg"
-                            accessibilityLabel="BINGO"
-                        >
-                            {t.claimBingo ?? 'BINGO!'}
-                        </WoodenButton>
+                            label={t.claimBingo ?? 'BINGO!'}
+                        />
                     </View>
                 )}
 

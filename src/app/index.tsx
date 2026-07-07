@@ -51,6 +51,9 @@ import Animated, {
     withSpring,
     withTiming,
     withDelay,
+    withRepeat,
+    withSequence,
+    cancelAnimation,
     interpolate,
     Easing,
 } from 'react-native-reanimated';
@@ -106,17 +109,30 @@ export default function MainMenu() {
     const profileSlide = useSharedValue(40);
     const buttonsSlide = useSharedValue(60);
     const footerOpacity = useSharedValue(0);
+    const diceFloat = useSharedValue(0);
 
     useEffect(() => {
         initialize();
         analytics.logScreenView('main_menu');
 
-        // Smooth entrance animations (no infinite loops — battery-friendly)
+        // Smooth entrance animations
         logoScale.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) });
         profileSlide.value = withDelay(100, withTiming(0, { duration: 500, easing: Easing.out(Easing.cubic) }));
         buttonsSlide.value = withDelay(200, withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) }));
         footerOpacity.value = withDelay(400, withTiming(1, { duration: 500 }));
-    }, [initialize, logoScale, profileSlide, buttonsSlide, footerOpacity]);
+        // Gentle idle float on the dice — slow single transform loop
+        diceFloat.value = withDelay(
+            800,
+            withRepeat(
+                withSequence(
+                    withTiming(-6, { duration: 1700, easing: Easing.inOut(Easing.sin) }),
+                    withTiming(0, { duration: 1700, easing: Easing.inOut(Easing.sin) })
+                ),
+                -1
+            )
+        );
+        return () => cancelAnimation(diceFloat);
+    }, [initialize, logoScale, profileSlide, buttonsSlide, footerOpacity, diceFloat]);
 
     useEffect(() => {
         if (playerName) setLocalName(playerName);
@@ -241,6 +257,13 @@ export default function MainMenu() {
         opacity: footerOpacity.value,
     }));
 
+    const diceAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: diceFloat.value },
+            { rotate: `${diceFloat.value * -0.8}deg` },
+        ],
+    }));
+
     const handleCreate = () => {
         if (localName.length < 2) {
             Alert.alert('Error', t.nameError);
@@ -315,7 +338,25 @@ export default function MainMenu() {
                     },
                 ]}
             >
-                <Text style={{ fontSize: 48, lineHeight: 56 }}>🎲</Text>
+                {/* Soft gold aura behind the logo block */}
+                <View
+                    pointerEvents="none"
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        width: 220,
+                        height: 160,
+                        borderRadius: 110,
+                        backgroundColor: 'rgba(255, 215, 0, 0.07)',
+                        shadowColor: '#ffd700',
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: 0.5,
+                        shadowRadius: 40,
+                    }}
+                />
+                <Animated.Text style={[diceAnimatedStyle, { fontSize: 48, lineHeight: 56 }]}>
+                    🎲
+                </Animated.Text>
                 <Text
                     style={[
                         TEXT_STYLES.display,
@@ -700,7 +741,7 @@ export default function MainMenu() {
     );
 
     return (
-        <WoodBackground useFolkPattern={true} overlayOpacity={0.5}>
+        <WoodBackground warmGlow overlayOpacity={0.42}>
 
             {isLoading ? (
                 <View style={{ paddingTop: insets.top + SPACING.xl }}>

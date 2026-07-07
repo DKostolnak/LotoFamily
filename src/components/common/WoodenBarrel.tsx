@@ -10,6 +10,7 @@ import Animated, {
     cancelAnimation,
     Easing,
     runOnJS,
+    type SharedValue,
 } from 'react-native-reanimated';
 import { TEXT_STYLES, FONT_WEIGHTS } from '@/lib/config';
 import { audioService } from '@/lib/services/audio';
@@ -33,6 +34,35 @@ const SIZE_PT: Record<WoodenBarrelSize, number> = {
     sm: 64,
     md: 96,
     lg: 132,
+};
+
+// Sparkle burst geometry — fixed angles (degrees) fanned around the barrel.
+const SPARKLE_ANGLES = [-155, -115, -75, -35, 15, 195] as const;
+
+/** One gold spark flying outward from the barrel center on each call. */
+const Sparkle = ({
+    progress,
+    angleDeg,
+    distance,
+}: {
+    progress: SharedValue<number>;
+    angleDeg: number;
+    distance: number;
+}) => {
+    const rad = (angleDeg * Math.PI) / 180;
+    const dx = Math.cos(rad) * distance;
+    const dy = Math.sin(rad) * distance;
+
+    const style = useAnimatedStyle(() => ({
+        opacity: progress.value === 0 ? 0 : Math.max(0, 1 - progress.value),
+        transform: [
+            { translateX: dx * progress.value },
+            { translateY: dy * progress.value },
+            { scale: 1.1 - progress.value * 0.7 },
+        ],
+    }));
+
+    return <Animated.View pointerEvents="none" style={[styles.sparkle, style]} />;
 };
 
 /**
@@ -61,6 +91,7 @@ const WoodenBarrelComponent = ({
     const numberOpacity = useSharedValue(number !== null ? 1 : 0);
     const numberTilt = useSharedValue(0);
     const glowOpacity = useSharedValue(0);
+    const sparkleProgress = useSharedValue(0);
 
     // Roll animation triggered by rollKey change.
     useEffect(() => {
@@ -101,6 +132,13 @@ const WoodenBarrelComponent = ({
             withTiming(0.85, { duration: 180, easing: Easing.out(Easing.cubic) }),
             withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) })
         );
+
+        // Sparkle burst — gold sparks fly out and fade
+        sparkleProgress.value = 0;
+        sparkleProgress.value = withDelay(
+            60,
+            withTiming(1, { duration: 620, easing: Easing.out(Easing.cubic) })
+        );
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rollKey]);
 
@@ -119,8 +157,9 @@ const WoodenBarrelComponent = ({
             cancelAnimation(numberOpacity);
             cancelAnimation(numberTilt);
             cancelAnimation(glowOpacity);
+            cancelAnimation(sparkleProgress);
         };
-    }, [scale, numberOpacity, numberTilt, glowOpacity]);
+    }, [scale, numberOpacity, numberTilt, glowOpacity, sparkleProgress]);
 
     const barrelStyle = useAnimatedStyle(() => ({
         transform: [{ scale: scale.value }],
@@ -152,19 +191,46 @@ const WoodenBarrelComponent = ({
                     : 'Wooden barrel — waiting for next number'
             }
         >
-            {/* Glow halo behind barrel (entrance flash) */}
+            {/* Glow halo behind barrel (entrance flash) — a circle behind the
+                barrel belly, not a rounded rectangle around the whole box. */}
             <Animated.View
                 pointerEvents="none"
                 style={[
                     styles.glow,
                     {
-                        width: width + 24,
-                        height: height + 24,
-                        borderRadius: (width + 24) / 2,
+                        width: width * 0.95,
+                        height: width * 0.95,
+                        borderRadius: (width * 0.95) / 2,
                     },
                     glowStyle,
                 ]}
             />
+
+            {/* Elliptical ground shadow under the barrel — replaces the old
+                rectangular container shadow that drew a visible box around
+                the transparent PNG. */}
+            <View
+                pointerEvents="none"
+                style={[
+                    styles.groundShadow,
+                    {
+                        width: width * 0.72,
+                        height: width * 0.16,
+                        borderRadius: width * 0.36,
+                        bottom: height * 0.02,
+                    },
+                ]}
+            />
+
+            {/* Sparkle burst on each new call */}
+            {SPARKLE_ANGLES.map((angle) => (
+                <Sparkle
+                    key={angle}
+                    progress={sparkleProgress}
+                    angleDeg={angle}
+                    distance={width * 0.75}
+                />
+            ))}
 
             {/* Barrel image and content container */}
             <Animated.View
@@ -226,14 +292,20 @@ const styles = StyleSheet.create({
         shadowOpacity: 1,
         shadowRadius: 28,
     },
+    groundShadow: {
+        position: 'absolute',
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 6,
+    },
+    // No shadow/elevation here: the container is a rectangle around a
+    // transparent PNG, so any box shadow renders as a visible square frame
+    // (web box-shadow, Android elevation). Depth comes from groundShadow.
     barrel: {
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.55,
-        shadowRadius: 8,
-        elevation: 10,
     },
     barrelImage: {
         position: 'absolute',
@@ -250,5 +322,16 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0, 0, 0, 0.85)',
         textShadowOffset: { width: 1, height: 2 },
         textShadowRadius: 4,
+    },
+    sparkle: {
+        position: 'absolute',
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#ffd700',
+        shadowColor: '#ffd700',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1,
+        shadowRadius: 6,
     },
 });

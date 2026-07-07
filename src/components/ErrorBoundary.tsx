@@ -93,7 +93,7 @@ export class ErrorBoundary extends Component<Props, State> {
             const t = translations[language] ?? translations.en;
 
             return (
-                <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} resizeMode="repeat">
+                <ImageBackground source={WOOD_TEXTURE} style={{ flex: 1 }} imageStyle={{ width: '100%', height: '100%' }} resizeMode="repeat">
                     <View className="flex-1 bg-black/60 justify-center items-center p-6">
                         <WoodenCard className="w-full max-w-sm">
                             <View className="items-center py-6">

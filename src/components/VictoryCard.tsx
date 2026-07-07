@@ -25,7 +25,7 @@ export const VictoryCard = ({ playerName, playerAvatar, prize, level, date }: Vi
             accessibilityRole="image"
             accessibilityLabel={`Victory card for ${playerName} — ${prize.toLocaleString()} coins prize`}
         >
-            <ImageBackground source={WOOD_TEXTURE} style={styles.card} resizeMode="repeat">
+            <ImageBackground source={WOOD_TEXTURE} style={styles.card} imageStyle={{ width: '100%', height: '100%' }} resizeMode="repeat">
                 <View style={styles.overlay} />
 
                 {/* Border Frame */}

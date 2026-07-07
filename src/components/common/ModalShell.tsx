@@ -89,7 +89,7 @@ export function ModalShell({
             <ImageBackground
                 source={WOOD_TEXTURE}
                 resizeMode="repeat"
-                imageStyle={{ opacity: 0.18, borderRadius: RADII.lg }}
+                imageStyle={{ opacity: 0.18, borderRadius: RADII.lg, width: '100%', height: '100%' }}
                 style={[
                     styles.shell,
                     {
