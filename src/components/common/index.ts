@@ -29,4 +29,6 @@ export * from './SeasonPassChip';
 export * from './WoodenBarrel';
 export * from './ChipMarker';
 export * from './HeroCTAButton';
+export * from './GameProgressBar';
+export * from './BingoButton';
 

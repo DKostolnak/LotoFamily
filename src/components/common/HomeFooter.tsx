@@ -49,13 +49,14 @@ export function HomeFooter({
             style={{
                 flexDirection: 'row',
                 alignItems: 'stretch',
-                paddingHorizontal: SPACING.md,
+                // Minimal chrome padding — every point goes to the 5 label slots
+                // so long SK/UK labels don't ellipsize on narrow phones.
+                paddingHorizontal: SPACING.xs,
                 paddingTop: SPACING.sm,
                 paddingBottom: Math.max(SPACING.sm, bottomInset),
                 backgroundColor: 'rgba(18, 12, 6, 0.92)',
                 borderTopWidth: 1,
                 borderTopColor: 'rgba(90, 64, 37, 0.35)',
-                gap: SPACING.xs,
             }}
         >
             {items.map((item) => {
@@ -115,12 +116,15 @@ export function HomeFooter({
                         <Icon size={22} color="#c9a87a" strokeWidth={2} />
                         <Text
                             style={{
-                                fontSize: 11,
+                                // 10pt + zero tracking: SK/UK labels (NASTAVENIA,
+                                // НАЛАШТУВАННЯ) must fit a 1/5-width slot on 320pt
+                                // screens without ellipsis.
+                                fontSize: 10,
                                 fontWeight: '700',
                                 // #8a6a40 failed WCAG contrast on dark wood — use muted token
                                 color: '#d4b896',
                                 textTransform: 'uppercase',
-                                letterSpacing: 0.4,
+                                letterSpacing: 0,
                             }}
                             numberOfLines={1}
                             maxFontSizeMultiplier={1.2}

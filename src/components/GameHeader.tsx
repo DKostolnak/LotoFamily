@@ -119,6 +119,7 @@ const GameHeaderComponent = ({
                 borderColor: '#5a4025',
                 zIndex: 50,
             }}
+            imageStyle={{ width: '100%', height: '100%' }}
             resizeMode="repeat"
         >
             {/* Cozy wooden-panel overlay (rgba 0.85 — drevený panel feel) */}

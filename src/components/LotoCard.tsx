@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import Animated, {
     useSharedValue,
@@ -6,6 +6,9 @@ import Animated, {
     withSequence,
     withTiming,
     withSpring,
+    withRepeat,
+    cancelAnimation,
+    interpolateColor,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { LotoCard as LotoCardType } from '@/lib/types';
@@ -174,10 +177,61 @@ const LotoCardComponent = ({
 
     const remainingOnCard = card.grid.flat().filter(c => c.value !== null && !c.isMarked).length;
 
+    // Near-win tension: when 1-3 numbers remain the card border breathes
+    // gold; on completion the whole card pops once and settles green.
+    const nearWin = remainingOnCard > 0 && remainingOnCard <= 3;
+    const isComplete = remainingOnCard === 0 && calledNumbers.length > 0;
+    const tension = useSharedValue(0);
+    const cardPop = useSharedValue(1);
+    const wasComplete = useRef(isComplete);
+
+    useEffect(() => {
+        if (nearWin) {
+            tension.value = withRepeat(withTiming(1, { duration: 900 }), -1, true);
+        } else {
+            cancelAnimation(tension);
+            tension.value = withTiming(0, { duration: 300 });
+        }
+        return () => cancelAnimation(tension);
+    }, [nearWin, tension]);
+
+    useEffect(() => {
+        if (isComplete && !wasComplete.current) {
+            cardPop.value = withSequence(
+                withTiming(1.04, { duration: 140 }),
+                withSpring(1, { damping: 9, stiffness: 260 }),
+            );
+        }
+        wasComplete.current = isComplete;
+    }, [isComplete, cardPop]);
+
+    const cardAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: cardPop.value }],
+        borderColor: isComplete
+            ? '#4ade80'
+            : interpolateColor(tension.value, [0, 1], [theme.border, '#ffd700']),
+        shadowOpacity: 0.25 + tension.value * 0.5,
+    }));
+
     return (
-        <View
-            className="w-full rounded-xl overflow-hidden shadow-md border-2"
-            style={[{ elevation: 4, backgroundColor: theme.cardBg, borderColor: theme.border }, style]}
+        <Animated.View
+            style={[
+                {
+                    width: '100%',
+                    borderRadius: 12,
+                    overflow: 'hidden',
+                    borderWidth: 2,
+                    elevation: 4,
+                    backgroundColor: theme.cardBg,
+                    borderColor: theme.border,
+                    shadowColor: '#ffd700',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowRadius: 10,
+                    shadowOpacity: 0.25,
+                },
+                cardAnimatedStyle,
+                style,
+            ]}
         >
             {/* Card Header Strip - Compact on small screens */}
             <View
@@ -191,10 +245,16 @@ const LotoCardComponent = ({
                 >
                     {(t.cardLabel ?? 'Card').toUpperCase()} #{card.id.slice(-3)}
                 </Text>
-                <View className="bg-black/20 px-1.5 py-0.5 rounded-md border" style={{ borderColor: theme.border }}>
+                <View
+                    className="bg-black/20 px-1.5 py-0.5 rounded-md border"
+                    style={{
+                        borderColor: nearWin ? '#ffd700' : theme.border,
+                        backgroundColor: nearWin ? 'rgba(255, 215, 0, 0.15)' : undefined,
+                    }}
+                >
                     <Text
                         className={`font-bold uppercase tracking-widest ${remainingOnCard === 0 ? 'text-success' : 'text-cream'}`}
-                        style={{ fontSize: headerTextFontSize }}
+                        style={{ fontSize: headerTextFontSize, color: nearWin ? '#ffd700' : undefined }}
                         maxFontSizeMultiplier={1.2}
                     >
                         {remainingOnCard === 0
@@ -243,7 +303,7 @@ const LotoCardComponent = ({
                     </View>
                 ))}
             </View>
-        </View>
+        </Animated.View>
     );
 };
 

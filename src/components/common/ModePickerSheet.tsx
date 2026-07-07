@@ -52,6 +52,17 @@ export function ModePickerSheet({
                     elevation: 16,
                 }}
             >
+                {/* Bottom-sheet drag handle */}
+                <View
+                    style={{
+                        alignSelf: 'center',
+                        width: 40,
+                        height: 4,
+                        borderRadius: RADII.pill,
+                        backgroundColor: 'rgba(212, 184, 150, 0.35)',
+                        marginBottom: SPACING.xs,
+                    }}
+                />
                 <Text
                     style={[
                         TEXT_STYLES.h2,
